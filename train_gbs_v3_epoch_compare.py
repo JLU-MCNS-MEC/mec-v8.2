@@ -642,166 +642,168 @@ def train_one_model(model_name, train_shards, val_shards, val_hard_shards, devic
     best_50_ckpt = OUT_DIR / f"gbs_{name}_best50.pt"
     best_100_ckpt = OUT_DIR / f"gbs_{name}_best100.pt"
 
-    for epoch in range(1, MAX_EPOCHS + 1):
-        model.train()
-        shards = list(train_shards)
-        random.Random(model_seed + epoch).shuffle(shards)
+    try:
+        for epoch in range(1, MAX_EPOCHS + 1):
+            model.train()
+            shards = list(train_shards)
+            random.Random(model_seed + epoch).shuffle(shards)
 
-        total_loss_sum = 0.0
-        move_loss_sum = 0.0
-        arr_loss_sum = 0.0
-        batches = 0
-        natural_correct = 0
-        natural_total = 0
+            total_loss_sum = 0.0
+            move_loss_sum = 0.0
+            arr_loss_sum = 0.0
+            batches = 0
+            natural_correct = 0
+            natural_total = 0
 
-        for shard_index, path in enumerate(shards):
-            # Explicit per-epoch/per-shard generator makes the first 50 epochs
-            # identical to the first 50 epochs of any same-seed comparison run.
-            loader_seed = model_seed + epoch * 100003 + shard_index
-            for batch in build_loader(
-                path,
-                BATCH_SIZES[model_name],
-                shuffle=True,
-                seed=loader_seed,
-            ):
-                (
-                    tokens,
-                    goal_tokens,
-                    heatmaps,
-                    network_states,
-                    labels,
-                    arrival_labels,
-                    move_valid,
-                    arrival_mask,
-                    _distances,
-                    sample_type,
-                ) = move_batch_to_device(batch, device)
-
-                optimizer.zero_grad(set_to_none=True)
-                with amp_context(device, use_amp):
-                    comp = model.forward_components(
+            for shard_index, path in enumerate(shards):
+                # Explicit per-epoch/per-shard generator makes the first 50 epochs
+                # identical to the first 50 epochs of any same-seed comparison run.
+                loader_seed = model_seed + epoch * 100003 + shard_index
+                for batch in build_loader(
+                    path,
+                    BATCH_SIZES[model_name],
+                    shuffle=True,
+                    seed=loader_seed,
+                ):
+                    (
                         tokens,
                         goal_tokens,
                         heatmaps,
                         network_states,
-                    )
-                    loss, move_loss, arr_loss = compute_training_loss(
-                        comp,
                         labels,
                         arrival_labels,
                         move_valid,
                         arrival_mask,
-                        move_weights,
-                    )
+                        _distances,
+                        sample_type,
+                    ) = move_batch_to_device(batch, device)
 
-                if not torch.isfinite(loss):
-                    continue
+                    optimizer.zero_grad(set_to_none=True)
+                    with amp_context(device, use_amp):
+                        comp = model.forward_components(
+                            tokens,
+                            goal_tokens,
+                            heatmaps,
+                            network_states,
+                        )
+                        loss, move_loss, arr_loss = compute_training_loss(
+                            comp,
+                            labels,
+                            arrival_labels,
+                            move_valid,
+                            arrival_mask,
+                            move_weights,
+                        )
 
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                scaler.step(optimizer)
-                scaler.update()
+                    if not torch.isfinite(loss):
+                        continue
 
-                batches += 1
-                total_loss_sum += float(loss.item())
-                move_loss_sum += float(move_loss.item())
-                arr_loss_sum += float(arr_loss.item())
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                    scaler.step(optimizer)
+                    scaler.update()
 
-                natural = sample_type == 0
-                if bool(natural.any()):
-                    decision = arrival_gated_decision(
-                        comp["move_logits"], comp["arrival_logit"]
-                    )
-                    pred = decision["action"][natural]
-                    natural_correct += int((pred == labels[natural]).sum())
-                    natural_total += int(natural.sum())
+                    batches += 1
+                    total_loss_sum += float(loss.item())
+                    move_loss_sum += float(move_loss.item())
+                    arr_loss_sum += float(arr_loss.item())
 
-        val = evaluate_streaming(
-            model,
-            val_shards,
-            VAL_BATCH_SIZES[model_name],
-            device,
-            use_amp,
-        )
-        hard_val = evaluate_hard_arrival(
-            model,
-            val_hard_shards,
-            VAL_BATCH_SIZES[model_name],
-            device,
-            use_amp,
-        )
-        # Preserve the existing 70/30 movement-arrival weighting, but evaluate
-        # Arrival on both natural states and held-out hard-arrival states.
-        arrival_selection_f1 = 0.5 * (
-            float(val["arrival"]["f1"]) + float(hard_val["arrival"]["f1"])
-        )
-        score = (
-            float(TRAIN.checkpoint_macro_f1_weight) * val["macro_f1"]
-            + float(TRAIN.checkpoint_arrival_f1_weight) * arrival_selection_f1
-        )
-        scheduler.step(score)
-        lr = float(optimizer.param_groups[0]["lr"])
+                    natural = sample_type == 0
+                    if bool(natural.any()):
+                        decision = arrival_gated_decision(
+                            comp["move_logits"], comp["arrival_logit"]
+                        )
+                        pred = decision["action"][natural]
+                        natural_correct += int((pred == labels[natural]).sum())
+                        natural_total += int(natural.sum())
 
-        recalls = val["recalls"]
-        arr = val["arrival"]
-        hard_arr = hard_val["arrival"]
-        row = {
-            "epoch": epoch,
-            "model_seed": model_seed,
-            "train_total_loss": total_loss_sum / max(batches, 1),
-            "train_move_loss": move_loss_sum / max(batches, 1),
-            "train_arrival_loss": arr_loss_sum / max(batches, 1),
-            "train_natural_acc": natural_correct / max(natural_total, 1),
-            "val_nll": val["nll"],
-            "val_acc": val["accuracy"],
-            "val_bal4": val["balanced4"],
-            "val_directional": val["directional"],
-            "val_macro_f1": val["macro_f1"],
-            "val_natural_arrival_f1": arr["f1"],
-            "val_hard_arrival_f1": hard_arr["f1"],
-            "val_hard_arrival_count": hard_val["count"],
-            "val_hard_positive_recall": hard_val["positive_recall"],
-            "val_hard_negative_false_stop_rate": hard_val["hard_negative_false_stop_rate"],
-            "val_far40_false_stop_rate": val["far40_false_stop_rate"],
-            "val_far100_false_stop_rate": val["far100_false_stop_rate"],
-            "val_near20_miss_stop_rate": val["near20_miss_stop_rate"],
-            "arrival_selection_f1": arrival_selection_f1,
-            "checkpoint_score": score,
-            "lr": lr,
-        }
-        history.append(row)
+            val = evaluate_streaming(
+                model,
+                val_shards,
+                VAL_BATCH_SIZES[model_name],
+                device,
+                use_amp,
+            )
+            hard_val = evaluate_hard_arrival(
+                model,
+                val_hard_shards,
+                VAL_BATCH_SIZES[model_name],
+                device,
+                use_amp,
+            )
+            # Preserve the existing 70/30 movement-arrival weighting, but evaluate
+            # Arrival on both natural states and held-out hard-arrival states.
+            arrival_selection_f1 = 0.5 * (
+                float(val["arrival"]["f1"]) + float(hard_val["arrival"]["f1"])
+            )
+            score = (
+                float(TRAIN.checkpoint_macro_f1_weight) * val["macro_f1"]
+                + float(TRAIN.checkpoint_arrival_f1_weight) * arrival_selection_f1
+            )
+            scheduler.step(score)
+            lr = float(optimizer.param_groups[0]["lr"])
 
-        print(
-            f"Epoch {epoch:03d}/{MAX_EPOCHS} | "
-            f"Loss={row['train_total_loss']:.4f} "
-            f"(Move={row['train_move_loss']:.4f}, Arr={row['train_arrival_loss']:.4f}) | "
-            f"TrainNatAcc={100*row['train_natural_acc']:6.2f}% | "
-            f"ValMacroF1={100*val['macro_f1']:5.2f}% | "
-            f"ArrF1 natural/hard={100*arr['f1']:5.2f}/{100*hard_arr['f1']:5.2f}% | "
-            f"HardNegFalseStop={100*hard_val['hard_negative_false_stop_rate']:5.2f}% | "
-            f"Score={100*score:5.2f}% | LR={lr:.2e}"
-        )
+            recalls = val["recalls"]
+            arr = val["arrival"]
+            hard_arr = hard_val["arrival"]
+            row = {
+                "epoch": epoch,
+                "model_seed": model_seed,
+                "train_total_loss": total_loss_sum / max(batches, 1),
+                "train_move_loss": move_loss_sum / max(batches, 1),
+                "train_arrival_loss": arr_loss_sum / max(batches, 1),
+                "train_natural_acc": natural_correct / max(natural_total, 1),
+                "val_nll": val["nll"],
+                "val_acc": val["accuracy"],
+                "val_bal4": val["balanced4"],
+                "val_directional": val["directional"],
+                "val_macro_f1": val["macro_f1"],
+                "val_natural_arrival_f1": arr["f1"],
+                "val_hard_arrival_f1": hard_arr["f1"],
+                "val_hard_arrival_count": hard_val["count"],
+                "val_hard_positive_recall": hard_val["positive_recall"],
+                "val_hard_negative_false_stop_rate": hard_val["hard_negative_false_stop_rate"],
+                "val_far40_false_stop_rate": val["far40_false_stop_rate"],
+                "val_far100_false_stop_rate": val["far100_false_stop_rate"],
+                "val_near20_miss_stop_rate": val["near20_miss_stop_rate"],
+                "arrival_selection_f1": arrival_selection_f1,
+                "checkpoint_score": score,
+                "lr": lr,
+            }
+            history.append(row)
 
-        snapshot = checkpoint_metrics(val, hard_val, score, epoch)
-        if score > best_100_score + 1e-6:
-            best_100_score = score
-            best_100_epoch = epoch
-            best_100_metrics = snapshot
-            torch.save(model.state_dict(), best_100_ckpt)
-            print(f"  Saved best-100 candidate -> {best_100_ckpt}")
+            print(
+                f"Epoch {epoch:03d}/{MAX_EPOCHS} | "
+                f"Loss={row['train_total_loss']:.4f} "
+                f"(Move={row['train_move_loss']:.4f}, Arr={row['train_arrival_loss']:.4f}) | "
+                f"TrainNatAcc={100*row['train_natural_acc']:6.2f}% | "
+                f"ValMacroF1={100*val['macro_f1']:5.2f}% | "
+                f"ArrF1 natural/hard={100*arr['f1']:5.2f}/{100*hard_arr['f1']:5.2f}% | "
+                f"HardNegFalseStop={100*hard_val['hard_negative_false_stop_rate']:5.2f}% | "
+                f"Score={100*score:5.2f}% | LR={lr:.2e}"
+            )
 
-        if epoch <= COMPARE_CUTOFF and score > best_50_score + 1e-6:
-            best_50_score = score
-            best_50_epoch = epoch
-            best_50_metrics = snapshot
-            torch.save(model.state_dict(), best_50_ckpt)
-            print(f"  Saved best-50 candidate -> {best_50_ckpt}")
+            snapshot = checkpoint_metrics(val, hard_val, score, epoch)
+            if score > best_100_score + 1e-6:
+                best_100_score = score
+                best_100_epoch = epoch
+                best_100_metrics = snapshot
+                torch.save(model.state_dict(), best_100_ckpt)
+                print(f"  Saved best-100 candidate -> {best_100_ckpt}")
 
-        save_history_csv(model_name, history)
-        write_epoch_metrics(tb_writer, row, epoch)
+            if epoch <= COMPARE_CUTOFF and score > best_50_score + 1e-6:
+                best_50_score = score
+                best_50_epoch = epoch
+                best_50_metrics = snapshot
+                torch.save(model.state_dict(), best_50_ckpt)
+                print(f"  Saved best-50 candidate -> {best_50_ckpt}")
 
-    tb_writer.close()
+            save_history_csv(model_name, history)
+            write_epoch_metrics(tb_writer, row, epoch)
+
+    finally:
+        tb_writer.close()
     save_plots(model_name, history)
     return {
         "model": model_name,
