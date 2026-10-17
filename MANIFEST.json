@@ -1,0 +1,29 @@
+{
+  "version": "test_v8.2-input-redesign",
+  "modified": [
+    "config.py",
+    "gbs_network.py",
+    "latency_model.py",
+    "token_data.py",
+    "generate_token_dataset.py",
+    "generate_val_token_dataset.py",
+    "generate_test_token_dataset.py",
+    "gbs_model_v3.py",
+    "train_gbs_v3.py",
+    "eval_fixed_mec_capability_v82.py",
+    "sanity_check_v82.py",
+    "README_v82.md"
+  ],
+  "unchanged_dependencies": [
+    "encoder.py",
+    "env.py",
+    "navigation_reward.py",
+    "utils.py"
+  ],
+  "not_included": [
+    "DQN",
+    "association",
+    "old MEC checkpoints",
+    "shared_encoder.pt"
+  ]
+}
