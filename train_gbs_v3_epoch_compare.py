@@ -23,6 +23,8 @@ import json
 import random
 from pathlib import Path
 
+from tensorboard_logging import make_writer, new_run_id, write_epoch_metrics
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -635,6 +637,7 @@ def train_one_model(model_name, train_shards, val_shards, val_hard_shards, devic
     best_100_epoch = -1
     best_100_metrics = None
     history = []
+    tb_writer = make_writer(OUT_DIR.name, model_name, run_id=new_run_id())
     name = safe_name(model_name)
     best_50_ckpt = OUT_DIR / f"gbs_{name}_best50.pt"
     best_100_ckpt = OUT_DIR / f"gbs_{name}_best100.pt"
@@ -796,7 +799,9 @@ def train_one_model(model_name, train_shards, val_shards, val_hard_shards, devic
             print(f"  Saved best-50 candidate -> {best_50_ckpt}")
 
         save_history_csv(model_name, history)
+        write_epoch_metrics(tb_writer, row, epoch)
 
+    tb_writer.close()
     save_plots(model_name, history)
     return {
         "model": model_name,
