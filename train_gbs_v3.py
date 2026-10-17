@@ -511,162 +511,164 @@ def train_one_model(model_name, train_shards, val_shards, device, move_weights):
     tb_writer = make_writer(OUT_DIR.name, model_name, run_id=new_run_id())
     best_ckpt = OUT_DIR / f"gbs_{safe_name(model_name)}_best.pt"
 
-    for epoch in range(1, MAX_EPOCHS + 1):
-        model.train()
-        shards = list(train_shards)
-        random.Random(SEED + epoch).shuffle(shards)
+    try:
+        for epoch in range(1, MAX_EPOCHS + 1):
+            model.train()
+            shards = list(train_shards)
+            random.Random(SEED + epoch).shuffle(shards)
 
-        total_loss_sum = 0.0
-        move_loss_sum = 0.0
-        arr_loss_sum = 0.0
-        batches = 0
-        natural_correct = 0
-        natural_total = 0
+            total_loss_sum = 0.0
+            move_loss_sum = 0.0
+            arr_loss_sum = 0.0
+            batches = 0
+            natural_correct = 0
+            natural_total = 0
 
-        for path in shards:
-            for batch in build_loader(
-                path, BATCH_SIZES[model_name], shuffle=True
-            ):
-                (
-                    tokens,
-                    goal_tokens,
-                    heatmaps,
-                    network_states,
-                    labels,
-                    arrival_labels,
-                    move_valid,
-                    arrival_mask,
-                    _distances,
-                    sample_type,
-                ) = move_batch_to_device(batch, device)
-
-                optimizer.zero_grad(set_to_none=True)
-                with amp_context(device, use_amp):
-                    comp = model.forward_components(
+            for path in shards:
+                for batch in build_loader(
+                    path, BATCH_SIZES[model_name], shuffle=True
+                ):
+                    (
                         tokens,
                         goal_tokens,
                         heatmaps,
                         network_states,
-                    )
-                    loss, move_loss, arr_loss = compute_training_loss(
-                        comp,
                         labels,
                         arrival_labels,
                         move_valid,
                         arrival_mask,
-                        move_weights,
-                    )
+                        _distances,
+                        sample_type,
+                    ) = move_batch_to_device(batch, device)
 
-                if not torch.isfinite(loss):
-                    continue
+                    optimizer.zero_grad(set_to_none=True)
+                    with amp_context(device, use_amp):
+                        comp = model.forward_components(
+                            tokens,
+                            goal_tokens,
+                            heatmaps,
+                            network_states,
+                        )
+                        loss, move_loss, arr_loss = compute_training_loss(
+                            comp,
+                            labels,
+                            arrival_labels,
+                            move_valid,
+                            arrival_mask,
+                            move_weights,
+                        )
 
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                scaler.step(optimizer)
-                scaler.update()
+                    if not torch.isfinite(loss):
+                        continue
 
-                batches += 1
-                total_loss_sum += float(loss.item())
-                move_loss_sum += float(move_loss.item())
-                arr_loss_sum += float(arr_loss.item())
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                    scaler.step(optimizer)
+                    scaler.update()
 
-                natural = sample_type == 0
-                if bool(natural.any()):
-                    decision = arrival_gated_decision(
-                        comp["move_logits"], comp["arrival_logit"]
-                    )
-                    pred = decision["action"][natural]
-                    natural_correct += int(
-                        (pred == labels[natural]).sum()
-                    )
-                    natural_total += int(natural.sum())
+                    batches += 1
+                    total_loss_sum += float(loss.item())
+                    move_loss_sum += float(move_loss.item())
+                    arr_loss_sum += float(arr_loss.item())
 
-        val = evaluate_streaming(
-            model,
-            val_shards,
-            VAL_BATCH_SIZES[model_name],
-            device,
-            use_amp,
-        )
-        score = (
-            float(TRAIN.checkpoint_macro_f1_weight) * val["macro_f1"]
-            + float(TRAIN.checkpoint_arrival_f1_weight) * val["arrival"]["f1"]
-        )
-        scheduler.step(score)
-        lr = float(optimizer.param_groups[0]["lr"])
+                    natural = sample_type == 0
+                    if bool(natural.any()):
+                        decision = arrival_gated_decision(
+                            comp["move_logits"], comp["arrival_logit"]
+                        )
+                        pred = decision["action"][natural]
+                        natural_correct += int(
+                            (pred == labels[natural]).sum()
+                        )
+                        natural_total += int(natural.sum())
 
-        recalls = val["recalls"]
-        arr = val["arrival"]
-        row = {
-            "epoch": epoch,
-            "train_total_loss": total_loss_sum / max(batches, 1),
-            "train_move_loss": move_loss_sum / max(batches, 1),
-            "train_arrival_loss": arr_loss_sum / max(batches, 1),
-            "train_natural_acc": natural_correct / max(natural_total, 1),
-            "val_nll": val["nll"],
-            "val_acc": val["accuracy"],
-            "val_bal4": val["balanced4"],
-            "val_directional": val["directional"],
-            "val_macro_f1": val["macro_f1"],
-            "val_arrival_precision": arr["precision"],
-            "val_arrival_recall": arr["recall"],
-            "val_arrival_f1": arr["f1"],
-            "val_far40_false_stop_rate": val["far40_false_stop_rate"],
-            "val_far100_false_stop_rate": val["far100_false_stop_rate"],
-            "val_near20_miss_stop_rate": val["near20_miss_stop_rate"],
-            "checkpoint_score": score,
-            "lr": lr,
-        }
-        history.append(row)
+            val = evaluate_streaming(
+                model,
+                val_shards,
+                VAL_BATCH_SIZES[model_name],
+                device,
+                use_amp,
+            )
+            score = (
+                float(TRAIN.checkpoint_macro_f1_weight) * val["macro_f1"]
+                + float(TRAIN.checkpoint_arrival_f1_weight) * val["arrival"]["f1"]
+            )
+            scheduler.step(score)
+            lr = float(optimizer.param_groups[0]["lr"])
 
-        print(
-            f"Epoch {epoch:02d}/{MAX_EPOCHS} | "
-            f"Loss={row['train_total_loss']:.4f} "
-            f"(Move={row['train_move_loss']:.4f}, Arr={row['train_arrival_loss']:.4f}) | "
-            f"TrainNatAcc={100*row['train_natural_acc']:6.2f}% | "
-            f"ValAcc={100*val['accuracy']:6.2f}% | "
-            f"MacroF1={100*val['macro_f1']:6.2f}% | "
-            f"ArrivalF1={100*arr['f1']:6.2f}% | "
-            f"Score={100*score:6.2f}% | LR={lr:.2e}"
-        )
-        print(
-            "  Recall | "
-            f"F={100*recalls[0]:5.1f}% L={100*recalls[1]:5.1f}% "
-            f"R={100*recalls[2]:5.1f}% S={100*recalls[3]:5.1f}%"
-        )
-        print(
-            "  Arrival| "
-            f"P={100*arr['precision']:5.1f}% "
-            f"R={100*arr['recall']:5.1f}% "
-            f"F1={100*arr['f1']:5.1f}% | "
-            f"FalseStop>=100m={100*val['far100_false_stop_rate']:5.2f}% | "
-            f"Miss<20m={100*val['near20_miss_stop_rate']:5.2f}%"
-        )
-
-        if score > best_score + 1e-6:
-            best_score = score
-            best_epoch = epoch
-            best_metrics = {
-                "score": score,
-                "accuracy": val["accuracy"],
-                "balanced_accuracy": val["balanced4"],
-                "directional_balanced_accuracy": val["directional"],
-                "macro_f1": val["macro_f1"],
-                "arrival": arr,
-                "far40_false_stop_rate": val["far40_false_stop_rate"],
-                "far100_false_stop_rate": val["far100_false_stop_rate"],
-                "near20_miss_stop_rate": val["near20_miss_stop_rate"],
-                "recalls": recalls,
-                "confusion": val["confusion"].tolist(),
+            recalls = val["recalls"]
+            arr = val["arrival"]
+            row = {
+                "epoch": epoch,
+                "train_total_loss": total_loss_sum / max(batches, 1),
+                "train_move_loss": move_loss_sum / max(batches, 1),
+                "train_arrival_loss": arr_loss_sum / max(batches, 1),
+                "train_natural_acc": natural_correct / max(natural_total, 1),
+                "val_nll": val["nll"],
+                "val_acc": val["accuracy"],
+                "val_bal4": val["balanced4"],
+                "val_directional": val["directional"],
+                "val_macro_f1": val["macro_f1"],
+                "val_arrival_precision": arr["precision"],
+                "val_arrival_recall": arr["recall"],
+                "val_arrival_f1": arr["f1"],
+                "val_far40_false_stop_rate": val["far40_false_stop_rate"],
+                "val_far100_false_stop_rate": val["far100_false_stop_rate"],
+                "val_near20_miss_stop_rate": val["near20_miss_stop_rate"],
+                "checkpoint_score": score,
+                "lr": lr,
             }
-            torch.save(model.state_dict(), best_ckpt)
-            print(f"  Saved best -> {best_ckpt}")
+            history.append(row)
 
-        save_history_csv(model_name, history)
-        write_epoch_metrics(tb_writer, row, epoch)
+            print(
+                f"Epoch {epoch:02d}/{MAX_EPOCHS} | "
+                f"Loss={row['train_total_loss']:.4f} "
+                f"(Move={row['train_move_loss']:.4f}, Arr={row['train_arrival_loss']:.4f}) | "
+                f"TrainNatAcc={100*row['train_natural_acc']:6.2f}% | "
+                f"ValAcc={100*val['accuracy']:6.2f}% | "
+                f"MacroF1={100*val['macro_f1']:6.2f}% | "
+                f"ArrivalF1={100*arr['f1']:6.2f}% | "
+                f"Score={100*score:6.2f}% | LR={lr:.2e}"
+            )
+            print(
+                "  Recall | "
+                f"F={100*recalls[0]:5.1f}% L={100*recalls[1]:5.1f}% "
+                f"R={100*recalls[2]:5.1f}% S={100*recalls[3]:5.1f}%"
+            )
+            print(
+                "  Arrival| "
+                f"P={100*arr['precision']:5.1f}% "
+                f"R={100*arr['recall']:5.1f}% "
+                f"F1={100*arr['f1']:5.1f}% | "
+                f"FalseStop>=100m={100*val['far100_false_stop_rate']:5.2f}% | "
+                f"Miss<20m={100*val['near20_miss_stop_rate']:5.2f}%"
+            )
 
-    tb_writer.close()
+            if score > best_score + 1e-6:
+                best_score = score
+                best_epoch = epoch
+                best_metrics = {
+                    "score": score,
+                    "accuracy": val["accuracy"],
+                    "balanced_accuracy": val["balanced4"],
+                    "directional_balanced_accuracy": val["directional"],
+                    "macro_f1": val["macro_f1"],
+                    "arrival": arr,
+                    "far40_false_stop_rate": val["far40_false_stop_rate"],
+                    "far100_false_stop_rate": val["far100_false_stop_rate"],
+                    "near20_miss_stop_rate": val["near20_miss_stop_rate"],
+                    "recalls": recalls,
+                    "confusion": val["confusion"].tolist(),
+                }
+                torch.save(model.state_dict(), best_ckpt)
+                print(f"  Saved best -> {best_ckpt}")
+
+            save_history_csv(model_name, history)
+            write_epoch_metrics(tb_writer, row, epoch)
+
+    finally:
+        tb_writer.close()
     save_plots(model_name, history)
     return {
         "model": model_name,
