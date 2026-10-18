@@ -4,6 +4,8 @@ Usage:
   python migrate_v82_workspace.py             # dry run (default)
   python migrate_v82_workspace.py --apply     # copy missing files, never overwrite
   python migrate_v82_workspace.py --apply --results-only
+  python migrate_v82_workspace.py --results-only --archive-subdir runs/archive_pycharm_v82_20261018
+  python migrate_v82_workspace.py --apply --results-only --archive-subdir runs/archive_pycharm_v82_20261018
 
 This NEVER changes old /tmp artifacts, Git-tracked source code, or checkpoints
 at the destination. It does not remove source files. Run only after all
@@ -129,6 +131,12 @@ def main():
         "--results-only", action="store_true",
         help="Migrate results and shared_encoder.pt but skip large token datasets."
     )
+    parser.add_argument(
+        "--archive-subdir", type=Path, default=None,
+        help=("Place the copied artifacts under an ignored runs/ subdirectory "
+              "inside the Git workspace, instead of mixing results in its root. "
+              "Example: runs/archive_pycharm_v82_20261018")
+    )
     args = parser.parse_args()
 
     source_root = args.source.expanduser().resolve()
@@ -140,11 +148,29 @@ def main():
     if source_root == target_root or source_root in target_root.parents:
         raise SystemExit("Source and destination overlap: refusing migration")
 
+    artifact_root = target_root
+    if args.archive_subdir is not None:
+        archive_subdir = args.archive_subdir
+        if (
+            archive_subdir.is_absolute()
+            or ".." in archive_subdir.parts
+            or len(archive_subdir.parts) < 2
+            or archive_subdir.parts[0] != "runs"
+        ):
+            raise SystemExit(
+                "--archive-subdir must be a relative path below runs/, "
+                "for example runs/archive_pycharm_v82_20261018"
+            )
+        artifact_root = (target_root / archive_subdir).resolve()
+        if target_root not in artifact_root.parents:
+            raise SystemExit("Archive path escapes the workspace: refusing migration")
+    print(f"Artifact destination: {artifact_root}")
+
     names = RESULT_DIRS + OTHER_FILES
     if not args.results_only:
         names += DATA_DIRS
 
-    plan = file_plan(source_root, target_root, names)
+    plan = file_plan(source_root, artifact_root, names)
     missing = [(src, dst) for src, dst, action in plan if action == "copy"]
     total = sum(src.stat().st_size for src, _ in missing)
     print(f"Files: {len(plan)} total; {len(missing)} missing; "
@@ -168,7 +194,8 @@ def main():
     report = {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source": str(source_root),
-        "destination": str(target_root),
+        "workspace_root": str(target_root),
+        "destination": str(artifact_root),
         "copied_files": len(missing),
         "already_identical_files": len(plan) - len(missing),
         "copied_bytes": total,
