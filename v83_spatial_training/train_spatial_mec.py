@@ -356,6 +356,11 @@ def train_one(mode, model_name, train_shards, val_shards, val_hard_shards,
                         comp, labels, arrival, move_valid, arrival_mask, move_weights
                     )
                 if not torch.isfinite(loss):
+                    if args.strict_finite:
+                        raise RuntimeError(
+                            f"Non-finite training loss at epoch {epoch}, "
+                            f"shard {path}, batch {batches}"
+                        )
                     continue
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
@@ -514,6 +519,9 @@ def main():
     p.add_argument("--model-name", default="Transformer-M")
     p.add_argument("--models", nargs="+", default=["M0", "M1"])
     p.add_argument("--cache-dir", type=Path, required=True)
+    p.add_argument("--train-dir", type=Path, default=TRAIN_DIR)
+    p.add_argument("--val-dir", type=Path, default=VAL_DIR)
+    p.add_argument("--val-hard-dir", type=Path, default=VAL_HARD_DIR)
     p.add_argument("--output-dir", type=Path, default=None)
     p.add_argument("--seed", type=int, default=SEED)
     p.add_argument("--max-epochs", type=int, default=MAX_EPOCHS)
@@ -522,6 +530,8 @@ def main():
     p.add_argument("--val-batch-size", type=int, default=VAL_BATCH_SIZE)
     p.add_argument("--lr", type=float, default=INITIAL_LR)
     p.add_argument("--weight-decay", type=float, default=WEIGHT_DECAY)
+    p.add_argument("--strict-finite", action="store_true",
+                   help="Abort immediately on a non-finite training loss.")
     p.add_argument("--smoke", action="store_true")
     args = p.parse_args()
     for mode in args.models:
@@ -535,9 +545,9 @@ def main():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         args.output_dir = OUT_ROOT / stamp
     args.output_dir.mkdir(parents=True, exist_ok=False if not args.smoke else True)
-    train_shards = sorted_shards(TRAIN_DIR)
-    val_shards = sorted_shards(VAL_DIR)
-    hard_shards = sorted_shards(VAL_HARD_DIR)
+    train_shards = sorted_shards(args.train_dir)
+    val_shards = sorted_shards(args.val_dir)
+    hard_shards = sorted_shards(args.val_hard_dir)
     train_cache = SpatialCache(cache_dir / "train.npz")
     val_cache = SpatialCache(cache_dir / "val.npz")
     hard_cache = SpatialCache(cache_dir / "val_hard.npz")

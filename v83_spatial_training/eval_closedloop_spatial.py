@@ -307,6 +307,7 @@ def main():
     )
     p.add_argument("--model-name", default="Transformer-M")
     p.add_argument("--modes", nargs="+", default=["M0", "M1"])
+    p.add_argument("--val-specs", type=Path, default=VAL_SPECS)
     p.add_argument("--max-episodes", type=int, default=60)
     p.add_argument("--threshold", type=float, default=ARRIVAL_STOP_THRESHOLD)
     p.add_argument("--smoke", action="store_true")
@@ -314,7 +315,7 @@ def main():
     args = p.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(False)
-    evaluation.TEST_STATS_PATH = VAL_SPECS
+    evaluation.TEST_STATS_PATH = args.val_specs
     evaluation.NUM_EPISODES = args.max_episodes
     specs = evaluation.load_test_episode_specs()
     encoder = load_encoder(device)
