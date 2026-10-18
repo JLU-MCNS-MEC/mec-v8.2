@@ -8,10 +8,14 @@ goal, UAV position, model capability, or success label are used.
 Depth values are *camera slant range* to visible landmarks, NOT horizontal
 distance to the target or the simulation's <20m stop threshold. Zero/NaN
 means invalid: always use the depth-availability features as masks.
+All output features are normalized to [0,1], including cosine-similarity
+confidence fields. The last two fields are RGB-only signals: a fair ablation
+must give the same RGB confidence to both the RGB and RGB-D probes.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -35,7 +39,7 @@ DEPTH_FEATURE_NAMES = (
 def goal_conditioned_depth_evidence(
     current_tokens: torch.Tensor,
     goal_tokens: torch.Tensor,
-    depth_map_m: torch.Tensor,
+    depth_map_m: torch.Tensor | np.ndarray,
     *,
     max_depth_m: float = float(AUX.depth_max_m),
     topk: int = 12,
@@ -66,14 +70,28 @@ def goal_conditioned_depth_evidence(
     if current_tokens.shape[0] != goal_tokens.shape[0]:
         raise ValueError("Current and Goal batch sizes differ")
 
-    if depth_map_m.ndim == 2:
-        depth_map_m = depth_map_m.unsqueeze(0)
-    if depth_map_m.ndim != 3 or depth_map_m.shape[0] != current_tokens.shape[0]:
+    # The simulator returns a NumPy array. Accept either ndarray or Tensor
+    # without assuming torch-only methods are available on the input.
+    if not isinstance(depth_map_m, (np.ndarray, torch.Tensor)):
+        raise TypeError("Depth map must be a NumPy array or torch.Tensor")
+    depth = torch.as_tensor(
+        depth_map_m, dtype=torch.float32, device=current_tokens.device
+    )
+    if depth.ndim == 2:
+        depth = depth.unsqueeze(0)
+    if depth.ndim != 3 or depth.shape[0] != current_tokens.shape[0]:
         raise ValueError("Expected depth map [B,H,W] (or [H,W] when B=1)")
 
-    depth = depth_map_m.to(device=current_tokens.device, dtype=torch.float32)
-    if min(depth.shape[1:]) < ENCODER.grid_size:
-        raise ValueError("Depth resolution is smaller than encoder's patch grid")
+    # The RGB encoder uses a fixed 336x336 image with 14x14 patches.
+    # Silently resizing another sensor geometry would break correspondence.
+    expected_hw = (ENCODER.image_size, ENCODER.image_size)
+    if tuple(depth.shape[-2:]) != expected_hw:
+        raise ValueError(
+            f"Depth spatial shape must equal aligned RGB {expected_hw}, "
+            f"got {tuple(depth.shape[-2:])}"
+        )
+    if ENCODER.image_size != ENCODER.grid_size * ENCODER.patch_size:
+        raise ValueError("RGB token/patch geometry is inconsistent")
     valid = torch.isfinite(depth) & (depth > 0) & (depth <= max_depth_m)
     safe_depth = torch.where(valid, depth, torch.zeros_like(depth))
     size = (ENCODER.grid_size, ENCODER.grid_size)
@@ -119,8 +137,13 @@ def goal_conditioned_depth_evidence(
         1.0 - (mean / max_depth_m).clamp(0, 1),
         torch.zeros_like(mean),
     )
-    peak = scores[:, 0]
-    margin = scores[:, 0] - scores[:, 1] if k >= 2 else scores[:, 0]
+    # Cosine scores are [-1,1], but all eight emitted features are [0,1].
+    # This avoids accidental scale mismatch in a later small Arrival probe.
+    peak = ((scores[:, 0] + 1.0) * 0.5).clamp(0, 1)
+    margin = (
+        (scores[:, 0] - scores[:, 1]) * 0.5
+        if k >= 2 else torch.zeros_like(scores[:, 0])
+    ).clamp(0, 1)
     scene_validity = valid.float().mean(dim=(1, 2))
 
     features = torch.stack((
