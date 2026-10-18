@@ -1,6 +1,6 @@
 # V8.3 Stage-2 Preparation
 
-Status: Stage-2a Transformer-M M0/M1 training and 180-episode closed-loop evaluation complete; **M1 was not a robust improvement**, so no Small/Far-Negative/M1-Dir runs were started. See `STAGE2A_REPORT.md`.
+Status: Stage-2a Transformer-M M0/M1 training and 180-episode closed-loop evaluation complete; **M1 was not a robust improvement**. Stage-2b Never-Stop and Arrival-only A0/A1 are also complete: A1 improves A0 but remains far below the original M0; no Small/M1-Dir runs were started. See `STAGE2A_REPORT.md` and `V83_STAGE2B_REPORT.md`.
 
 ## Data design
 
