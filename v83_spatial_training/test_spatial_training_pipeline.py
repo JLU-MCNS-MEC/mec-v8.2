@@ -15,9 +15,24 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from gbs_model_v3 import build_gbs_model
-from spatial_data import SpatialCache
-from spatial_mec import SpatialAwareMEC, SpatialFusionHead, parameter_count
-from train_spatial_mec import set_seed
+if __package__:
+    from .eval_closedloop_spatial import (
+        paired_bootstrap_ci,
+        paired_comparison,
+        sign_test_p,
+    )
+    from .spatial_data import SpatialCache
+    from .spatial_mec import SpatialAwareMEC, SpatialFusionHead, parameter_count
+    from .train_spatial_mec import set_seed
+else:  # direct script execution (sys.path[0] is v83_spatial_training/)
+    from eval_closedloop_spatial import (
+        paired_bootstrap_ci,
+        paired_comparison,
+        sign_test_p,
+    )
+    from spatial_data import SpatialCache
+    from spatial_mec import SpatialAwareMEC, SpatialFusionHead, parameter_count
+    from train_spatial_mec import set_seed
 
 
 class DummyBase(nn.Module):
@@ -87,6 +102,46 @@ class SpatialWrapperTest(unittest.TestCase):
             max_diff = max(max_diff, float((s0[k] - s1[k]).abs().max().item()))
         self.assertEqual(max_diff, 0.0)
         self.assertGreater(parameter_count(m1), parameter_count(m0))
+
+
+class PairedStatisticsTest(unittest.TestCase):
+    @staticmethod
+    def _row(episode, success, osr, premature, timeout, spl, ndtw):
+        return {
+            "episode_index": episode, "band": "short", "success": success,
+            "osr": osr, "premature_stop": premature,
+            "max_steps_termination": timeout, "spl": spl, "ndtw": ndtw,
+            "min_distance_m": 0.0,
+        }
+
+    def test_paired_direction_and_counts(self):
+        base = [
+            self._row(0, 0, 0, 1, 0, 0.0, 0.1),
+            self._row(1, 0, 0, 1, 0, 0.0, 0.1),
+            self._row(2, 1, 1, 0, 0, 0.5, 0.5),
+        ]
+        other = [
+            self._row(0, 1, 1, 0, 0, 0.2, 0.2),
+            self._row(1, 0, 0, 1, 0, 0.0, 0.1),
+            self._row(2, 1, 1, 0, 0, 0.5, 0.5),
+        ]
+        result = paired_comparison({"M0": base, "M1": other}, base="M0", other="M1")
+        self.assertEqual(result["success"]["other_better"], 1)
+        self.assertEqual(result["success"]["base_better"], 0)
+        self.assertEqual(result["success"]["ties"], 2)
+        self.assertAlmostEqual(result["success"]["delta_rate"], 1 / 3)
+        self.assertEqual(result["premature_stop"]["other_better"], 1)
+        self.assertEqual(result["premature_stop"]["delta_rate"], -1 / 3)
+        self.assertAlmostEqual(result["spl_delta"], 0.2 / 3)
+        self.assertEqual(result["spl"]["other_better"], 1)
+        self.assertEqual(result["success_sign_test_p"], 1.0)
+
+    def test_bootstrap_ci_and_sign_test(self):
+        low, high = paired_bootstrap_ci([1.0] * 20)
+        self.assertAlmostEqual(low, 1.0)
+        self.assertAlmostEqual(high, 1.0)
+        self.assertEqual(sign_test_p(5, 0), 0.0625)
+        self.assertEqual(sign_test_p(0, 0), 1.0)
 
 
 class SpatialCacheTest(unittest.TestCase):

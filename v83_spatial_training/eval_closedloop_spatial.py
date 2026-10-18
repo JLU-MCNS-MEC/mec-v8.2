@@ -38,7 +38,10 @@ from visual_grounding_v83 import (
     VisualBeliefTracker,
     static_grounding,
 )
-from spatial_mec import SpatialAwareMEC
+if __package__:
+    from .spatial_mec import SpatialAwareMEC
+else:  # direct script execution (sys.path[0] is v83_spatial_training/)
+    from spatial_mec import SpatialAwareMEC
 
 
 ARCHIVE = Path("runs/archive_pycharm_v82_20261018")
@@ -57,10 +60,15 @@ def load_encoder(device):
     return enc
 
 
+def synchronize(device):
+    """CUDA kernels are asynchronous; timing without this is not latency."""
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+
+
 def spatial_maps_for_mode(mode, tracker, current_tokens, goal_tokens, prev_action):
     if mode == "M0":
-        return None, None, 0.0
-    t0 = time.perf_counter()
+        return None, None
     if mode == "M1":
         baseline, coherent = static_grounding(current_tokens, goal_tokens)
         zero = torch.zeros_like(coherent)
@@ -77,7 +85,7 @@ def spatial_maps_for_mode(mode, tracker, current_tokens, goal_tokens, prev_actio
             [gm.baseline, gm.coherent, gm.temporal, gm.innovation], dim=1
         )
         valid = gm.temporal_valid.float().view(-1, 1, 1, 1)
-    return maps, valid, time.perf_counter() - t0
+    return maps, valid
 
 
 def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, device,
@@ -87,7 +95,10 @@ def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, de
     model.load_state_dict(state)
     model.eval()
     rows = []
-    for spec in specs[:max_episodes]:
+    for episode_position, spec in enumerate(specs[:max_episodes]):
+        # The first episode is a warm-up for latency measurement only; all
+        # episodes still contribute to SR/OSR/SPL/nDTW and paired statistics.
+        record_timing = episode_position > 0
         env = ToyUAVEnv()
         obs = env.reset(
             seed=spec["seed"],
@@ -116,10 +127,14 @@ def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, de
                 num_tokens=ENCODER.num_tokens, token_dim=ENCODER.token_dim,
             ).astype(np.float32)
             network = torch.from_numpy(network_np).unsqueeze(0).to(device)
-            maps, valid, mt = spatial_maps_for_mode(
+            synchronize(device)
+            t_map = time.perf_counter()
+            maps, valid = spatial_maps_for_mode(
                 mode, tracker, current_tokens, goal_tokens, prev_action
             )
-            map_times.append(mt)
+            synchronize(device)
+            map_elapsed = time.perf_counter() - t_map
+            synchronize(device)
             t0 = time.perf_counter()
             with torch.inference_mode():
                 decision = model.predict_action(
@@ -127,7 +142,11 @@ def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, de
                     spatial_maps=maps, spatial_valid=valid,
                     stop_threshold=threshold,
                 )
-            model_times.append(time.perf_counter() - t0)
+            synchronize(device)
+            model_elapsed = time.perf_counter() - t0
+            if record_timing:
+                map_times.append(map_elapsed)
+                model_times.append(model_elapsed)
             action = int(decision["action"].item())
             ended_by_stop = bool(action == STOP)
             obs, success, done = env.step(
@@ -166,6 +185,7 @@ def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, de
             "spl": float(spl),
             "ndtw": float(ndtw),
             "min_distance_m": float(min_distance),
+            "timed": int(record_timing),
             "map_ms_per_step": float(1000.0 * np.mean(map_times)) if map_times else 0.0,
             "model_ms_per_step": float(1000.0 * np.mean(model_times)) if model_times else 0.0,
         })
@@ -174,6 +194,10 @@ def evaluate_mode(mode, model_name, checkpoint, specs, oracle_cache, encoder, de
 
 def summarize(rows):
     n = len(rows)
+    timed = [r for r in rows if r.get("timed", 1)]
+    map_ms = [r["map_ms_per_step"] for r in timed]
+    model_ms = [r["model_ms_per_step"] for r in timed]
+    total_ms = [r["map_ms_per_step"] + r["model_ms_per_step"] for r in timed]
     return {
         "episodes": n,
         "sr": float(np.mean([r["success"] for r in rows])) if n else 0.0,
@@ -182,9 +206,32 @@ def summarize(rows):
         "timeout": float(np.mean([r["max_steps_termination"] for r in rows])) if n else 0.0,
         "spl": float(np.mean([r["spl"] for r in rows])) if n else 0.0,
         "ndtw": float(np.mean([r["ndtw"] for r in rows])) if n else 0.0,
-        "map_ms_per_step": float(np.mean([r["map_ms_per_step"] for r in rows])) if n else 0.0,
-        "model_ms_per_step": float(np.mean([r["model_ms_per_step"] for r in rows])) if n else 0.0,
+        "latency_episodes": len(timed),
+        # Synchronized per-episode means; first episode excluded as warm-up.
+        "map_ms_per_step": float(np.mean(map_ms)) if map_ms else 0.0,
+        "map_ms_per_step_p95": float(np.percentile(map_ms, 95)) if map_ms else 0.0,
+        "model_ms_per_step": float(np.mean(model_ms)) if model_ms else 0.0,
+        "model_ms_per_step_p95": float(np.percentile(model_ms, 95)) if model_ms else 0.0,
+        "total_ms_per_step": float(np.mean(total_ms)) if total_ms else 0.0,
+        "total_ms_per_step_p95": float(np.percentile(total_ms, 95)) if total_ms else 0.0,
     }
+
+
+def paired_bootstrap_ci(diffs, n_boot=10000, seed=20261018):
+    """95% percentile CI for the mean paired difference, resampling episodes."""
+    values = np.asarray(diffs, dtype=np.float64)
+    if values.size == 0:
+        return [0.0, 0.0]
+    rng = np.random.default_rng(int(seed))
+    draws = rng.choice(values, size=(int(n_boot), values.size), replace=True)
+    means = draws.mean(axis=1)
+    return [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]
+
+
+def sign_test_from_diffs(diffs):
+    pos = sum(1 for d in diffs if d > 1e-12)
+    neg = sum(1 for d in diffs if d < -1e-12)
+    return sign_test_p(pos, neg)
 
 
 def paired_comparison(rows_by_mode, base="M0", other="M1"):
@@ -208,20 +255,36 @@ def paired_comparison(rows_by_mode, base="M0", other="M1"):
             for i in indices
         )
         ties = len(indices) - improvements - regressions
+        diffs = [int(b[i][key]) - int(a[i][key]) for i in indices]
         res[key] = {
             "other_better": improvements,
             "base_better": regressions,
             "ties": ties,
             # Signed new minus old occurrence rate, regardless of desirability.
-            "delta_rate": float(np.mean([
-                int(b[i][key]) - int(a[i][key]) for i in indices
-            ])),
+            "delta_rate": float(np.mean(diffs)) if diffs else 0.0,
+            "delta_ci95": paired_bootstrap_ci(diffs),
         }
-    res["spl_delta"] = float(np.mean([b[i]["spl"] - a[i]["spl"] for i in indices]))
+    for metric in ("spl", "ndtw", "min_distance_m"):
+        diffs = [float(b[i][metric]) - float(a[i][metric]) for i in indices]
+        res[f"{metric}_delta"] = float(np.mean(diffs)) if diffs else 0.0
+        res[f"{metric}_delta_ci95"] = paired_bootstrap_ci(diffs)
+        if metric in ("spl", "ndtw"):
+            res[metric] = {
+                "other_better": sum(1 for d in diffs if d > 1e-12),
+                "base_better": sum(1 for d in diffs if d < -1e-12),
+                "ties": sum(1 for d in diffs if abs(d) <= 1e-12),
+                "delta": res[f"{metric}_delta"],
+            }
     for metric in ("success", "osr"):
         res[f"{metric}_sign_test_p"] = sign_test_p(
             res[metric]["other_better"], res[metric]["base_better"]
         )
+    res["spl_sign_test_p"] = sign_test_from_diffs(
+        [float(b[i]["spl"]) - float(a[i]["spl"]) for i in indices]
+    )
+    res["ndtw_sign_test_p"] = sign_test_from_diffs(
+        [float(b[i]["ndtw"]) - float(a[i]["ndtw"]) for i in indices]
+    )
     return res
 
 
@@ -299,8 +362,16 @@ def main():
             comparisons[f"paired_{other}_vs_{base}"] = paired_comparison(
                 rows_by_mode, base=base, other=other
             )
+    by_band = {}
+    for mode, rows in rows_by_mode.items():
+        bands = sorted({str(r["band"]) for r in rows})
+        by_band[mode] = {
+            band: summarize([r for r in rows if str(r["band"]) == band])
+            for band in bands
+        }
     result = {
         "summaries": summaries,
+        "summaries_by_band": by_band,
         "checkpoint_sources": checkpoint_sources,
         **comparisons,
     }

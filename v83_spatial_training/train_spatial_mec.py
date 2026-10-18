@@ -40,12 +40,20 @@ from gbs_model_v3 import (
     build_gbs_model,
     combine_move_and_arrival,
 )
-from spatial_data import (
-    SpatialCache,
-    build_spatial_loader,
-    move_spatial_batch_to_device,
-)
-from spatial_mec import SpatialAwareMEC, parameter_count
+if __package__:
+    from .spatial_data import (
+        SpatialCache,
+        build_spatial_loader,
+        move_spatial_batch_to_device,
+    )
+    from .spatial_mec import SpatialAwareMEC, parameter_count
+else:  # direct script execution (sys.path[0] is v83_spatial_training/)
+    from spatial_data import (
+        SpatialCache,
+        build_spatial_loader,
+        move_spatial_batch_to_device,
+    )
+    from spatial_mec import SpatialAwareMEC, parameter_count
 
 
 SEED = 20264017
