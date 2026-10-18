@@ -90,8 +90,6 @@ def main():
     evaluation.CHECKPOINT_DIR = args.archive_root/"gbs_v82_epoch_compare_results"
     evaluation.NUM_EPISODES = args.max_episodes
     # load_frozen_encoder expects shared_encoder.pt relative to cwd.
-    import token_data
-    old_loader=token_data.load_frozen_encoder
     def from_archive(device):
         from encoder import VisualTokenEncoder
         encoder=VisualTokenEncoder().to(device)
@@ -101,9 +99,6 @@ def main():
             param.requires_grad=False
         return encoder
 
-    from pathlib import Path as _Path
-    from config import TRAIN
-    import os
     # The evaluator uses a function imported earlier from token_data; replace
     # only its module-level reference, not the global encoder implementation.
     evaluation.load_frozen_encoder=from_archive
@@ -160,7 +155,9 @@ def main():
         print(f"Results: {out}")
         print("NOTE: threshold=never is an oracle-free Movement counterfactual, NOT a deployable Stop policy.")
     finally:
-        pass
+        # Ensure memory is released on exceptions as well.
+        if evaluation.DEVICE.type == "cuda":
+            torch.cuda.empty_cache()
 
 
 if __name__=="__main__":
