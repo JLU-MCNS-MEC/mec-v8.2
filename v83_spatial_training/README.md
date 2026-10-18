@@ -1,6 +1,9 @@
 # V8.3 Spatial MEC Training (M0/M1/M2)
 
-Status: Transformer-M **M0/M1 trained and evaluated**; M2 not started (awaiting decision). See `V83_SPATIAL_TRAINING_REPORT.md`.
+Status: Transformer-M **M0/M1/M2 trained and evaluated**. M2 improved offline
+movement classification but failed the closed-loop reachability gate (SR/OSR below
+M1, premature stops +25 pp); do not expand to Small or all five MEC models. See
+`V83_SPATIAL_TRAINING_REPORT.md` and `V83_M2_TRAINING_REPORT.md`.
 
 Independent V8.3 training/evaluation entry point. It does **not** modify the V8.2 training entry or the five original model architectures.
 
@@ -18,8 +21,11 @@ Network 5D is retained unchanged. MEC BEV and Depth are not used.
 - `spatial_data.py` — `(episode_id, step_id)` cache lookup and shard loader.
 - `spatial_mec.py` — `SpatialFusionHead` and `SpatialAwareMEC` M0/M1/M2 wrappers.
 - `train_spatial_mec.py` — deterministic training entry, based on the V8.2 epoch-compare logic.
-- `eval_closedloop_spatial.py` — 60-episode development-validation closed-loop evaluator with per-episode paired comparison.
-- `test_spatial_training_pipeline.py` — CPU tests for wrappers, validity masking, cache lookup and base-initialization identity.
+- `eval_closedloop_spatial.py` — 60-episode development-validation closed-loop evaluator with per-episode paired comparison, paired bootstrap CIs and synchronized CUDA timing.
+- `verify_m2_alignment.py` — independent audit of cached temporal24/innovation24, validity mask and previous-action provenance.
+- `summarize_m2_results.py` — renders the M0/M1/M2 training/closed-loop/paired comparison tables from run artifacts.
+- `test_spatial_training_pipeline.py` — CPU tests for wrappers, validity masking, cache lookup, base-initialization identity and paired statistics.
+- `V83_M2_TRAINING_REPORT.md` — M2 protocol, results, failure mechanism and decision.
 
 ## Alignment rules for the temporal cache
 
