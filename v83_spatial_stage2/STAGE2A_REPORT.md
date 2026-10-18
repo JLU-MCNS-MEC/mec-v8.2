@@ -25,10 +25,10 @@
 
 ## 2. Training results
 
-| Model | Parameters | Best epoch | Train time | Macro-F1 (4-way) | Natural Arrival-F1 | Hard Arrival-F1 | Checkpoint score |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| M0 | 2,722,164 | 71 | 71.9 min | 70.84% | 59.11% | 73.37% | 69.46% |
-| M1 | 2,724,839 (+2,675) | 62 | 66.1 min | 69.94% | 54.69% | 70.69% | 67.77% |
+| Model | Parameters | Best epoch | Train time | Movement Macro-F1 (3-way) | Directional BA | Macro-F1 (4-way) | Natural Arrival-F1 | Hard Arrival-F1 | Checkpoint score |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| M0 | 2,722,164 | 71 | 71.9 min | 74.75% | 74.84% | 70.84% | 59.11% | 73.37% | 69.46% |
+| M1 | 2,724,839 (+2,675) | 62 | 66.1 min | 75.03% | 75.13% | 69.94% | 54.69% | 70.69% | 67.77% |
 
 - M0 ran all 80 epochs; M1 early-stopped at epoch 72 (best 62).
 - M0 is better offline on checkpoint score, movement Macro-F1, natural arrival F1 and hard arrival F1 in this Stage-2 dataset.
