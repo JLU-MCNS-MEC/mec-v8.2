@@ -195,16 +195,33 @@ def paired_comparison(rows_by_mode, base="M0", other="M1"):
     indices = sorted(set(a) & set(b))
     res = {"base": base, "other": other, "episodes": len(indices)}
     for key in ("success", "osr", "premature_stop", "max_steps_termination"):
-        pos = sum(int(b[i][key]) > int(a[i][key]) for i in indices)
-        neg = sum(int(b[i][key]) < int(a[i][key]) for i in indices)
-        ties = len(indices) - pos - neg
-        res[key] = {"other_better": pos, "base_better": neg, "ties": ties,
-                    "delta_rate": float(np.mean([int(b[i][key]) - int(a[i][key]) for i in indices]))}
+        # High SR/OSR is desirable; a high premature-stop/timeout rate is not.
+        higher_is_better = key in ("success", "osr")
+        improvements = sum(
+            (int(b[i][key]) > int(a[i][key])) if higher_is_better
+            else (int(b[i][key]) < int(a[i][key]))
+            for i in indices
+        )
+        regressions = sum(
+            (int(b[i][key]) < int(a[i][key])) if higher_is_better
+            else (int(b[i][key]) > int(a[i][key]))
+            for i in indices
+        )
+        ties = len(indices) - improvements - regressions
+        res[key] = {
+            "other_better": improvements,
+            "base_better": regressions,
+            "ties": ties,
+            # Signed new minus old occurrence rate, regardless of desirability.
+            "delta_rate": float(np.mean([
+                int(b[i][key]) - int(a[i][key]) for i in indices
+            ])),
+        }
     res["spl_delta"] = float(np.mean([b[i]["spl"] - a[i]["spl"] for i in indices]))
-    res["success_sign_test_p"] = sign_test_p(
-        sum(int(b[i]["success"]) > int(a[i]["success"]) for i in indices),
-        sum(int(b[i]["success"]) < int(a[i]["success"]) for i in indices),
-    )
+    for metric in ("success", "osr"):
+        res[f"{metric}_sign_test_p"] = sign_test_p(
+            res[metric]["other_better"], res[metric]["base_better"]
+        )
     return res
 
 
@@ -220,6 +237,11 @@ def sign_test_p(pos, neg):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--model-dir", type=Path, required=True)
+    p.add_argument(
+        "--reference-model-dir", type=Path, default=None,
+        help="Existing M0/M1 checkpoint directory for paired M2 evaluation; "
+             "never copy or overwrite archived checkpoints.",
+    )
     p.add_argument("--model-name", default="Transformer-M")
     p.add_argument("--modes", nargs="+", default=["M0", "M1"])
     p.add_argument("--max-episodes", type=int, default=60)
@@ -242,13 +264,24 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=False)
     rows_by_mode = {}
     summaries = {}
+    checkpoint_sources = {}
     for mode in args.modes:
         ckpt = (
             args.model_dir / "smoke" / f"{mode}.pt" if args.smoke
             else args.model_dir / args.model_name / mode / "best.pt"
         )
+        # M2 can be trained in its own immutable run directory. Read original
+        # M0/M1 weights from the explicitly specified comparison run.
+        if not ckpt.is_file() and args.reference_model_dir is not None:
+            ref_ckpt = (
+                args.reference_model_dir / "smoke" / f"{mode}.pt" if args.smoke
+                else args.reference_model_dir / args.model_name / mode / "best.pt"
+            )
+            if ref_ckpt.is_file():
+                ckpt = ref_ckpt
         if not ckpt.is_file():
-            raise SystemExit(f"Missing checkpoint {ckpt}")
+            raise SystemExit(f"Missing checkpoint for {mode}: {ckpt}")
+        checkpoint_sources[mode] = str(ckpt)
         print(f"Closed-loop {mode} from {ckpt}", flush=True)
         rows = evaluate_mode(
             mode, args.model_name, ckpt, specs, oracle_cache, encoder, device,
@@ -260,13 +293,21 @@ def main():
     with (args.output_dir / "per_episode.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(all_rows[0]))
         w.writeheader(); w.writerows(all_rows)
+    comparisons = {}
+    for base, other in (("M0", "M1"), ("M0", "M2"), ("M1", "M2")):
+        if base in rows_by_mode and other in rows_by_mode:
+            comparisons[f"paired_{other}_vs_{base}"] = paired_comparison(
+                rows_by_mode, base=base, other=other
+            )
+    result = {
+        "summaries": summaries,
+        "checkpoint_sources": checkpoint_sources,
+        **comparisons,
+    }
     (args.output_dir / "summary.json").write_text(
-        json.dumps({"summaries": summaries,
-                    "paired_M1_vs_M0": paired_comparison(rows_by_mode)}, indent=2),
-        encoding="utf-8",
+        json.dumps(result, indent=2), encoding="utf-8",
     )
-    print(json.dumps(summaries, indent=2), flush=True)
-    print("Paired M1 vs M0:", json.dumps(paired_comparison(rows_by_mode), indent=2), flush=True)
+    print(json.dumps(result, indent=2), flush=True)
     print(f"Results: {args.output_dir}", flush=True)
 
 
