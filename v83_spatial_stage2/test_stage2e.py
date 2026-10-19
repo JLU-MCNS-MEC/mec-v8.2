@@ -13,6 +13,12 @@ import unittest
 import torch
 from torch import nn
 
+from v83_spatial_stage2.stage2e_action_change_analysis import (
+    distance_after,
+    heading_after,
+    summarize,
+    wrap_deg,
+)
 from v83_spatial_stage2.stage2e_analyze import (
     fusion_bin_stats,
     movement_stats,
@@ -173,6 +179,49 @@ class TestFusionBenefitLabel(unittest.TestCase):
         self.assertAlmostEqual(stats["action_change_rate"], 0.75)
         self.assertAlmostEqual(stats["base_accuracy"], 0.5)
         self.assertAlmostEqual(stats["fused_accuracy"], 0.5)
+
+
+class TestActionChangeGeometry(unittest.TestCase):
+    def test_wrap_deg(self):
+        self.assertAlmostEqual(wrap_deg(190.0), -170.0)
+        self.assertAlmostEqual(wrap_deg(-190.0), 170.0)
+
+    def test_turns_change_heading_by_15_degrees(self):
+        self.assertAlmostEqual(heading_after(1, 20.0, 100.0), 5.0)
+        self.assertAlmostEqual(heading_after(2, 20.0, 100.0), 35.0)
+
+    def test_forward_geometry(self):
+        self.assertAlmostEqual(heading_after(0, 0.0, 100.0), 0.0)
+        self.assertAlmostEqual(distance_after(0, 0.0, 100.0), 95.0)
+        self.assertAlmostEqual(heading_after(0, 90.0, 100.0), 92.86, places=2)
+        self.assertAlmostEqual(distance_after(1, 90.0, 100.0), 100.0)
+
+    def test_summarize_counts_transitions(self):
+        rows = [
+            # FORWARD -> LEFT, oracle says LEFT: beneficial.
+            {"m1_base_action": 0, "m1_fused_action": 1,
+             "oracle_move_action": 1, "heading_error_deg": 20.0,
+             "distance_m": 100.0},
+            # FORWARD -> RIGHT, oracle says FORWARD: harmful.
+            {"m1_base_action": 0, "m1_fused_action": 2,
+             "oracle_move_action": 0, "heading_error_deg": 0.0,
+             "distance_m": 100.0},
+            # unchanged.
+            {"m1_base_action": 2, "m1_fused_action": 2,
+             "oracle_move_action": 2, "heading_error_deg": -20.0,
+             "distance_m": 100.0},
+        ]
+        stats = summarize(rows, "M1", "all", "100-200")
+        self.assertEqual(stats["steps"], 3)
+        self.assertEqual(stats["changed"], 2)
+        self.assertEqual(stats["changed_from_F"], 2)
+        self.assertEqual(stats["F_to_L"], 1)
+        self.assertEqual(stats["F_to_R"], 1)
+        self.assertEqual(stats["oracle_beneficial"], 1)
+        self.assertEqual(stats["oracle_harmful"], 1)
+        # LEFT reduces |heading|; RIGHT increases it, so one improves / one worsens.
+        self.assertEqual(stats["heading_improved"], 1)
+        self.assertEqual(stats["heading_worsened"], 1)
 
 
 if __name__ == "__main__":

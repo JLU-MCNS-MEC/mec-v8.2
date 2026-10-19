@@ -109,6 +109,11 @@ python v83_spatial_stage2/stage2e_analyze.py \
   --output-dir runs/v83_spatial_stage2/stage2e/analysis_<stamp> \
   --no-fusion-episodes <no-fusion>/M1-no-fusion@0.7_per_episode.csv
 
+# Action-transition addendum: which Forward/Left/Right decisions the fusion
+# residual changes, and the one-step heading/oracle benefit of each change.
+python v83_spatial_stage2/stage2e_action_change_analysis.py \
+  --output-dir runs/v83_spatial_stage2/stage2e/action_change_<stamp>
+
 # Eval-only control: same M1 checkpoint, fusion residual forced to zero.
 python v83_spatial_stage2/stage2e_m1_no_fusion_eval.py \
   --output-dir runs/v83_spatial_stage2/stage2e/no_fusion_<stamp>

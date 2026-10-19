@@ -278,6 +278,52 @@ base argmax did not; harmful = the reverse. By band (M1 trajectory):
 | Medium | 51 | 28 | 8 | +1.84 |
 | Long | 21 | 11 | 8 | +0.32 |
 
+### 6.1 Which actions change? (base → fused transition matrix)
+
+On M1's own trajectory, p_arrival < 0.7. `F/L/R` are the 3-way Movement
+argmax before/after the fusion residual.
+
+| Distance | Steps | Changed | Rate | F→L | F→R | L→F | L→R | R→F | R→L |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0–20 m | 119 | 0 | 0.00% | 0 | 0 | 0 | 0 | 0 | 0 |
+| 20–40 m | 1,255 | 3 | 0.24% | 2 | 1 | 0 | 0 | 0 | 0 |
+| 40–100 m | 6,177 | 28 | 0.45% | 28 | 0 | 0 | 0 | 0 | 0 |
+| 100–200 m | 9,017 | 36 | 0.40% | 27 | 9 | 0 | 0 | 0 | 0 |
+| 200 m+ | 12,077 | 40 | 0.33% | 25 | 14 | 0 | 0 | 1 | 0 |
+| **All** | **28,645** | **107** | **0.37%** | **82** | **24** | **0** | **0** | **1** | **0** |
+
+| Band | Steps | Changed | Rate | F→L | F→R | R→F | Beneficial | Harmful | Neutral | Heading improved | Heading worsened |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Short | 8,400 | 35 | 0.42% | 31 | 3 | 1 | 6 | **27** | 2 | 18 | 17 |
+| Medium | 10,850 | 51 | 0.47% | 35 | 16 | 0 | 28 | 8 | 15 | 35 | 16 |
+| Long | 9,395 | 21 | 0.22% | 16 | 5 | 0 | 11 | 8 | 2 | 17 | 4 |
+
+Interpretation:
+
+- **106 of 107 changed decisions are FORWARD→turn**; there is exactly one
+  R→F and **zero** L→F, L→R, R→L. The fusion branch is therefore a global
+  "turn more" bias, not a left/right correction. This is exactly what a
+  translation-invariant 1×1-pooled head can express.
+- The 82 F→L vs 24 F→R split is a learned global asymmetry, not a response to
+  the target side: the mirror test shows the head gives the same output when
+  the map is flipped.
+- **Short:** 27 of 35 changes are harmful; they are mostly spurious F→L turns
+  (31 F→L, 6 beneficial vs 27 harmful). This agrees with the high spurious-turn
+  rate on Short (29.1%).
+- **Medium:** 28 beneficial vs 8 harmful and 35 vs 16 on the one-step heading
+  metric, so the local changes are directionally sensible, but they are only
+  0.47% of steps; zeroing the residual leaves Medium SR at 14/60.
+- **Long:** 11 beneficial vs 8 harmful, 17 vs 4 on heading, but only 0.22% of
+  steps; zeroing the residual leaves Long SR at 16/60 with zero success
+  changes.
+
+One-step heading is `|heading error|` after the action relative to the base
+action: LEFT = −15°, RIGHT = +15°, FORWARD uses the 5 m step and the current
+goal geometry. Immediate distance is not a useful harm measure for these
+changes: a turn keeps distance while the FORWARD baseline moves 5 m closer, so
+92/107 are mechanically "farther than the forward action"; the heading and
+oracle columns are the meaningful ones.
+
 The residual is tiny relative to the base logit scale, changes only 0.37% of
 movement decisions, is **completely inert inside 20 m** (0/119 changes), and
 its net effect is indistinguishable from zero overall. On Short it is locally
@@ -369,16 +415,20 @@ Trajectory-quality reading:
 
 ## 9. Should a minimal M1-Dir (2×2 pooling) controlled training be run?
 
-**Verdict: not now.** The current head is provably direction-blind, but the
-evidence does not make a 2×2 pooling retrain the highest-value next
-experiment.
+**Verdict: not now.** The current head is provably direction-blind, and
+replacing `AdaptiveAvgPool2d(1)` with `AdaptiveAvgPool2d((2,2))` is the
+architecturally correct fix (+144 parameters). But the evidence does not make
+a 2×2 pooling **controlled training** the highest-value next experiment.
 
 Reasons:
 
-1. **The residual is nearly inert.** It changes 0.37% of movement decisions,
-   has 45 beneficial vs 43 harmful changes, and its removal leaves Long SR at
-   exactly 16/60 and raises overall SR 56→58. A better pooling layer has to
-   overcome a very small learned residual, not a dominant directional path.
+1. **The residual is nearly inert and not directional.** It changes 0.37% of
+   movement decisions (107/28,645), has 45 beneficial vs 43 harmful changes,
+   and 106 of the 107 changes are FORWARD→turn (zero L→R/L→F, one R→F). It is
+   a global "turn more" bias, not a left/right correction; its removal leaves
+   Long SR at exactly 16/60 and raises overall SR 56→58. A better pooling layer
+   has to overcome a very small learned residual, not a dominant directional
+   path.
 2. **The base already has direction.** When the goal is visible, the M1 base
    L−R logit AUC is 0.87–0.90, and M0's is 0.86–0.90. The missing piece is not
    "no directional signal"; it is that the agent often faces away from the
@@ -440,10 +490,15 @@ Artifacts:
   `runs/v83_spatial_stage2/stage2e/no_fusion_20261019T020700Z/`
   (`M1-no-fusion@0.7_per_episode.csv`, `steps/`, `stops/`, `metrics.json`,
   `provenance.json`).
+- Action-transition addendum:
+  `runs/v83_spatial_stage2/stage2e/action_change_20261019T033000Z/`
+  (`action_change_by_distance.csv`, `action_change_by_band.csv`,
+  `action_transition_oracle.csv`, `summary.json`).
 - Code:
   `v83_spatial_stage2/stage2e_movement_replay.py`,
   `v83_spatial_stage2/stage2e_analyze.py`,
+  `v83_spatial_stage2/stage2e_action_change_analysis.py`,
   `v83_spatial_stage2/stage2e_m1_no_fusion_eval.py`,
   `v83_spatial_stage2/test_stage2e.py`.
-- Tests: 7 CPU-only tests pass (`python -m unittest -v
+- Tests: 11 CPU-only tests pass (`python -m unittest -v
   v83_spatial_stage2.test_stage2e`).
