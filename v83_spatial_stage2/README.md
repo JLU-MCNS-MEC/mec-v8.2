@@ -33,13 +33,21 @@ the offline near-target gate (near-invisible precision 0.914/0.935, far-visible
 false-trigger 0.07%/0.06%). The localizability probe still fails, and the
 visible probe has a high far-invisible false-trigger; a small closed-loop smoke
 with the P1-2 near-target-invisible trigger is the next step, not controller
-integration. No M1-Dir or other training was started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
+integration. Stage-2g.2 is **blocked before execution**: the P1-2 probe
+weights were not saved by `stage2g1_probe.py` (only predictions and thresholds
+were persisted). The Train-OOF threshold is recoverable
+(0.13694876571430528 for the f1/far-vis-5% point), but no live model is
+available; the probe was not retrained and no R0/R1 closed-loop run was
+started. See `V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` for the audit and the
+minimal save-model/re-run unblock plan. No M1-Dir or other training was started.
+See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
 `V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
 `V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
 `V83_STAGE2F_RECOVERY_DIAGNOSIS.md`,
 `V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md`,
 `V83_STAGE2G_TARGET_PRESENCE_REPORT.md`,
-`V83_STAGE2G1_NEAR_TARGET_REPORT.md` and
+`V83_STAGE2G1_NEAR_TARGET_REPORT.md`,
+`V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` and
 `STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
