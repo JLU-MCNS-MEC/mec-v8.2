@@ -1,0 +1,217 @@
+{
+  "status": "frozen",
+  "protocol_version": "stage2j-v1",
+  "created_utc": "2026-10-19T14:39:16.249651+00:00",
+  "git": {
+    "commit": "81b7552db23c7aac7268b724953c3fcbd95bb0f2",
+    "branch": "experiment/v83-spatial-foundation",
+    "status": ""
+  },
+  "critical_files": {
+    "config.py": "05923c5a97b38c425aa45372089fa95e64233390abb404c8f54086f9d4f0acbe",
+    "encoder.py": "814b00299487df90afc93860afec1b895765a0bc4045c8f80d32427b9937fe72",
+    "env.py": "ee210848a9c5d1d7f902396146d92076f2033ff342d2beab8bafd6a28b27ed21",
+    "gbs_model_v3.py": "1a5aea56891598488e8ede7762ecba66e025f8fc7319ee449be97ae745837269",
+    "gbs_network.py": "a672d80cd202d0467015829601c246b6c89dd0de6108c3706a545f3a2ed41b88",
+    "navigation_reward.py": "fffe08693df128651e49213e9064f8e478fcc3d09b48ad90a04714f51fd1d756",
+    "token_data.py": "cfeb887a4d513ce616041ee2d17e2b3cbe8436560b0e97c99e8763671d37a3ed",
+    "utils.py": "cc477892e2397d4ef819ff27df66d4049681f0d3abb7edec7707d41635656896",
+    "v83_spatial_training/eval_closedloop_spatial.py": "60a702087435bd446f89b0b444bde77709fefd43eea7232575e32a94c63ecc35",
+    "v83_spatial_stage2/stage2d_common.py": "d368f1a3c9f2fdbf766f177ffc635bb9d0996738726d54be02857ac447c69979",
+    "v83_spatial_stage2/stage2f_collect.py": "1a288b8bd102c127ebac28e7298c50a9807e8cb8a591f3d84f162806b005d7a1",
+    "v83_spatial_stage2/stage2h_gab.py": "2fba1382652f18a3e37983341ed7d17e57cded466bcc9167672f9624d695240e",
+    "v83_spatial_stage2/stage2i_common.py": "cab064577d5670d056f4976347715778af53a4459511daacc510128964b2c9b7",
+    "v83_spatial_stage2/stage2i_data.py": "826d751cc002a93329a9eb9bec8a008015eebc3f9247d7e1249cd3003cb2981b",
+    "v83_spatial_stage2/stage2i_model.py": "7255fe8632672404c6aa023e973036b36b0aa11155b3df322711964ce8f22f59",
+    "v83_spatial_stage2/stage2i_train.py": "58d53d072dfd90c6465106fafd62da49e97c690d73fb2febb2f03fa97c1dff35",
+    "v83_spatial_stage2/stage2j_common.py": "a3324675f5dc5e58daf0b569495b739ad03babf13af5e5c691432877076d0bd0",
+    "v83_spatial_stage2/stage2j_model.py": "c7d4407a4d712b82a381699a172e9ed37c5153aa19b2f5c87b627fa328924aea",
+    "v83_spatial_stage2/stage2j_train.py": "f3c4439e105ad4e795168bbd9082c997a45d3ca93e1d387985a376537b99ed07",
+    "v83_spatial_stage2/stage2j_eval.py": "5939be82170eeb7a41466d87e6766142f43c250262aba4e892b59eff48d33797",
+    "v83_spatial_stage2/stage2j_freeze.py": "ccbbd65219d7180d76f7a0bc86a09c4b178a9611739a34d2d3ee833e00727a8c"
+  },
+  "models": {
+    "Small": {
+      "architecture": "late_fusion_mlp",
+      "native_config": {
+        "architecture": "late_fusion_mlp",
+        "hidden_dim": 256,
+        "num_layers": 0,
+        "num_heads": 1
+      },
+      "parameters": 611716,
+      "trainable_parameters": 611716,
+      "initialisation_seed": 20264017
+    },
+    "Transformer-S": {
+      "architecture": "explicit_transformer",
+      "native_config": {
+        "architecture": "explicit_transformer",
+        "hidden_dim": 192,
+        "num_layers": 1,
+        "num_heads": 4,
+        "ff_mult": 3
+      },
+      "parameters": 1332868,
+      "trainable_parameters": 1332868,
+      "initialisation_seed": 20264017
+    },
+    "Medium": {
+      "architecture": "goal_cross_attention",
+      "native_config": {
+        "architecture": "goal_cross_attention",
+        "hidden_dim": 384,
+        "num_layers": 0,
+        "num_heads": 6
+      },
+      "parameters": 1991044,
+      "trainable_parameters": 1991044,
+      "initialisation_seed": 20264017
+    },
+    "Transformer-M": {
+      "architecture": "explicit_transformer",
+      "native_config": {
+        "architecture": "explicit_transformer",
+        "hidden_dim": 256,
+        "num_layers": 2,
+        "num_heads": 8,
+        "ff_mult": 4
+      },
+      "parameters": 3033732,
+      "trainable_parameters": 3033732,
+      "initialisation_seed": 20264017
+    },
+    "Large": {
+      "architecture": "explicit_transformer",
+      "native_config": {
+        "architecture": "explicit_transformer",
+        "hidden_dim": 352,
+        "num_layers": 2,
+        "num_heads": 8,
+        "ff_mult": 4
+      },
+      "parameters": 5248932,
+      "trainable_parameters": 5248932,
+      "initialisation_seed": 20264017
+    }
+  },
+  "training_protocol": {
+    "train_dataset": "runs/v83_spatial_stage2/datasets/train_600",
+    "dev_val_dataset": "runs/v83_spatial_stage2/datasets/dev_val_180",
+    "aux_root": "runs/v83_spatial_stage2/stage2i/aux",
+    "max_epochs": 50,
+    "patience": 8,
+    "batch_size": 48,
+    "val_batch_size": 96,
+    "learning_rate": 6e-05,
+    "weight_decay": 0.0001,
+    "optimizer": "AdamW",
+    "lr_scheduler": "ReduceLROnPlateau(factor=0.5, patience=3, min_lr=1e-6)",
+    "seed": 20264017,
+    "amp": true,
+    "frozen_shared_rgb_encoder": true,
+    "loss": "movement CE (soft class weights) + Arrival BCE; no pos_weight",
+    "checkpoint_score": "0.7*macro_f1 + 0.3*mean(natural,hard)_arrival_f1",
+    "stop_threshold_for_offline_metrics": 0.5,
+    "stop_threshold_for_closed_loop": 0.7
+  },
+  "evaluation_protocol": {
+    "final_test_dataset": "runs/v83_spatial_stage2/datasets/final_test_300",
+    "episodes": 300,
+    "bands": {
+      "short": 100,
+      "medium": 100,
+      "long": 100
+    },
+    "stop_threshold": 0.7,
+    "weights_frozen": true,
+    "no_test_tuning": true,
+    "task_list_source": "sealed token shards (episode_id, episode_seed, network_layout_seed, trajectory_band_id)",
+    "seal_verification": "SHA256 of every file listed in SEALED.json",
+    "oracle_usage": "evaluation-only SPL/nDTW reference; never model input",
+    "metrics": [
+      "SR",
+      "OSR",
+      "SPL",
+      "nDTW",
+      "Premature-Stop",
+      "Timeout",
+      "Average Steps"
+    ]
+  },
+  "stop_threshold": 0.7,
+  "t5_reuse": {
+    "checkpoint": "runs/v83_spatial_stage2/stage2i/T5_map_assisted/best.pt",
+    "checkpoint_sha256": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+    "training_result": "runs/v83_spatial_stage2/stage2i/T5_map_assisted/training_result.json",
+    "training_result_sha256": "d972b27b0f9100c932f3ea7c40967f3dcc0e172e8bf1a65ace77532362f04580",
+    "best_epoch": 24,
+    "checkpoint_score": 0.7798980641233373,
+    "training_time_s": 996.4430110454559
+  },
+  "datasets": {
+    "train_dir": "runs/v83_spatial_stage2/datasets/train_600",
+    "train_stats_sha256": "c5cfa1c01bf559085dc4c1917e123df13781bf53be2de526de529778e78be2ff",
+    "train_shards": 556,
+    "dev_val_dir": "runs/v83_spatial_stage2/datasets/dev_val_180",
+    "dev_val_stats_sha256": "b51aa3573230d39ceb6deb4f243f2bd1243c2c117b8d5de75e8935d3aab65d71",
+    "dev_val_shards": 173,
+    "aux_manifest": "runs/v83_spatial_stage2/stage2i/aux/manifest.json",
+    "aux_manifest_sha256": "7018e4ce4c9052c1308c8b875aa1b0f270feca1887644ef3a44c1b0b8867a57d",
+    "train_class_counts_sha256": "6c342ebdcb5c59d499c859f2521334105f2df85fcf5be90330fd61c0ef97a31f"
+  },
+  "final_test": {
+    "directory": "runs/v83_spatial_stage2/datasets/final_test_300",
+    "sealed_manifest": "runs/v83_spatial_stage2/datasets/final_test_300/SEALED.json",
+    "sealed_manifest_sha256": "791c0467e85214df50d99329bc079fde2c5610484f4885372dc5363bd3273af9",
+    "sealed_files": 265,
+    "token_shards": 264,
+    "token_shards_read_for_freeze": 0,
+    "labels_read_for_freeze": false,
+    "model_evaluated_for_freeze": false
+  },
+  "environment": {
+    "python": "3.11.16 (main, Aug 27 2026, 14:44:21) [GCC 14.3.0]",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "numpy": "2.4.6",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 5090"
+  },
+  "freeze_rules": {
+    "five_models_fixed": [
+      "Small",
+      "Transformer-S",
+      "Medium",
+      "Transformer-M",
+      "Large"
+    ],
+    "execution_order": [
+      "Small",
+      "Transformer-S",
+      "Medium",
+      "Large",
+      "Transformer-M"
+    ],
+    "no_retraining_for_test": true,
+    "no_stop_threshold_tuning": true,
+    "no_test_based_model_or_hyperparameter_change": true,
+    "test_read_once_per_model": true,
+    "bug_fix_policy": "Only engineering fixes independent of test outcomes are allowed; record an amendment and verify metric consistency."
+  },
+  "pre_freeze_inspection_disclosure": {
+    "date": "2026-10-19",
+    "read": [
+      "directory listing of final_test_300",
+      "SEALED.json manifest fields and file hash list",
+      "shard_0000.pt metadata arrays only (episode_ids, episode_seeds, network_layout_seeds, trajectory_band_ids, step_ids) to confirm schema",
+      "top-level aggregate fields of dataset_stats.json"
+    ],
+    "not_read": [
+      "Final Test token tensors",
+      "Final Test labels or arrival targets",
+      "any model prediction or metric on Final Test"
+    ],
+    "models_evaluated_on_test": 0
+  }
+}
