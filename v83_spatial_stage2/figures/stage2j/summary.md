@@ -1,6 +1,6 @@
 # Stage-2j summary - Final Test 300
 
-Generated: 2026-10-19T16:31:18.621137+00:00
+Generated: 2026-10-19T16:32:10.595490+00:00
 
 All numbers are closed-loop Final Test 300 results. Stop threshold fixed at 0.7; no test-time tuning.
 

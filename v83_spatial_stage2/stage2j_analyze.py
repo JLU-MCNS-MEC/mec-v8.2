@@ -405,10 +405,12 @@ def plot_metric(results, bootstrap, metric, output_dir=FIGURE_DIR):
         Patch(facecolor=COLOR_REFERENCE, edgecolor="none",
               label="Transformer-M (Stage-2i T5 reference)"),
     ]
-    ax.legend(
-        handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.995),
+    # Keep the legend outside the plotting area: high OSR bars and their
+    # direct labels otherwise collide with an in-plot legend.
+    fig.legend(
+        handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.105),
         ncol=2, frameon=False, fontsize=8.2, handlelength=1.2,
-        handleheight=0.9, borderaxespad=0.2, columnspacing=1.4,
+        handleheight=0.9, borderaxespad=0.0, columnspacing=1.4,
     )
 
     fig.text(
@@ -422,12 +424,12 @@ def plot_metric(results, bootstrap, metric, output_dir=FIGURE_DIR):
         fontsize=8.5, color=TEXT_SECONDARY, ha="left", va="top",
     )
     fig.text(
-        0.075, 0.03,
+        0.075, 0.025,
         "Error bars: 95% episode bootstrap CI (10,000 resamples). "
         "Stop threshold fixed at 0.7; no test-time tuning.",
         fontsize=7.5, color=TEXT_MUTED, ha="left", va="bottom",
     )
-    fig.subplots_adjust(top=0.80, bottom=0.21, left=0.095, right=0.975)
+    fig.subplots_adjust(top=0.80, bottom=0.28, left=0.095, right=0.975)
 
     png = output_dir / f"{METRIC_FILENAME[metric]}.png"
     svg = output_dir / f"{METRIC_FILENAME[metric]}.svg"
