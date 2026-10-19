@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 import time
@@ -398,28 +399,50 @@ def verify_protocol_freeze(freeze_path, model_name, model):
     return payload
 
 
+def _spec_content_sha256(sealed_manifest_sha256, specs):
+    canonical = json.dumps(
+        {"sealed_manifest_sha256": sealed_manifest_sha256, "specs": specs},
+        sort_keys=True, separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def load_final_test_specs(test_dir=FINAL_TEST_DIR):
-    """Verify the seal, extract the task list, and freeze it to disk."""
+    """Verify the seal, extract the task list, and freeze it to disk once."""
     result = extract_final_test_specs(test_dir)
     SPECS_DIR.mkdir(parents=True, exist_ok=True)
     path = SPECS_DIR / "final_test_300_spec.json"
-    payload = {
-        "version": "stage2j-final-test-300",
-        "created_utc": result["created_utc"],
-        "sealed_manifest_sha256": result["seal"]["manifest_sha256"],
-        "episodes": result["episodes"],
-        "band_counts": result["band_counts"],
-        "seeds_min": result["seeds_min"],
-        "seeds_max": result["seeds_max"],
-        "network_seeds_min": result["network_seeds_min"],
-        "network_seeds_max": result["network_seeds_max"],
-        "specs": result["specs"],
-        "note": "Derived only from sealed token shard metadata; no episode "
-                "was regenerated or selected by model performance.",
-    }
-    atomic_write_json(path, payload)
+    content_sha = _spec_content_sha256(
+        result["seal"]["manifest_sha256"], result["specs"]
+    )
+    if path.is_file():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if existing.get("spec_content_sha256") != content_sha:
+            raise RuntimeError(
+                "The Final Test task list changed after it was first "
+                f"extracted: {path}"
+            )
+    else:
+        payload = {
+            "version": "stage2j-final-test-300",
+            "created_utc": result["created_utc"],
+            "sealed_manifest_sha256": result["seal"]["manifest_sha256"],
+            "spec_content_sha256": content_sha,
+            "episodes": result["episodes"],
+            "band_counts": result["band_counts"],
+            "seeds_min": result["seeds_min"],
+            "seeds_max": result["seeds_max"],
+            "network_seeds_min": result["network_seeds_min"],
+            "network_seeds_max": result["network_seeds_max"],
+            "specs": result["specs"],
+            "note": "Derived only from sealed token shard metadata; no "
+                    "episode was regenerated or selected by model "
+                    "performance.",
+        }
+        atomic_write_json(path, payload)
     result["spec_path"] = str(path)
     result["spec_sha256"] = file_sha256(path)
+    result["spec_content_sha256"] = content_sha
     return result
 
 
@@ -847,6 +870,10 @@ def run_eval(args):
                 seal["files_verified"] if seal else 0
             ),
             "test_spec_sha256": spec_sha,
+            "test_spec_content_sha256": (
+                specs_payload.get("spec_content_sha256")
+                if final_test else None
+            ),
             "protocol": EVAL_PROTOCOL,
         },
         "overall": overall,
