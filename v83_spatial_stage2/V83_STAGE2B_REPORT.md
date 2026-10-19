@@ -1,5 +1,11 @@
 # V8.3 Stage-2b Never-Stop and Arrival-only A0/A1 Report
 
+> **Correction (2026-10-19, Stage-2c):** the A0/A1 closed-loop collapse was
+> caused by `BCEWithLogitsLoss(pos_weight = negatives/positives)` = 7.02/8.64,
+> not by head-only training or the cached-feature path. With plain BCE the same
+> 3%/10% masks recover B0-level SR (B1 29.44%, B2 28.89% vs B0 28.89%); the 3%→10%
+> far-negative change itself is inert. See `V83_STAGE2C_REPORT.md`.
+
 - Date: 2026-10-18
 - Branch: `experiment/v83-spatial-foundation`
 - Scope: Stage-2b only; Stage-2a checkpoints preserved; no Small/M1-Dir/Depth/MEC BEV.

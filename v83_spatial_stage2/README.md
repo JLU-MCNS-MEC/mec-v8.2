@@ -1,6 +1,18 @@
 # V8.3 Stage-2 Preparation
 
-Status: Stage-2a Transformer-M M0/M1 training and 180-episode closed-loop evaluation complete; **M1 was not a robust improvement**. Stage-2b Never-Stop and Arrival-only A0/A1 are also complete: A1 improves A0 but remains far below the original M0; no Small/M1-Dir runs were started. See `STAGE2A_REPORT.md` and `V83_STAGE2B_REPORT.md`.
+Status: Stage-2a Transformer-M M0/M1 training and 180-episode closed-loop
+evaluation complete; **M1 was not a robust improvement**. Stage-2b Never-Stop
+and Arrival-only A0/A1 are complete: A1 improves A0 but remains far below the
+original M0. Stage-2c B0/B1/B2 is complete: **the A0/A1 collapse was caused by
+`pos_weight`; plain BCE restores M0-level SR (B1 29.44%, B2 28.89% vs B0
+28.89%)**, but increasing far negatives from 3% to 10% does not improve
+closed-loop behaviour. Diagnostics show the binding issue is per-decision
+hazard: ~132 far decisions/episode at a ~0.35% on-policy far Stop rate gives
+the observed 56.7% premature-Stop rate; B2's offline FPR gain shrinks from 25%
+to 5% on-policy. The next stage is off-policy far-negative mining plus a
+constrained residual calibration, prepared but not started. See
+`STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`, `V83_STAGE2C_REPORT.md` and
+`STAGE2C_OFFPOLICY_PROTOCOL.md`. No Small/M1-Dir run was started.
 
 ## Data design
 
@@ -49,6 +61,32 @@ python v83_spatial_training/eval_closedloop_spatial.py \
   --modes M1 --max-episodes 2 \
   --val-specs <prep-audit>/dev_val_180_spec.json \
   --output-dir runs/v83_spatial_stage2/closedloop_smoke_<timestamp>
+```
+
+## Stage-2c Arrival calibration controls
+
+```bash
+# B0/B1/B2: original head, 3% and 10% far negatives with plain BCE
+python v83_spatial_stage2/stage2c_arrival_calibration.py \
+  --output-dir runs/v83_spatial_stage2/stage2c/<new-stamp>
+
+# Offline Dev Val + on-policy rollout calibration/stop diagnostics
+python v83_spatial_stage2/stage2c_diagnostics.py \
+  --output-dir runs/v83_spatial_stage2/stage2c/diag_<new-stamp>
+
+# Recompute post-processing from saved rollout CSVs if needed
+python v83_spatial_stage2/stage2c_finalize_diagnostics.py \
+  --diagnostics-dir runs/v83_spatial_stage2/stage2c/diag_<new-stamp>
+
+# Per-decision premature-Stop hazard decomposition
+python v83_spatial_stage2/stage2c_risk_analysis.py \
+  --diagnostics-dir runs/v83_spatial_stage2/stage2c/diag_<new-stamp> \
+  --output-dir runs/v83_spatial_stage2/stage2c/risk_<new-stamp>
+
+# Prepare off-policy negatives from Train 600 B0 rollouts (next stage)
+python v83_spatial_stage2/stage2c_collect_rollouts.py \
+  --dataset-root runs/v83_spatial_stage2/datasets/train_600 \
+  --output-dir runs/v83_spatial_stage2/stage2c/offpolicy_train_rollouts_<stamp>
 ```
 
 ## Planned Stage-2 experiments (paused for approval)
