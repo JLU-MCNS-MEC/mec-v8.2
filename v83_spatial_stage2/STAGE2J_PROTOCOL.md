@@ -2,7 +2,9 @@
 
 - Date frozen: 2026-10-19
 - Branch: `experiment/v83-spatial-foundation`
-- Frozen code commit: `81b7552db23c7aac7268b724953c3fcbd95bb0f2`
+- Frozen code commit: `3663c7f53b9b834e0924e8bc4f929a1f33be6bf4`
+  (original freeze `81b7552db23c7aac7268b724953c3fcbd95bb0f2`;
+  pre-test amendment 1 is recorded in §9)
 - Machine-readable freeze: `v83_spatial_stage2/stage2j_protocol_freeze.json`
   (status `frozen`, 21 critical source hashes, model parameter counts,
   training/evaluation protocol, SEALED manifest hash)
@@ -263,3 +265,23 @@ python v83_spatial_stage2/stage2j_eval.py --model Small \
 # aggregate + figures after all five
 python v83_spatial_stage2/stage2j_analyze.py
 ```
+
+---
+
+## 9. Freeze amendment 1 (pre-test, 2026-10-19)
+
+- **Trigger:** engineering audit of task-list provenance before any model
+  had been evaluated on Final Test 300.
+- **Change:** `stage2j_eval.py` now writes the derived spec file once and
+  reuses it on later models, validating a canonical content hash
+  (`spec_content_sha256`) over `(sealed_manifest_sha256, specs)`. This makes
+  the task-list provenance hash identical for all five models; it does not
+  change seeds, bands, episodes, metrics or model code.
+- **Original freeze:** `81b7552` (protocol document `dc51ff0`).
+- **Amended freeze:** `3663c7f`; `stage2j_protocol_freeze.json` was
+  regenerated with the new critical-file hashes.
+- **Unchanged:** all five model structures and parameter counts, the shared
+  T5 input contract, the training protocol, checkpoint selection, Stop
+  threshold 0.7 and the Final Test procedure.
+- **Test status at amendment:** zero models evaluated on Final Test 300;
+  no test token tensor, label or metric had been read.

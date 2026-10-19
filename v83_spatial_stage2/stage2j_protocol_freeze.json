@@ -1,9 +1,9 @@
 {
   "status": "frozen",
   "protocol_version": "stage2j-v1",
-  "created_utc": "2026-10-19T14:39:16.249651+00:00",
+  "created_utc": "2026-10-19T14:40:57.931318+00:00",
   "git": {
-    "commit": "81b7552db23c7aac7268b724953c3fcbd95bb0f2",
+    "commit": "3663c7f53b9b834e0924e8bc4f929a1f33be6bf4",
     "branch": "experiment/v83-spatial-foundation",
     "status": ""
   },
@@ -27,7 +27,7 @@
     "v83_spatial_stage2/stage2j_common.py": "a3324675f5dc5e58daf0b569495b739ad03babf13af5e5c691432877076d0bd0",
     "v83_spatial_stage2/stage2j_model.py": "c7d4407a4d712b82a381699a172e9ed37c5153aa19b2f5c87b627fa328924aea",
     "v83_spatial_stage2/stage2j_train.py": "f3c4439e105ad4e795168bbd9082c997a45d3ca93e1d387985a376537b99ed07",
-    "v83_spatial_stage2/stage2j_eval.py": "5939be82170eeb7a41466d87e6766142f43c250262aba4e892b59eff48d33797",
+    "v83_spatial_stage2/stage2j_eval.py": "e116358dc6f7c26894bb1b6fb7ce0766039c74c1e778d310aa081b7a1e868736",
     "v83_spatial_stage2/stage2j_freeze.py": "ccbbd65219d7180d76f7a0bc86a09c4b178a9611739a34d2d3ee833e00727a8c"
   },
   "models": {
