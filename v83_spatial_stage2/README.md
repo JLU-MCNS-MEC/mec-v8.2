@@ -24,7 +24,9 @@ insufficient for a reliable no-leakage recovery trigger. No M1-Dir or other
 training was started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
 `V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
 `V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
-`V83_STAGE2F_RECOVERY_DIAGNOSIS.md` and `STAGE2C_OFFPOLICY_PROTOCOL.md`.
+`V83_STAGE2F_RECOVERY_DIAGNOSIS.md`,
+`V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md` and
+`STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
 
@@ -155,7 +157,21 @@ python v83_spatial_stage2/stage2f_recovery_eval.py \
 
 # CPU-only feature/policy tests.
 python -m unittest -v v83_spatial_stage2.test_stage2f
+
+# Supplementary analyses: trigger distance, transient vs sustained loss,
+# turn-induced loss and the observable proximity proxy.
+python v83_spatial_stage2/stage2f_supplement.py \
+  --features runs/v83_spatial_stage2/stage2f/collect_<stamp>/features.csv \
+  --smoke-dir runs/v83_spatial_stage2/stage2f/smoke_budget12_<stamp> \
+  --output-dir runs/v83_spatial_stage2/stage2f/supplement_<stamp>
+
+# CPU-only supplementary tests.
+python -m unittest -v v83_spatial_stage2.test_stage2f_supplement
 ```
+
+Consolidated metrics and resume-verification report:
+`V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md`. The detailed predecessor is
+`V83_STAGE2F_RECOVERY_DIAGNOSIS.md`.
 
 ## Planned Stage-2 experiments (paused for approval)
 
