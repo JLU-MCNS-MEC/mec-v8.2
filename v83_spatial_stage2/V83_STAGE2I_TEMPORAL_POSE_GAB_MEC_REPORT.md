@@ -485,7 +485,17 @@ python v83_spatial_stage2/stage2i_report.py
 
 ### 6.4 Commit / Push
 
-（在本报告写入后执行；结果补在最后。）
+- 源码/测试/报告提交：`c4b901a`
+  （`Stage-2i: six MEC input ablations with history/pose/GAB and map-assisted T5`）
+- 分支：`experiment/v83-spatial-foundation`
+- 远端：`origin` = `https://github.com/JLU-MCNS-MEC/mec-v8.2.git`
+- Push：`48bc414..c4b901a`，**成功**
+  （本机 HTTP/SOCKS 代理 `127.0.0.1:7890` 的 TLS handshake 失败；
+  本次 push 在清除代理环境变量后直连成功。）
+- 大型权重、缓存、逐 Episode CSV 与日志保留在服务器
+  `runs/v83_spatial_stage2/stage2i/`，未上传 GitHub
+  （`runs/`、`*.pt`、`*.log` 均在 `.gitignore`）。
+- 本报告的状态更新提交在 `c4b901a` 之后单独推送。
 
 ### 6.5 Final Test
 
