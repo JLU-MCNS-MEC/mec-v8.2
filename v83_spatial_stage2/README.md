@@ -16,10 +16,15 @@ robust improvement. Stage-2e (eval-only) shows that the M1
 residual changes only 0.37% of movement decisions, and the M1 Long gain
 survives removing the residual entirely (16/60 in both cases). The Long +5 pp
 is therefore stop-timing/training-weight variation, not spatial-fusion
-direction correction. No M1-Dir training was started. See `STAGE2A_REPORT.md`,
-`V83_STAGE2B_REPORT.md`, `V83_STAGE2C_REPORT.md`,
-`V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
-`V83_STAGE2E_MOVEMENT_DIAGNOSIS.md` and `STAGE2C_OFFPOLICY_PROTOCOL.md`.
+direction correction. Stage-2f (eval-only) shows that observable confidence
+features separate goal visibility only moderately (AUC ~0.64–0.76) and that a
+rule-based Goal-Reacquisition overlay is harmful in a 36-episode closed-loop
+smoke (SR 36.1%→19.4%, Timeout 13.9%→25.0%); the offline evidence is
+insufficient for a reliable no-leakage recovery trigger. No M1-Dir or other
+training was started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
+`V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
+`V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
+`V83_STAGE2F_RECOVERY_DIAGNOSIS.md` and `STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
 
@@ -120,6 +125,36 @@ python v83_spatial_stage2/stage2e_m1_no_fusion_eval.py \
 
 # CPU-only tests (mirror invariance, 2x2 pooling sensitivity, label logic).
 python -m unittest -v v83_spatial_stage2.test_stage2e
+```
+
+## Stage-2f Goal Reacquisition / Movement Recovery (eval only)
+
+```bash
+# Collect observable features on the saved M0@0.7 / M1@0.7 states.
+python v83_spatial_stage2/stage2f_collect.py \
+  --output-dir runs/v83_spatial_stage2/stage2f/collect_<stamp> --max-episodes 180
+
+# Visible/invisible movement, confidence, entropy, wrong-run and trigger analysis.
+python v83_spatial_stage2/stage2f_analyze.py \
+  --features runs/v83_spatial_stage2/stage2f/collect_<stamp>/features.csv \
+  --output-dir runs/v83_spatial_stage2/stage2f/analysis_<stamp>
+
+# Even/odd episode threshold sweep for the observable recovery trigger.
+python v83_spatial_stage2/stage2f_trigger_sweep.py \
+  --features runs/v83_spatial_stage2/stage2f/collect_<stamp>/features.csv \
+  --output-dir runs/v83_spatial_stage2/stage2f/sweep_<stamp>
+
+# Closed-loop smoke: baseline M0@0.7, side-history recovery, scan-only recovery.
+python v83_spatial_stage2/stage2f_recovery_eval.py \
+  --output-dir runs/v83_spatial_stage2/stage2f/smoke_<stamp> \
+  --episodes-per-band 12 --selection even \
+  --policies baseline side_history scan_only \
+  --low-top1 0.02 --low-entropy 0.98 --trigger-k 1 \
+  --high-top1 0.20 --high-entropy 0.85 --consistency -1.0 \
+  --max-recovery-steps 12
+
+# CPU-only feature/policy tests.
+python -m unittest -v v83_spatial_stage2.test_stage2f
 ```
 
 ## Planned Stage-2 experiments (paused for approval)
