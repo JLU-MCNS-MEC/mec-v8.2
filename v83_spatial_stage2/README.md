@@ -20,12 +20,19 @@ direction correction. Stage-2f (eval-only) shows that observable confidence
 features separate goal visibility only moderately (AUC ~0.64–0.76) and that a
 rule-based Goal-Reacquisition overlay is harmful in a 36-episode closed-loop
 smoke (SR 36.1%→19.4%, Timeout 13.9%→25.0%); the offline evidence is
-insufficient for a reliable no-leakage recovery trigger. No M1-Dir or other
-training was started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
+insufficient for a reliable no-leakage recovery trigger. Stage-2g (probe-only)
+shows that frozen token features predict localizability (AUROC 0.86) but
+cannot gate near-target recovery: 90% of low-localizability flags are
+far-visible states and near-invisible precision among flags is only 0.27%.
+Train 600 contains only 47 near-target invisible states (versus 747 in the M0
+closed-loop distribution), so the next step is a targeted near-target token
+supplement, not controller integration. No M1-Dir or other training was
+started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
 `V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
 `V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
 `V83_STAGE2F_RECOVERY_DIAGNOSIS.md`,
-`V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md` and
+`V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md`,
+`V83_STAGE2G_TARGET_PRESENCE_REPORT.md` and
 `STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
@@ -172,6 +179,41 @@ python -m unittest -v v83_spatial_stage2.test_stage2f_supplement
 Consolidated metrics and resume-verification report:
 `V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md`. The detailed predecessor is
 `V83_STAGE2F_RECOVERY_DIAGNOSIS.md`.
+
+## Stage-2g Target-Presence / Localization Probe (eval only)
+
+```bash
+# Label-only replay: projection geometry, occlusion-aware visible pixels and
+# target_visible / target_localizable labels. Does not regenerate tokens.
+python v83_spatial_stage2/stage2g_labels.py --split train \
+  --output-dir runs/v83_spatial_stage2/stage2g/labels_train_<stamp>
+python v83_spatial_stage2/stage2g_labels.py --split val \
+  --output-dir runs/v83_spatial_stage2/stage2g/labels_val_<stamp>
+
+# Observable feature matrices (current/goal tokens, heatmap, spatial maps).
+python v83_spatial_stage2/stage2g_features.py --split train \
+  --labels-dir runs/v83_spatial_stage2/stage2g/labels_train_<stamp> \
+  --output-dir runs/v83_spatial_stage2/stage2g/features_<stamp>
+python v83_spatial_stage2/stage2g_features.py --split val \
+  --labels-dir runs/v83_spatial_stage2/stage2g/labels_val_<stamp> \
+  --output-dir runs/v83_spatial_stage2/stage2g/features_<stamp>
+
+# Linear/MLP probes, episode-level 5-fold OOF + Train->Dev-Val validation,
+# and the Stage-2f M0 scalar closed-loop distribution check.
+python v83_spatial_stage2/stage2g_probe.py --mode both --epochs 30 \
+  --bootstrap 200 --output-dir runs/v83_spatial_stage2/stage2g/probe_<stamp>
+
+# CPU-only label/feature/metric tests.
+python -m unittest -v v83_spatial_stage2.test_stage2g
+```
+
+Report: `V83_STAGE2G_TARGET_PRESENCE_REPORT.md`. Key finding: the token probe
+is a useful general localizability signal (localizable AUROC 0.856 CV / 0.857
+Dev Val) but not a near-target recovery trigger; at the 50%-negative-recall
+operating point 90% of flags are far-visible states and near-target invisible
+precision among flags is 0.27%. Train 600 has 47 near-target invisible states
+versus 747 in the M0 closed-loop distribution; a targeted token supplement is
+required before any controller work.
 
 ## Planned Stage-2 experiments (paused for approval)
 
