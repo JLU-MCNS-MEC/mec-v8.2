@@ -2,15 +2,21 @@
 
 - Date: 2026-10-19
 - Branch: `experiment/v83-spatial-foundation`
-- Status: **BLOCKED before execution.** The P1-2 probe weights were never
-  saved, so the closed-loop smoke cannot run without retraining the probe.
-  Per the round's instruction, the probe was **not retrained**, and no R0/R1
-  outcomes were fabricated.
-- Scope: audit of the existing Stage-2g.1 artifacts; no MEC training, no probe
-  retraining, no closed-loop run, no controller integration, Final Test 300
-  sealed.
+- Status: **EXECUTED after approval — STOP.** The P1-2 probe was re-run with
+  saved weights and reproduced the old Dev-Val predictions exactly
+  (max |Δp| = 0.0). The 36-episode R1 smoke showed **no SR/SPL/nDTW
+  improvement**; 2/2 triggers were far-invisible (166 m / 335 m), 4/4
+  recovery actions were wrong, with 0 re-visible and 0 enter-20 m. See §7.
+- Scope: data supplement + probe + 36-episode closed-loop smoke; no MEC
+  training, no controller integration, Final Test 300 sealed. The
+  pre-execution blocker audit is retained in §§1–6 for provenance.
 
-## 结论摘要 (Chinese TL;DR)
+> **Execution update (2026-10-19, after approval):** the blocker described in
+> §§1–6 was resolved by adding `--save-models`, re-running the same P1-2
+> configuration, and verifying exact prediction reproduction. The 36-episode
+> R1 smoke was then executed; the result is **STOP** (§7).
+
+## 结论摘要 (pre-execution audit, historical; see §7 for executed result)
 
 1. **闭环 smoke 没有执行。** 阻塞点不是阈值、数据或代码配置，而是
    **P1-2 探针的模型权重没有保存**。`stage2g1_probe.py` 只保存了 OOF/Dev Val
@@ -299,8 +305,208 @@ new harness before R1 comparison.
 | f1/far-vis-5% threshold | 0.13694876571430528 |
 | recall-0.5 threshold | 0.9666095860450129 |
 
-## Appendix B. What would make this report obsolete
+## Appendix B. Historical note
 
-A future round with a saved P1-2 external `state_dict` (and provenance) can
-replace §2–§3 with the actual 36-episode R0/R1 smoke results. Until then, the
-correct status is **blocked**, not “negative” and not “positive.”
+This appendix was written when the report was blocked. It is superseded by §7:
+the P1-2 weights were saved and reproduced exactly (max |Δp| = 0.0), the
+36-episode R1 smoke was executed, and the result is **STOP**. Retained for
+provenance; the current status is not “blocked.”
+
+
+## 7. Execution results after approval (2026-10-19)
+
+### 7.1 Weights, provenance and exact reproduction
+
+The P1-2 probe was re-run with the same combined Train/Dev-Val data, input
+definition, MLP (128 hidden, dropout 0.2), 30 epochs, Adam (lr 1e-3, weight
+decay 1e-4), batch 8,192, 5-fold episode OOF and external seed 1000. The new
+run saved:
+
+- 72 model checkpoints (`models/v{0..3}_{head}_{fold|external}.pt`) including
+  `state_dict`, standardization mean/std, `pos_weight`, input dimension,
+  feature names, compact history names, history order, action encoding, clip,
+  seed, config and git commit;
+- `probe_provenance.json` with data SHA256, thresholds, config and model list.
+
+New probe directory:
+`runs/v83_spatial_stage2/stage2g1/probe_20261019T124500Z/`.
+`reproduction_check.json` compares the new external P1-2 near-inv Dev-Val
+predictions with the old
+`probe_20261019T123000Z/predictions_v2_near_target_invisible_val.npz`:
+
+| Check | Result |
+|---|---|
+| States compared | 17,494 |
+| Max absolute probability difference | **0.0** |
+| Mean absolute probability difference | **0.0** |
+| Old Train-OOF threshold | 0.13694876571430528 |
+| New Train-OOF threshold | 0.13694876571430528 |
+| Reproduction verdict | **REPRODUCED** |
+| Offline gate at selected threshold | **PASS** (precision 0.914, far-visible FT 0.0007, far-invisible FT 0.027) |
+
+The old Train-OOF threshold was therefore reused, as permitted by the
+pre-agreed `max |Δp| <= 1e-4` criterion. No Dev-Val threshold tuning was done.
+
+### 7.2 R0 baseline verification
+
+The 36 selected Dev-Val episodes (12/band, same `select_specs` even selection)
+match the Stage-2f smoke baseline exactly on `episode_index`, `seed` and
+`band`; R0 outcomes were reused from
+`smoke_budget12_20261019T031000Z/baseline_per_episode.csv`. Episodes without a
+trigger in R1 reproduced R0 exactly (`no_trigger_r0_mismatches = []`).
+
+### 7.3 R0 vs R1
+
+Table: SR/OSR/SPL/nDTW/Pre-Premature/Timeout/Steps.
+
+| Split | Policy | SR | OSR | SPL | nDTW | Premature | Timeout | Steps |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Overall | R0 | 36.11% | 38.89% | 0.361 | 0.4086 | 50.00% | 13.89% | 129.03 |
+| Overall | R1 | 36.11% | 38.89% | 0.361 | 0.4086 | 52.78% | 11.11% | 125.61 |
+| Short | R0 | 50.00% | 58.33% | 0.500 | 0.5456 | 41.67% | 8.33% | 79.58 |
+| Short | R1 | 50.00% | 58.33% | 0.500 | 0.5456 | 41.67% | 8.33% | 78.00 |
+| Medium | R0 | 33.33% | 33.33% | 0.333 | 0.4002 | 50.00% | 16.67% | 166.67 |
+| Medium | R1 | 33.33% | 33.33% | 0.333 | 0.4002 | 58.33% | 8.33% | 158.00 |
+| Long | R0 | 25.00% | 25.00% | 0.250 | 0.2800 | 58.33% | 16.67% | 140.83 |
+| Long | R1 | 25.00% | 25.00% | 0.250 | 0.2800 | 58.33% | 16.67% | 140.83 |
+
+Paired per episode (R1 − R0):
+
+| Metric | W/L/T | Mean Δ | 95% CI |
+|---|---|---:|---|
+| Success | **0W / 0L / 36T** | 0.00 | — |
+| SPL | 0W / 0L / 36T | 0.0000 | [0.0000, 0.0000] |
+| nDTW | 2W / 0L / 34T | **+3.48e-7** | [0, 1.04e-6] |
+| Steps | 0W / 2L / 34T | −3.42 | [−9.74, 0] |
+| Timeout | 0W / 1L / 35T | −2.78 pp | [−8.33, 0] |
+| Premature Stop | 1W / 0L / 35T | +2.78 pp | [0, 8.33] |
+
+The nDTW “win” is +3.5e-7 and the CI upper bound is 1e-6; this is numerically
+zero, not a meaningful improvement. The only outcome-level change is episode
+142 switching from timeout to premature Stop; episode 174 kept its premature
+Stop but ended earlier. No episode changed success.
+
+### 7.4 Triggers and closed-loop probe behaviour
+
+Only **2 triggers** occurred, in 2 of 36 episodes:
+
+| Episode | Band | Trigger step | p_near | True distance | Goal visible | Last high side | Steps since high | Recovery actions | Wrong | Re-visible ≤10 | Enter <20 m ≤40 | Exit |
+|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---|
+| 174 | short | 24 | 0.1822 | **166.2 m** | 0 | unknown | 999 | 2 | 2 | 0 | 0 | budget |
+| 142 | medium | 118 | 0.2023 | **335.1 m** | 0 | unknown | 999 | 2 | 2 | 0 | 0 | budget |
+
+Both triggers are **far-invisible**, not near-target-invisible. The trigger
+aggregate is:
+
+| Trigger metric | Value |
+|---|---:|
+| Triggers / episodes | 2 / 2 |
+| Trigger true goal-invisible rate | 100% |
+| Trigger distance | 166.2 m / 335.1 m |
+| Re-visible ≤5 / ≤10 steps | 0% / 0% |
+| Enter <20 m within 40 steps | 0% |
+| Recovery actions / wrong vs heading oracle | 4 / 4 (100%) |
+| Repeated triggers per episode | max 1; 0 episodes with ≥2 |
+
+The closed-loop probe step metrics (4,418 observable states where the probe
+was evaluated at the fixed threshold 0.13694876571430528):
+
+| Subset | n | Probe flags | Rate / precision / recall |
+|---|---:|---:|---|
+| Near-target-invisible (<100 m, invisible) | 50 | **0** | precision 0.000, recall 0.000 |
+| Far-visible (≥100 m, visible) | 2,386 | 0 | false-trigger 0.000 |
+| Far-invisible (≥100 m, invisible) | 1,568 | **2** | false-trigger 0.00128 |
+| Near-visible (<100 m, visible) | 414 | 0 | false-trigger 0.000 |
+
+Overall probe metrics on these closed-loop states: AUROC **0.632**
+[0.465, 0.967], AUPRC **0.043**, Brier 0.0113, ECE 0.0112. The near-inv
+probability maximum on real closed-loop near-inv states was **0.0412**, far
+below the fixed threshold; the two flags are from the far-inv tail (max
+0.2023). The offline Dev-Val performance (AUROC 0.985, AP 0.904) did not
+transfer to the M0 closed-loop distribution.
+
+### 7.5 Failure analysis
+
+1. **Distribution shift is the binding failure.** The synthetic supplement's
+   near-invisible positives were generated by turning away after a
+   high-confidence view. Real M0 near-invisible states in this smoke are
+   sustained/far invisible with no recent high-confidence observation
+   (`steps_since_high_conf = 999` at both triggers). The probe is
+   under-confident on the real near-inv states (max p 0.0412) and fires on the
+   far-inv tail instead.
+2. **The gate fired in the wrong regime.** Both triggers were at 166 m and
+   335 m, not <100 m; the closed-loop near-inv precision/recall is 0/0. This
+   repeats the Stage-2f far-trigger failure, though with only 2 events.
+3. **The bounded recovery action did not re-acquire.** Both triggers had no
+   recent high-confidence side, so the policy used the fallback single-turn +
+   forward correction; all 4 actions were wrong against the heading oracle,
+   with 0 re-visible and 0 enter-20 m.
+4. **No performance benefit.** SR and SPL are exactly unchanged
+   (0W/0L/36T), nDTW is +3.5e-7 (numerically zero), premature Stop rises by
+   2.78 pp, Timeout falls by 2.78 pp, and two episodes changed their paths.
+   The 36-episode smoke is a mechanism test, not a performance result.
+5. **The offline gate was necessary but not sufficient.** Exact weight
+   reproduction (max |Δp| = 0.0) rules out a weight-loading error; the failure
+   is the real closed-loop state distribution, not the saved checkpoint.
+
+### 7.6 Decision and next step
+
+**Decision: STOP the P1-2 near-target recovery direction.**
+
+- SR, SPL and nDTW show no meaningful improvement (nDTW +3.5e-7; all other
+  success/SPL changes zero).
+- The gate triggered only on far-invisible states; closed-loop near-inv
+  precision/recall is 0/0.
+- 100% of recovery actions were wrong; 0% re-visible; 0% enter-20 m; one
+  episode changed timeout to premature Stop.
+- Do not expand to Dev Val 180; do not integrate the policy; do not train a
+  new MEC.
+
+Recommended alternative research (future, not started):
+
+- Collect **real M0 closed-loop near-target-invisible token states** (not
+  synthetic turn-away states) and retrain a presence/localization signal on
+  that distribution; the synthetic supplement did not transfer.
+- Or treat far invisibility as a map/coarse-navigation problem rather than a
+  local scan/recovery problem.
+- Do not continue hand-written scan/step-correction recovery without a
+  closed-loop-validated target-presence signal.
+
+### 7.7 Limitations
+
+- 36 episodes (12/band), 2 triggers; trigger-level estimates are unstable and
+  the paired CIs are wide.
+- R0 was reused from the Stage-2f smoke after exact episode/seed/band
+  verification; it was not re-run.
+- The P1-2 probe is a single seed; the supplement contains synthetic
+  near-invisible states and synthetic hard-state histories.
+- True distance/visibility/heading/oracle action were used only for offline
+  scoring; the runtime policy used only the probe probability, M0 base action
+  and observable high-confidence side/recency.
+- No MEC training, no checkpoint modification, no controller integration;
+  Final Test 300 remains sealed.
+
+### 7.8 Artifacts
+
+```
+runs/v83_spatial_stage2/stage2g1/probe_20261019T124500Z/
+  models/ (72 checkpoints)
+  probe_provenance.json
+  reproduction_check.json
+  probe_results.json
+  predictions_v2_near_target_invisible_val.npz
+
+runs/v83_spatial_stage2/stage2g2/recovery_20261019T130000Z/
+  r1_per_episode.csv
+  steps/r1.csv
+  events/r1.csv
+  probe_steps.csv
+  metrics.json
+  provenance.json
+```
+
+Code: `stage2g2_policy.py`, `stage2g2_recovery_eval.py`,
+`stage2g2_reproduce.py`, `test_stage2g2.py`; `stage2g1_probe.py` now supports
+`--save-models`; `stage2g_probe.py` exposes optional stats/model returns.
+
+Tests: **38 pass** (32 prior + 6 Stage-2g.2 policy/input tests).

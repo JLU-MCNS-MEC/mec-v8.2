@@ -12,10 +12,13 @@ operating point is selected on Train OOF only; Dev Val is held out.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import subprocess
 import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -42,6 +45,68 @@ from v83_spatial_stage2.stage2g1_common import (  # noqa: E402
     goal_indices,
     one_hot_actions,
 )
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_commit():
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+def save_checkpoint(path, model, mean, std, weight, variant, head, fold,
+                    args, train_data, input_dim, seed):
+    checkpoint = {
+        "state_dict": {
+            key: value.detach().cpu()
+            for key, value in model.state_dict().items()
+        },
+        "mean": np.asarray(mean, dtype=np.float32),
+        "std": np.asarray(std, dtype=np.float32),
+        "clip": 20.0,
+        "pos_weight": float(weight),
+        "input_dim": int(input_dim),
+        "config": {
+            "kind": "mlp",
+            "hidden": int(args.hidden),
+            "dropout": 0.2,
+            "epochs": int(args.epochs),
+            "batch_size": int(args.batch_size),
+            "lr": float(args.lr),
+            "weight_decay": float(args.weight_decay),
+            "seed": int(seed),
+            "folds": int(args.folds),
+        },
+        "variant": int(variant),
+        "history_len": int(variant),
+        "head": head,
+        "fold": int(fold),
+        "feature_names": list(train_data["feature_names"]),
+        "compact_feature_names": list(
+            train_data["compact_feature_names"]
+        ),
+        "history_order": ["t-1", "t-2", "t-3"][:int(variant)],
+        "action_encoding": {
+            "FORWARD": 0, "LEFT": 1, "RIGHT": 2, "STOP": 3,
+            "one_hot_dim": 4,
+        },
+        "clip_after_standardize": 20.0,
+        "label": head,
+        "git_commit": git_commit(),
+        "data_train": str(args.train),
+        "data_val": str(args.val),
+    }
+    torch.save(checkpoint, path)
+
 
 HEADS = ("target_visible", "target_localizable", "near_target_invisible")
 HEAD_SHORT = {
@@ -430,34 +495,83 @@ def bootstrap_paired(episodes, data, score, threshold, n_boot=200, seed=0):
     }
 
 
-def run_variant(train_data, valid_data, variant, folds, args, device):
+def run_variant(train_data, valid_data, variant, folds, args, device,
+                output_dir=None):
     train_x = build_input(train_data, variant)
     valid_x = build_input(valid_data, variant)
     oof = {head: np.full(len(train_x), np.nan) for head in HEADS}
     external = {}
+    models_dir = None
+    if args.save_models:
+        if output_dir is None:
+            raise RuntimeError("output_dir is required with --save-models")
+        models_dir = Path(output_dir) / "models"
+        models_dir.mkdir(parents=True, exist_ok=True)
     for fold in sorted(set(folds.tolist())):
         train_mask = folds != fold
         valid_mask = folds == fold
-        train_std, valid_std = standardize(
-            train_x[train_mask], train_x[valid_mask]
-        )
+        if args.save_models:
+            train_std, valid_std, mean, std = standardize(
+                train_x[train_mask], train_x[valid_mask],
+                return_stats=True,
+            )
+        else:
+            train_std, valid_std = standardize(
+                train_x[train_mask], train_x[valid_mask]
+            )
+            mean = std = None
         for head in HEADS:
             train_y = train_data[head][train_mask]
             weight = pos_weight(train_y)
-            probabilities, _info = train_and_predict(
-                train_std, train_y, valid_std, "mlp", args.hidden,
-                args.epochs, args.batch_size, args.lr, args.weight_decay,
-                weight, args.seed + int(fold), device,
-            )
+            if args.save_models:
+                probabilities, info, model = train_and_predict(
+                    train_std, train_y, valid_std, "mlp", args.hidden,
+                    args.epochs, args.batch_size, args.lr,
+                    args.weight_decay, weight, args.seed + int(fold),
+                    device, return_model=True,
+                )
+                save_checkpoint(
+                    models_dir / f"v{variant}_{head}_fold{fold}.pt",
+                    model, mean, std, weight, variant, head, fold,
+                    args, train_data, train_x.shape[1],
+                    seed=args.seed + int(fold),
+                )
+            else:
+                probabilities, info = train_and_predict(
+                    train_std, train_y, valid_std, "mlp", args.hidden,
+                    args.epochs, args.batch_size, args.lr,
+                    args.weight_decay, weight, args.seed + int(fold),
+                    device,
+                )
             oof[head][valid_mask] = prior_correct(probabilities, weight)
-    train_std, valid_std = standardize(train_x, valid_x)
+    if args.save_models:
+        train_std, valid_std, mean, std = standardize(
+            train_x, valid_x, return_stats=True
+        )
+    else:
+        train_std, valid_std = standardize(train_x, valid_x)
+        mean = std = None
     for head in HEADS:
         weight = pos_weight(train_data[head])
-        probabilities, info = train_and_predict(
-            train_std, train_data[head], valid_std, "mlp", args.hidden,
-            args.epochs, args.batch_size, args.lr, args.weight_decay,
-            weight, args.seed + 1000, device,
-        )
+        if args.save_models:
+            probabilities, info, model = train_and_predict(
+                train_std, train_data[head], valid_std, "mlp",
+                args.hidden, args.epochs, args.batch_size, args.lr,
+                args.weight_decay, weight, args.seed + 1000, device,
+                return_model=True,
+            )
+            save_checkpoint(
+                models_dir / f"v{variant}_{head}_external.pt",
+                model, mean, std, weight, variant, head, -1,
+                args, train_data, train_x.shape[1],
+                seed=args.seed + 1000,
+            )
+        else:
+            probabilities, info = train_and_predict(
+                train_std, train_data[head], valid_std, "mlp",
+                args.hidden, args.epochs, args.batch_size, args.lr,
+                args.weight_decay, weight, args.seed + 1000, device,
+            )
         external[head] = {
             "probabilities": prior_correct(probabilities, weight),
             "train_info": info,
@@ -605,6 +719,7 @@ def main():
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--variants", nargs="+", type=int,
                         default=[0, 1, 2, 3])
+    parser.add_argument("--save-models", action="store_true")
     args = parser.parse_args()
     device = torch.device(
         args.device if torch.cuda.is_available() else "cpu"
@@ -639,7 +754,8 @@ def main():
     for variant in args.variants:
         print(f"running variant {variant}", flush=True)
         variant_result = run_variant(
-            train_data, valid_data, variant, folds, args, device
+            train_data, valid_data, variant, folds, args, device,
+            output_dir=output_dir,
         )
         variant_output = {"variant": int(variant), "heads": {}}
         for head in HEADS:
@@ -724,6 +840,73 @@ def main():
             }
     results["history_length"] = history_summary
 
+    if args.save_models:
+        models_dir = output_dir / "models"
+        model_files = sorted(
+            str(path.relative_to(output_dir))
+            for path in models_dir.glob("*.pt")
+        )
+        thresholds = {
+            str(variant): {
+                head: results["variants"][str(variant)]["heads"][head][
+                    "external"
+                ].get("thresholds")
+                for head in HEADS
+            }
+            for variant in args.variants
+        }
+        provenance = {
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "git_commit": git_commit(),
+            "command": sys.argv,
+            "data": {
+                "train": {
+                    "path": str(args.train),
+                    "sha256": sha256(args.train),
+                },
+                "val": {
+                    "path": str(args.val),
+                    "sha256": sha256(args.val),
+                },
+                "counts": results["data"],
+            },
+            "config": {
+                "variants": [int(v) for v in args.variants],
+                "folds": int(args.folds),
+                "epochs": int(args.epochs),
+                "hidden": int(args.hidden),
+                "batch_size": int(args.batch_size),
+                "lr": float(args.lr),
+                "weight_decay": float(args.weight_decay),
+                "seed": int(args.seed),
+                "bootstrap": int(args.bootstrap),
+                "class_weight": "pos_weight = n_neg / n_pos",
+                "prior_correction": "odds_corrected = odds / pos_weight",
+                "standardize": "mean/std from training split; clip [-20, 20]",
+            },
+            "input_dims": {
+                str(v): int(2858 + 79 * int(v)) for v in args.variants
+            },
+            "history_order": ["t-1", "t-2", "t-3"],
+            "action_encoding": {
+                "FORWARD": 0, "LEFT": 1, "RIGHT": 2, "STOP": 3,
+                "one_hot_dim": 4,
+            },
+            "feature_names": list(train_data["feature_names"]),
+            "compact_feature_names": list(
+                train_data["compact_feature_names"]
+            ),
+            "threshold_source": (
+                "Train OOF only; external thresholds are in "
+                "results['variants'][v]['heads'][h]['external']['thresholds']; "
+                "Dev Val is used only to apply them"
+            ),
+            "thresholds": thresholds,
+            "models": model_files,
+        }
+        (output_dir / "probe_provenance.json").write_text(
+            json.dumps(provenance, indent=2), encoding="utf-8"
+        )
     (output_dir / "probe_results.json").write_text(
         json.dumps(results, indent=2), encoding="utf-8"
     )

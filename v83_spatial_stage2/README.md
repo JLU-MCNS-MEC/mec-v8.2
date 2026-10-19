@@ -33,13 +33,15 @@ the offline near-target gate (near-invisible precision 0.914/0.935, far-visible
 false-trigger 0.07%/0.06%). The localizability probe still fails, and the
 visible probe has a high far-invisible false-trigger; a small closed-loop smoke
 with the P1-2 near-target-invisible trigger is the next step, not controller
-integration. Stage-2g.2 is **blocked before execution**: the P1-2 probe
-weights were not saved by `stage2g1_probe.py` (only predictions and thresholds
-were persisted). The Train-OOF threshold is recoverable
-(0.13694876571430528 for the f1/far-vis-5% point), but no live model is
-available; the probe was not retrained and no R0/R1 closed-loop run was
-started. See `V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` for the audit and the
-minimal save-model/re-run unblock plan. No M1-Dir or other training was started.
+integration. Stage-2g.2 was **executed after approval**: the P1-2 probe was
+re-run with saved weights and reproduced the old Dev-Val predictions exactly
+(max |Δp| = 0.0; Train-OOF threshold 0.13694876571430528). The 36-episode R1
+smoke showed **no SR/SPL/nDTW improvement** (0W/0L/36T; nDTW +3.5e-7); only
+2 triggers occurred, both far-invisible (166 m / 335 m), with 4/4 recovery
+actions wrong, 0 re-visible and 0 enter-20 m. The recovery direction is
+**STOPPED**; no expansion to Dev Val 180 and no controller integration. See
+`V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` §7. No M1-Dir or other training was
+started.
 See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
 `V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
 `V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
@@ -268,9 +270,10 @@ Report: `V83_STAGE2G1_NEAR_TARGET_REPORT.md`. Key finding: two/three frames of
 visual history turn the near-target-invisible probe from a failing current-only
 detector (precision 0.204) into a passing one (P1-2 precision 0.914, far-visible
 false-trigger 0.07%; P1-3 0.935/0.06%). The localizability probe still fails,
-and the visibility probe's far-invisible false-trigger is 43.6-45.7%. The next
-step is a small closed-loop smoke with the P1-2 near-target-invisible trigger;
-no controller integration was done.
+and the visibility probe's far-invisible false-trigger is 43.6-45.7%. The
+follow-up 36-episode closed-loop smoke is complete: exact probe reproduction,
+but no SR/SPL/nDTW improvement and 2/2 far-invisible triggers; the recovery
+direction is stopped (`V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` §7).
 
 ## Planned Stage-2 experiments (paused for approval)
 

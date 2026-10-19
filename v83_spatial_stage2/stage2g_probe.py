@@ -372,7 +372,7 @@ def assign_episode_folds(episodes, bands, n_folds, seed):
     return folds
 
 
-def standardize(train_x, valid_x):
+def standardize(train_x, valid_x, return_stats=False):
     mean = train_x.mean(axis=0, dtype=np.float64).astype(np.float32)
     std = train_x.std(axis=0, dtype=np.float64).astype(np.float32)
     std[std < 1e-6] = 1.0
@@ -380,6 +380,8 @@ def standardize(train_x, valid_x):
     valid_x = (valid_x - mean) / std
     np.clip(train_x, -20.0, 20.0, out=train_x)
     np.clip(valid_x, -20.0, 20.0, out=valid_x)
+    if return_stats:
+        return train_x, valid_x, mean, std
     return train_x, valid_x
 
 
@@ -400,6 +402,7 @@ def build_model(kind, dim, hidden, seed):
 def train_and_predict(
     train_x, train_y, valid_x, kind, hidden, epochs, batch_size,
     learning_rate, weight_decay, pos_weight, seed, device,
+    return_model=False,
 ):
     train_x = torch.from_numpy(train_x).to(device)
     train_y = torch.from_numpy(train_y.astype(np.float32)).to(device)
@@ -439,7 +442,10 @@ def train_and_predict(
             logits = model(valid_x[start:start + 16384]).squeeze(1)
             predictions.append(torch.sigmoid(logits).cpu().numpy())
     probabilities = np.concatenate(predictions).astype(np.float64)
-    return probabilities, {"final_train_loss": float(last_loss)}
+    info = {"final_train_loss": float(last_loss)}
+    if return_model:
+        return probabilities, info, model
+    return probabilities, info
 
 
 def prior_correct(probabilities, pos_weight):
