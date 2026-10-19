@@ -9,10 +9,17 @@ original M0. Stage-2c B0/B1/B2 is complete: **the A0/A1 collapse was caused by
 closed-loop behaviour. Diagnostics show the binding issue is per-decision
 hazard: ~132 far decisions/episode at a ~0.35% on-policy far Stop rate gives
 the observed 56.7% premature-Stop rate; B2's offline FPR gain shrinks from 25%
-to 5% on-policy. The next stage is off-policy far-negative mining plus a
-constrained residual calibration, prepared but not started. See
-`STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`, `V83_STAGE2C_REPORT.md` and
-`STAGE2C_OFFPOLICY_PROTOCOL.md`. No Small/M1-Dir run was started.
+to 5% on-policy. Stage-2d completed the off-policy calibration controls and
+the Stop-rule sweep; the M1@0.7 threshold migration was evaluated but is not a
+robust improvement. Stage-2e (eval-only) shows that the M1
+`AdaptiveAvgPool2d(1)` fusion head is exactly left/right invariant, its learned
+residual changes only 0.37% of movement decisions, and the M1 Long gain
+survives removing the residual entirely (16/60 in both cases). The Long +5 pp
+is therefore stop-timing/training-weight variation, not spatial-fusion
+direction correction. No M1-Dir training was started. See `STAGE2A_REPORT.md`,
+`V83_STAGE2B_REPORT.md`, `V83_STAGE2C_REPORT.md`,
+`V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
+`V83_STAGE2E_MOVEMENT_DIAGNOSIS.md` and `STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
 
@@ -87,6 +94,27 @@ python v83_spatial_stage2/stage2c_risk_analysis.py \
 python v83_spatial_stage2/stage2c_collect_rollouts.py \
   --dataset-root runs/v83_spatial_stage2/datasets/train_600 \
   --output-dir runs/v83_spatial_stage2/stage2c/offpolicy_train_rollouts_<stamp>
+```
+
+## Stage-2e Movement / fusion diagnostics (eval only)
+
+```bash
+# Exact-state replay of the saved M0@0.7 and M1@0.7 action sequences.
+# Writes replay_steps.csv, replay_check.json and fusion_pool_features.npz.
+python v83_spatial_stage2/stage2e_movement_replay.py \
+  --output-dir runs/v83_spatial_stage2/stage2e/replay_<stamp>
+
+# Band / failure / movement / fusion-residual / mirror / pooling analysis.
+python v83_spatial_stage2/stage2e_analyze.py \
+  --output-dir runs/v83_spatial_stage2/stage2e/analysis_<stamp> \
+  --no-fusion-episodes <no-fusion>/M1-no-fusion@0.7_per_episode.csv
+
+# Eval-only control: same M1 checkpoint, fusion residual forced to zero.
+python v83_spatial_stage2/stage2e_m1_no_fusion_eval.py \
+  --output-dir runs/v83_spatial_stage2/stage2e/no_fusion_<stamp>
+
+# CPU-only tests (mirror invariance, 2x2 pooling sensitivity, label logic).
+python -m unittest -v v83_spatial_stage2.test_stage2e
 ```
 
 ## Planned Stage-2 experiments (paused for approval)
