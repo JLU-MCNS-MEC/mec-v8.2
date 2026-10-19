@@ -298,6 +298,21 @@ argmax before/after the fusion residual.
 | Medium | 10,850 | 51 | 0.47% | 35 | 16 | 0 | 28 | 8 | 15 | 35 | 16 |
 | Long | 9,395 | 21 | 0.22% | 16 | 5 | 0 | 11 | 8 | 2 | 17 | 4 |
 
+Transition × oracle outcome (M1 trajectory, all distances):
+
+| Band | Transition | Count | Beneficial | Harmful | Neutral |
+|---|---|---:|---:|---:|---:|
+| Overall | F→L | 82 | 30 | **36** | 16 |
+| Overall | F→R | 24 | 15 | 6 | 3 |
+| Overall | R→F | 1 | 0 | 1 | 0 |
+| Short | F→L | 31 | 3 | **26** | 2 |
+| Short | F→R | 3 | 3 | 0 | 0 |
+| Short | R→F | 1 | 0 | 1 | 0 |
+| Medium | F→L | 35 | 17 | 4 | 14 |
+| Medium | F→R | 16 | 11 | 4 | 1 |
+| Long | F→L | 16 | 10 | 6 | 0 |
+| Long | F→R | 5 | 1 | 2 | 2 |
+
 Interpretation:
 
 - **106 of 107 changed decisions are FORWARD→turn**; there is exactly one
@@ -307,9 +322,12 @@ Interpretation:
 - The 82 F→L vs 24 F→R split is a learned global asymmetry, not a response to
   the target side: the mirror test shows the head gives the same output when
   the map is flipped.
-- **Short:** 27 of 35 changes are harmful; they are mostly spurious F→L turns
-  (31 F→L, 6 beneficial vs 27 harmful). This agrees with the high spurious-turn
-  rate on Short (29.1%).
+- **Short:** 27 of 35 changes are harmful; F→L alone is 3 beneficial vs 26
+  harmful. This agrees with the high spurious-turn rate on Short (29.1%).
+- **The same F→L transition is good in one band and bad in another:** 17/35
+  beneficial in Medium, 10/16 in Long, but 3/31 in Short. A direction-blind
+  global bias cannot know which F→L is appropriate; the outcome depends on
+  the state, which the 1×1 pooling discards.
 - **Medium:** 28 beneficial vs 8 harmful and 35 vs 16 on the one-step heading
   metric, so the local changes are directionally sensible, but they are only
   0.47% of steps; zeroing the residual leaves Medium SR at 14/60.
