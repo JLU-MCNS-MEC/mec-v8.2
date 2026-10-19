@@ -18,6 +18,42 @@
   which re-evaluates the same 180 episodes with the M1 fusion output forced to
   zero. Everything else is exact-state replay plus extra forward passes.
 
+## Key conclusions (TL;DR)
+
+1. **The M1 fusion head is direction-blind by construction.**
+   `AdaptiveAvgPool2d(1)` makes the trained head exactly mirror-invariant
+   (L−R flip rate 0.03%, equivariance error 1.999/2); its residual L−R
+   direction AUC is 0.52–0.56 versus 0.87–0.90 for the M1 base. A 2×2 pooled
+   feature probe decodes the target side with test AUC 0.832 versus 0.548 for
+   1×1.
+2. **The learned fusion residual is nearly inert.** It is ~1.6% of the base
+   logit L2, changes 107/28,645 movement decisions (0.37%), 45 beneficial vs
+   43 harmful, and is exactly zero inside 20 m. 106 of the 107 changes are
+   FORWARD→turn, with zero L→R/L→F. Removing it leaves Long SR exactly
+   16/60 (0W/0L) and raises overall SR 56→58.
+3. **The overall M1 regression is 6 extra far timeouts.** M1@0.7 is 56/180
+   vs M0 62/180. Exact partition: −3 P-far, +3 T-reached (Stop errors net
+   0), +6 T-far. The loss is never reaching the target, not more premature
+   Stops.
+4. **Medium is the real regression (14/60 vs 20/60).** Of the 9 lost M0
+   successes, 6 never reached (4 T-far, 2 P-far) and 3 reached but missed
+   Stop (2 T-reached, 1 P-reached); 0 other. Inside 20 m only 54.1% of steps
+   see the goal, mean |heading error| is 62.5°, and 59.2% of executed moves
+   miss a needed turn. This is an orientation/search + arrival-head failure,
+   not a pooling problem.
+5. **The Long +5 pp is not a spatial-fusion win.** It is 16/60 vs 13/60
+   (7W/4L, sign-test p≈0.55), 6 of 7 gains are M0 far premature Stops
+   avoided, and the fusion-off Long run is still exactly 16/60 with zero
+   success changes. It is a Stop-timing/training-weight effect.
+6. **M1-Dir recommendation:** changing `AdaptiveAvgPool2d(1)` to
+   `AdaptiveAvgPool2d((2,2))` is the correct architectural fix (+144
+   parameters), but a controlled training is **not recommended now**. Run a
+   ~10–20 min head-only probe first; only a >1–2% net beneficial near-goal
+   action-change rate justifies the ~1.5 h one-seed run.
+7. **Compliance:** no training, no checkpoint modification, Final Test 300
+   sealed. All non-fusion comparisons are exact-state replays (360/360
+   trajectory passes, zero distance/action/arrival mismatch).
+
 ## 0. Evidence base and replay verification
 
 | Item | Result |
