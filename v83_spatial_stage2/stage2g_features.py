@@ -128,6 +128,49 @@ def feature_names():
     return names
 
 
+def compute_feature_vector(tokens, goal, heatmap, baseline, coherent):
+    """Compute the 2,858 observable features for a batch.
+
+    tokens: (B, 576, 384); goal: (B, 3, 384); heatmap: (B, 3, 8, 8);
+    baseline/coherent: (B, 24, 24). Only observable inputs are used.
+    """
+    cur_norm = F.normalize(tokens, dim=2)
+    goal_norm = F.normalize(goal, dim=2)
+    sim = torch.einsum("bnd,bkd->bnk", cur_norm, goal_norm)
+    sim_max_all = sim.max(dim=2).values
+    patch_argmax = sim_max_all.argmax(dim=1)
+    sim_argmax_x = (patch_argmax % 24).float() / 23.0
+    sim_argmax_y = torch.div(
+        patch_argmax, 24, rounding_mode="floor"
+    ).float() / 23.0
+
+    parts = [
+        tokens.mean(dim=1), tokens.std(dim=1), tokens.max(dim=1).values,
+        goal.mean(dim=1), goal.std(dim=1),
+    ]
+    for scale in range(3):
+        values = sim[:, :, scale]
+        top5 = torch.topk(values, k=5, dim=1).values
+        parts += [
+            values.max(dim=1).values.unsqueeze(1),
+            top5.mean(dim=1).unsqueeze(1),
+            values.mean(dim=1).unsqueeze(1),
+            values.std(dim=1).unsqueeze(1),
+        ]
+    parts += [
+        sim_max_all,
+        torch.topk(sim_max_all, k=5, dim=1).values.mean(dim=1).unsqueeze(1),
+        sim_max_all.mean(dim=1).unsqueeze(1),
+        sim_max_all.std(dim=1).unsqueeze(1),
+        sim_argmax_x.unsqueeze(1),
+        sim_argmax_y.unsqueeze(1),
+    ]
+    parts += [_entropy_from_heatmap(heatmap)]
+    parts += [heatmap.flatten(1)]
+    parts += [_map_stats(baseline), _map_stats(coherent)]
+    return torch.cat(parts, dim=1)
+
+
 def build_features(data_dir, cache_path, labels_path, max_shards=None):
     import torch
 
@@ -179,41 +222,7 @@ def build_features(data_dir, cache_path, labels_path, max_shards=None):
             cache["coherent"][indices].astype(np.float32)
         )
 
-        cur_norm = F.normalize(tokens, dim=2)
-        goal_norm = F.normalize(goal, dim=2)
-        sim = torch.einsum("bnd,bkd->bnk", cur_norm, goal_norm)
-        sim_max_all = sim.max(dim=2).values
-        patch_argmax = sim_max_all.argmax(dim=1)
-        sim_argmax_x = (patch_argmax % 24).float() / 23.0
-        sim_argmax_y = torch.div(
-            patch_argmax, 24, rounding_mode="floor"
-        ).float() / 23.0
-
-        parts = [
-            tokens.mean(dim=1), tokens.std(dim=1), tokens.max(dim=1).values,
-            goal.mean(dim=1), goal.std(dim=1),
-        ]
-        for scale in range(3):
-            values = sim[:, :, scale]
-            top5 = torch.topk(values, k=5, dim=1).values
-            parts += [
-                values.max(dim=1).values.unsqueeze(1),
-                top5.mean(dim=1).unsqueeze(1),
-                values.mean(dim=1).unsqueeze(1),
-                values.std(dim=1).unsqueeze(1),
-            ]
-        parts += [
-            sim_max_all,
-            torch.topk(sim_max_all, k=5, dim=1).values.mean(dim=1).unsqueeze(1),
-            sim_max_all.mean(dim=1).unsqueeze(1),
-            sim_max_all.std(dim=1).unsqueeze(1),
-            sim_argmax_x.unsqueeze(1),
-            sim_argmax_y.unsqueeze(1),
-        ]
-        parts += [_entropy_from_heatmap(heatmap)]
-        parts += [heatmap.flatten(1)]
-        parts += [_map_stats(base), _map_stats(coh)]
-        features = torch.cat(parts, dim=1)
+        features = compute_feature_vector(tokens, goal, heatmap, base, coh)
         if features.shape[1] != len(names):
             raise RuntimeError(
                 f"feature width {features.shape[1]} != {len(names)}"

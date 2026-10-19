@@ -26,13 +26,20 @@ cannot gate near-target recovery: 90% of low-localizability flags are
 far-visible states and near-invisible precision among flags is only 0.27%.
 Train 600 contains only 47 near-target invisible states (versus 747 in the M0
 closed-loop distribution), so the next step is a targeted near-target token
-supplement, not controller integration. No M1-Dir or other training was
-started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
+supplement, not controller integration. Stage-2g.1 (data supplement + probe)
+completes that supplement: 2,000 matched near-target pairs and hard-state short
+histories were added, and P1-2/P1-3 near-target-invisible history probes pass
+the offline near-target gate (near-invisible precision 0.914/0.935, far-visible
+false-trigger 0.07%/0.06%). The localizability probe still fails, and the
+visible probe has a high far-invisible false-trigger; a small closed-loop smoke
+with the P1-2 near-target-invisible trigger is the next step, not controller
+integration. No M1-Dir or other training was started. See `STAGE2A_REPORT.md`, `V83_STAGE2B_REPORT.md`,
 `V83_STAGE2C_REPORT.md`, `V83_STAGE2D_M1_THRESHOLD_REPORT.md`,
 `V83_STAGE2E_MOVEMENT_DIAGNOSIS.md`,
 `V83_STAGE2F_RECOVERY_DIAGNOSIS.md`,
 `V83_STAGE2F_MOVEMENT_RECOVERY_REPORT.md`,
-`V83_STAGE2G_TARGET_PRESENCE_REPORT.md` and
+`V83_STAGE2G_TARGET_PRESENCE_REPORT.md`,
+`V83_STAGE2G1_NEAR_TARGET_REPORT.md` and
 `STAGE2C_OFFPOLICY_PROTOCOL.md`.
 
 ## Data design
@@ -214,6 +221,48 @@ operating point 90% of flags are far-visible states and near-target invisible
 precision among flags is 0.27%. Train 600 has 47 near-target invisible states
 versus 747 in the M0 closed-loop distribution; a targeted token supplement is
 required before any controller work.
+
+## Stage-2g.1 Near-Target Data Supplement (eval/probe only)
+
+```bash
+# 2,000 matched near-target pairs (1,600 Train + 400 Dev Val)
+python v83_spatial_stage2/stage2g1_supplement.py --split train --pairs 1600 \
+  --output-dir runs/v83_spatial_stage2/stage2g1/supplement_train_<stamp>
+python v83_spatial_stage2/stage2g1_supplement.py --split val --pairs 400 \
+  --output-dir runs/v83_spatial_stage2/stage2g1/supplement_val_<stamp>
+
+# Short history for the isolated hard states (compact features only)
+python v83_spatial_stage2/stage2g1_hard_history.py --split train \
+  --output-dir runs/v83_spatial_stage2/stage2g1/hard_history_train_<stamp>
+python v83_spatial_stage2/stage2g1_hard_history.py --split val \
+  --output-dir runs/v83_spatial_stage2/stage2g1/hard_history_val_<stamp>
+
+# Combined near/far dataset, then P0 vs P1-1/2/3 probes + analysis
+python v83_spatial_stage2/stage2g1_dataset.py --split train \
+  --far-features .../features_train.npz \
+  --supplement .../supplement_train.npz \
+  --hard-history .../hard_history_train.npz \
+  --data-dir runs/v83_spatial_stage2/datasets/train_600 \
+  --output .../combined_train.npz
+python v83_spatial_stage2/stage2g1_probe.py \
+  --train .../combined_train.npz --val .../combined_val.npz \
+  --output-dir runs/v83_spatial_stage2/stage2g1/probe_<stamp> \
+  --epochs 30 --bootstrap 200
+python v83_spatial_stage2/stage2g1_analyze.py \
+  --probe-dir .../probe_<stamp> --combined-val .../combined_val.npz \
+  --output .../probe_<stamp>/analysis.json
+
+# CPU-only tests
+python -m unittest -v v83_spatial_stage2.test_stage2g1
+```
+
+Report: `V83_STAGE2G1_NEAR_TARGET_REPORT.md`. Key finding: two/three frames of
+visual history turn the near-target-invisible probe from a failing current-only
+detector (precision 0.204) into a passing one (P1-2 precision 0.914, far-visible
+false-trigger 0.07%; P1-3 0.935/0.06%). The localizability probe still fails,
+and the visibility probe's far-invisible false-trigger is 43.6-45.7%. The next
+step is a small closed-loop smoke with the P1-2 near-target-invisible trigger;
+no controller integration was done.
 
 ## Planned Stage-2 experiments (paused for approval)
 
