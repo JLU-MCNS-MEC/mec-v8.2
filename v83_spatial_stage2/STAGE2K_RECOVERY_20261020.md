@@ -245,3 +245,13 @@ Baseline），但没有学会时延权衡：每步平均 E2E 比 Heuristic 高�
    已触发的早停结论，需要先修订实验协议。
 
 在没有明确选择前，保持现有权重、日志、Baseline 与 `progress.json` 不变。
+
+---
+
+## 2026-10-20 后续审计补充（重要）
+
+本文写于收尾恢复时。后续完整审计发现：训练脚本的 10 次“Validation”实际使用
+**train Episode + dev topology**，不是 Dev Val Episode。Ep800 的 0.2235 可以
+用 train 子集 0 差异复现；真实 Dev60 只有 0.1386，真实 Dev Val 180 为 0.1133。
+因此本文中的“最佳 Validation”应理解为 **in-sample 指标**，不能作为 Dev 收敛
+依据。完整对比与修正提案见 `v83_spatial_stage2/STAGE2K_ASSOCIATION_RL_REPORT.md`。

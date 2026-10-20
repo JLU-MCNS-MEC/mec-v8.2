@@ -268,3 +268,112 @@ SR、P95 E2E、时延违约率（E2E > 100 ms）、平均步数、模型使用�
 
 Association Final Test 在 DQN 训练完成并冻结配置后只评估一次，不做权重更新、
 阈值调整或重新训练。
+
+---
+
+## 8. 2026-10-20 恢复审计：状态与奖励
+
+本节是在**不重新训练**的前提下，对实际运行代码和已有 2000 Episode 记录的审计。
+详细数据：
+
+- 状态审计：`runs/v83_spatial_stage2/stage2k/state_audit/state_audit.json`
+- 奖励审计：`runs/v83_spatial_stage2/stage2k/reward_audit/reward_audit.json`
+- 训练曲线：`runs/v83_spatial_stage2/stage2k/plots/`
+
+### 8.1 478-D 状态审计
+
+实际调用链为 `EpisodeRunner._build_step_data → candidate_features →
+global_features → build_state`。在三种 Dev 场景各取 1 个 Episode，打印 20 个
+候选 MEC 的归一化前后特征，并做单步动作检查。结果：
+
+| 检查项 | 结果 |
+|---|---|
+| `state_dim` | 478（128 视觉 + 10 全局 + 20×17 候选） |
+| 候选字段顺序 | 与 `state_layout()` 完全一致 |
+| Mask 与 500 m 覆盖半径 | 一致 |
+| 动作索引 0..19 ↔ 拓扑节点 | 一致（单步 `transition_node_index == action`） |
+| 不可用节点网络字段 | 上行/通信/推理/E2E 为 0；几何/带宽/算力/质量/类型保留 |
+| 质量先验 | 与 `quality_prior.json` 一致 |
+| 模型 one-hot | 与 `model_index` 一致 |
+| E2E 特征 | `min(E2E_ms/100, 3.0)`；有限值；随节点真实变化 |
+| 上一步选中标志 | 下一状态中仅选中节点置 1 |
+| 全局 previous-E2E | 与上一步实际 E2E/100 一致 |
+
+可用节点间归一化 E2E 的标准差：Balanced 0.498、Quality-rich 0.743、
+Tradeoff-stress 1.031。Tradeoff-stress 有 2 个节点 E2E > 300 ms，被截断到
+`3.0`；其余节点仍可区分。
+
+**结论：时延特征已经正确进入 478-D 状态，没有发现状态实现错误。**
+
+### 8.2 奖励量级审计
+
+实际奖励：
+
+```
+r_t = r_navigation_t − 0.25 × min(E2E_ms / 100, 3.0) / 200
+```
+
+其中 `r_navigation_t` 是 potential 差分，未折扣累计严格等于最终 nDTW
+（用 900 条 Baseline 记录复核，`sum(nav_reward) − nDTW` 最大绝对误差为 0）。
+
+已有 2000 条训练记录统计：
+
+| 指标 | 数值 |
+|---|---:|
+| 导航奖励累计均值 / std | 0.5284 / 0.4064 |
+| 时延惩罚累计均值 / std | −0.2416 / 0.2468 |
+| 两者绝对值比 | 0.457 |
+| 单步导航奖励 / 单步时延惩罚 | 0.00397 / −0.00182 |
+| JointR 时延惩罚均值 | 0.3651 |
+| 奖励累计时延惩罚 ÷ JointR 时延惩罚 | 均值 0.663，中位数 0.334 |
+| 训练回报 − 同轨迹 JointR | +0.1235 |
+| 训练回报与 Validation JointR 相关 | +0.270 |
+
+原因：奖励把每步时延惩罚除以 200，而 JointR 使用 mean(E2E)/100。对 T 步
+Episode，奖励累计时延惩罚恰好是 JointR 时延惩罚的 **T/200**。训练 Episode
+步数中位数只有 67，因此典型 Episode 只拿到约 **1/3** 的时延惩罚；均值 133 步
+也只有约 2/3。训练回报因此系统性高估 JointR。
+
+**额外发现：训练顺序按 band 分块。** 前 2000 Episode 只有
+`short`（1332）和 `medium`（668），**没有 `long`**；long 从训练顺序第 2664 条
+才开始。早停发生在 2000，恰好发生在看到 long 之前。Validation 与 Dev 180
+都包含 long，训练/验证分布不一致。
+
+### 8.3 Validation split 错配（关键发现）
+
+`stage2k_dqn.py` 先执行 `spec_payload = load_split_specs("train")`，随后
+`validation_specs(spec_payload)` 从 **train** 中取 60 个 Episode，topology
+却用 dev。用该 train 子集可以 0 差异复现 Ep800 的 0.2235；真实 Dev60
+只有 0.1386，Dev180 为 0.1133。最佳 checkpoint 和早停均基于 **in-sample**
+指标，不能作为 Dev 收敛依据。复现数据：
+`runs/v83_spatial_stage2/stage2k/dqn/validation_split_audit/`。
+
+### 8.4 已修复的代码问题（本轮只修代码，未重训）
+
+1. **Validation split 已修复**：`stage2k_dqn.py` 现在通过
+   `dev_validation_specs()` 使用 `load_split_specs("dev")` +
+   `validation_specs`；新增 `test_13_dqn_validation_specs_are_dev_and_disjoint`
+   断言验证 Episode 的 `split == "dev"`、数量为 60、band 为 6/10/4，且与
+   train UID 不相交。旧代码保留在 git 历史 `ebec155` 中，现有
+   checkpoint、日志和 TensorBoard 未改动。本轮**没有用修复后的代码重新训练**。
+
+### 8.5 修正实验提案（未执行）
+
+在下一次训练前，建议继续修正以下问题：
+
+1. **Band 交错训练顺序**：用固定 seed 对每个场景的 short/medium/long 做
+   轮转或确定性洗牌，保证前 2000 Episode 覆盖三个 band；不改变 4000
+   Episode 池、Episode seed、拓扑或奖励定义。
+2. **时延系数**：把 `REWARD_DELAY_DIVISOR` 从 200 改为 **150**。
+   理由：10 次 Validation 的平均步数为 149.7，150 使奖励累计时延惩罚与
+   JointR 在验证长度上基本一致（当前 200 少算约 25%）；若要按 band 精确
+   对齐，可用 band 平均步数（short≈125、medium≈150、long≈175）作为
+   band-specific divisor。该修改不引入成功终止奖励、失败惩罚、目标距离
+   奖励或 Oracle 奖励。
+3. 修正实验必须从现有权重 Warm Start，新建独立目录，**清空 Replay
+   Buffer**，重新记录配置；不能把含旧奖励值的 Replay Buffer 当作严格续训。
+4. 修正实验的最终比较必须使用完整 Dev Val 180；在完整 Dev180 JointR
+   稳定超过 Heuristic（0.2617）之前，不进入 Association Final Test 180。
+
+以上 band/divisor/warm-start 修改本轮**没有执行**，也没有启动新的
+4000 Episode 训练。

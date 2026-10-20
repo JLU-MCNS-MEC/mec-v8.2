@@ -293,6 +293,16 @@ def spec_lookup(spec_payload):
     }
 
 
+def dev_validation_specs():
+    """Fixed 60 Dev Validation episodes used for DQN model selection.
+
+    Training specs must never be used here.  The interrupted 2k run passed
+    ``load_split_specs("train")`` to ``validation_specs``, so its recorded
+    "validation" was in-sample; see STAGE2K_ASSOCIATION_RL_REPORT.md §7.2.
+    """
+    return validation_specs(load_split_specs("dev"))
+
+
 def evaluate_dqn(
     agent,
     specs,
@@ -420,13 +430,13 @@ def main():
     if quality_payload is None:
         raise SystemExit("Missing quality prior")
     quality = flat_quality(quality_payload)
-    spec_payload = load_split_specs("train")
-    lookup = spec_lookup(spec_payload)
+    train_payload = load_split_specs("train")
+    lookup = spec_lookup(train_payload)
     order_path = args.output_dir / "training_order.json"
     if order_path.is_file():
         order = json.loads(order_path.read_text(encoding="utf-8"))["order"]
     else:
-        order = interleaved_training_order(spec_payload)
+        order = interleaved_training_order(train_payload)
         atomic_write_json(order_path, {
             "created_utc": utc_now(),
             "episodes": len(order),
@@ -495,7 +505,7 @@ def main():
     best_joint = float(best_joint) if best_joint is not None else -1e9
     no_improve = int(progress["dqn"]["consecutive_no_improve"] or 0)
     best_path = args.output_dir / "best.pt"
-    validation_specs_list = validation_specs(spec_payload)
+    validation_specs_list = dev_validation_specs()
     scene_cache = SceneCache(encoder, device, max_entries=60)
     started = time.time()
     stop_reason = None

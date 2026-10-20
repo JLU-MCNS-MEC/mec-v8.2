@@ -11,6 +11,7 @@ import json
 import sys
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,7 @@ from v83_spatial_stage2.stage2k_common import (
 )
 from v83_spatial_stage2.stage2k_dqn import (
     QNetwork,
+    dev_validation_specs,
     plot_training_curves,
     should_early_stop,
 )
@@ -287,6 +289,26 @@ class Stage2KChecks(unittest.TestCase):
         self.assertTrue(stop)
         stop, reason = should_early_stop(1600, 8, [0.5, 0.49, 0.51])
         self.assertTrue(stop)
+
+    def test_13_dqn_validation_specs_are_dev_and_disjoint(self):
+        dev_val = dev_validation_specs()
+        self.assertEqual(len(dev_val), 60)
+        self.assertTrue(all(item["split"] == "dev" for item in dev_val))
+        train = load_split_specs("train")
+        train_uids = {
+            item["episode_uid"]
+            for scenario in SCENARIOS
+            for item in train["scenarios"][scenario]["episodes"]
+        }
+        self.assertFalse(
+            {item["episode_uid"] for item in dev_val} & train_uids
+        )
+        counts = Counter(
+            (item["scenario"], item["band"]) for item in dev_val
+        )
+        for scenario in SCENARIOS:
+            for band, expected in (("short", 6), ("medium", 10), ("long", 4)):
+                self.assertEqual(counts[(scenario, band)], expected)
 
     def test_12_plot_training_curves_uses_history_schema(self):
         history = {
