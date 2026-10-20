@@ -36,7 +36,17 @@ from v83_spatial_stage2.stage2k_runtime import (
     load_gab_config,
     load_runtime,
 )
-from v83_spatial_stage2.stage2k_state import VisualProjector, masked_argmax
+from v83_spatial_stage2.stage2k_no_visual_state import (
+    STATE_DIM_NO_VISUAL,
+)
+from v83_spatial_stage2.stage2k_pure_mec_state import (
+    STATE_DIM_PURE_MEC,
+)
+from v83_spatial_stage2.stage2k_state import (
+    STATE_DIM,
+    VisualProjector,
+    masked_argmax,
+)
 
 DEFAULT_RUN = Path("runs/v83_spatial_stage2/stage2k_jointr_v2")
 BASELINE_STRATEGIES = (
@@ -181,7 +191,19 @@ def main():
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--max-episodes", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument(
+        "--state-mode",
+        choices=("full", "no_visual", "pure_mec"), default="full",
+    )
     args = parser.parse_args()
+    no_visual = args.state_mode == "no_visual"
+    pure_mec = args.state_mode == "pure_mec"
+    if pure_mec:
+        state_dim = STATE_DIM_PURE_MEC
+    elif no_visual:
+        state_dim = STATE_DIM_NO_VISUAL
+    else:
+        state_dim = STATE_DIM
     run_dir = args.run_dir
     checkpoint = args.checkpoint or run_dir / "checkpoints" / "best.pt"
     output_dir = args.output_dir or run_dir / "dev180_eval"
@@ -194,13 +216,23 @@ def main():
     topologies = {
         scenario: load_topology(scenario, "dev") for scenario in SCENARIOS
     }
-    projector = VisualProjector.load(VISUAL_PCA_PATH)
+    projector = (
+        None if (no_visual or pure_mec)
+        else VisualProjector.load(VISUAL_PCA_PATH)
+    )
     device, encoder, backends = load_runtime(args.device)
     gab_config = load_gab_config()
-    agent = DQNAgentV2(device)
+    agent = DQNAgentV2(
+        device, state_dim=state_dim, state_mode=args.state_mode
+    )
     payload = agent.load_model(checkpoint)
-    if payload.get("config", {}).get("reward_mode") != "jointr_aligned_v2":
+    config = payload.get("config", {})
+    if config.get("reward_mode") != "jointr_aligned_v2":
         raise SystemExit("Checkpoint is not a JointR-aligned v2 model")
+    if str(config.get("state_mode", "full")) != args.state_mode:
+        raise SystemExit("Checkpoint state_mode does not match --state-mode")
+    if int(config.get("state_dim", -1)) != state_dim:
+        raise SystemExit("Checkpoint state_dim does not match --state-mode")
     cache = SceneCache(encoder, device, max_entries=60)
     rows = []
     step_rows = []
@@ -219,6 +251,8 @@ def main():
                 scene_cache=cache,
                 device=device,
                 jointr_aligned=True,
+                no_visual_state=no_visual,
+                pure_mec_state=pure_mec,
             )
             while True:
                 state = runner.step_data["state"]

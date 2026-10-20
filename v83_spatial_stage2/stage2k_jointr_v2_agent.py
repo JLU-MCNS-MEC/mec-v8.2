@@ -39,12 +39,15 @@ GAMMA_V2 = 1.0
 
 
 class DQNAgentV2:
-    def __init__(self, device, seed=SEED, gamma=GAMMA_V2):
+    def __init__(self, device, seed=SEED, gamma=GAMMA_V2,
+                 state_dim=STATE_DIM, state_mode="full"):
         self.device = torch.device(device)
         self.gamma = float(gamma)
+        self.state_dim = int(state_dim)
+        self.state_mode = str(state_mode)
         torch.manual_seed(int(seed))
-        self.online = QNetwork().to(self.device)
-        self.target = QNetwork().to(self.device)
+        self.online = QNetwork(state_dim=self.state_dim).to(self.device)
+        self.target = QNetwork(state_dim=self.state_dim).to(self.device)
         self.target.load_state_dict(self.online.state_dict())
         self.target.eval()
         for parameter in self.target.parameters():
@@ -53,7 +56,7 @@ class DQNAgentV2:
             self.online.parameters(), lr=LEARNING_RATE
         )
         self.buffer = ReplayBuffer(
-            capacity=REPLAY_CAPACITY, state_dim=STATE_DIM,
+            capacity=REPLAY_CAPACITY, state_dim=self.state_dim,
             action_dim=ACTION_DIM, seed=seed,
         )
         self.rng = np.random.default_rng(int(seed))
@@ -125,8 +128,9 @@ class DQNAgentV2:
 
     def config(self):
         return {
-            "architecture": "mlp_478_256_256_20",
-            "state_dim": STATE_DIM,
+            "architecture": f"mlp_{self.state_dim}_256_256_20",
+            "state_dim": self.state_dim,
+            "state_mode": self.state_mode,
             "action_dim": ACTION_DIM,
             "gamma": self.gamma,
             "learning_rate": LEARNING_RATE,
@@ -212,6 +216,16 @@ class DQNAgentV2:
         config = payload.get("config", {})
         if abs(float(config.get("gamma", -1.0)) - GAMMA_V2) > 1e-12:
             raise RuntimeError("Checkpoint gamma is not 1.0")
+        if str(config.get("state_mode", "full")) != self.state_mode:
+            raise RuntimeError(
+                f"Checkpoint state_mode {config.get('state_mode')} != "
+                f"{self.state_mode}"
+            )
+        if int(config.get("state_dim", -1)) != self.state_dim:
+            raise RuntimeError(
+                f"Checkpoint state_dim {config.get('state_dim')} != "
+                f"{self.state_dim}"
+            )
         self._load_networks(payload)
         self.buffer.load_state_dict(payload["buffer_state"])
         self._restore_rng_state(payload["rng_state"])

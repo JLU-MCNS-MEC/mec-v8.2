@@ -30,6 +30,53 @@ from v83_spatial_stage2.stage2k_dqn import SEED, dev_validation_specs
 GROUP_ORDER = tuple(
     (scenario, band) for scenario in SCENARIOS for band in BANDS
 )
+RANDOM_ORDER_SEED = int(SEED) + 20261031
+
+
+def random_training_order(spec_payload, total=3500, seed=RANDOM_ORDER_SEED):
+    """Stratified random sample without replacement from Train, then shuffle.
+
+    The sample targets equal scenario x band counts as far as integer
+    division allows.  For total=3500 the target is 389 episodes for each of
+    the first eight groups and 388 for the last group, giving exact band
+    totals 1167 / 1167 / 1166 (Short / Medium / Long).  The combined list is
+    shuffled globally, so the band sequence is random rather than a fixed
+    round-robin.
+    """
+    total = int(total)
+    if total <= 0:
+        raise ValueError("total must be positive")
+    groups = {}
+    for scenario in SCENARIOS:
+        for band in BANDS:
+            items = [
+                item for item in spec_payload["scenarios"][scenario]["episodes"]
+                if item["band"] == band
+            ]
+            if not items:
+                raise RuntimeError(f"Empty train group {scenario}/{band}")
+            groups[(scenario, band)] = items
+    group_keys = list(GROUP_ORDER)
+    base = total // len(group_keys)
+    target = {key: base for key in group_keys}
+    for index in range(total - base * len(group_keys)):
+        target[group_keys[index]] += 1
+    rng = np.random.default_rng(int(seed))
+    selected = []
+    for key in group_keys:
+        items = groups[key]
+        if len(items) < target[key]:
+            raise RuntimeError(
+                f"Not enough episodes for {key}: {len(items)} < {target[key]}"
+            )
+        indices = rng.choice(len(items), size=target[key], replace=False)
+        selected.extend(items[int(index)] for index in indices)
+    rng.shuffle(selected)
+    if len(selected) != total:
+        raise RuntimeError(
+            f"Random order length {len(selected)} != requested {total}"
+        )
+    return [item["episode_uid"] for item in selected], target
 
 
 def stratified_training_order(spec_payload, seed=SEED):
@@ -105,26 +152,34 @@ def order_statistics(order, lookup):
     }
 
 
-def verify_order(order, spec_payload):
-    """Verify the order is a pure permutation of the frozen train list."""
+def verify_order(order, spec_payload, require_full=True):
+    """Verify the order is a permutation of the frozen train list.
+
+    ``require_full=False`` allows a random subset of the frozen Train list
+    (used by the pure-MEC sampling protocol); the order must still contain
+    only Train UIDs and no duplicates.
+    """
     lookup = {
         item["episode_uid"]: item
         for scenario in SCENARIOS
         for item in spec_payload["scenarios"][scenario]["episodes"]
     }
     expected = list(lookup)
-    if len(order) != len(expected):
+    if require_full and len(order) != len(expected):
         raise RuntimeError(
             f"Order length {len(order)} != frozen train length {len(expected)}"
         )
     if len(set(order)) != len(order):
         raise RuntimeError("Order contains duplicate Episode UIDs")
-    if set(order) != set(expected):
-        missing = sorted(set(expected) - set(order))[:5]
+    if not set(order).issubset(lookup):
         extra = sorted(set(order) - set(expected))[:5]
         raise RuntimeError(
-            f"Order changed the frozen episode set; missing={missing} "
-            f"extra={extra}"
+            f"Order contains non-Train Episode UIDs: {extra}"
+        )
+    if require_full and set(order) != set(expected):
+        missing = sorted(set(expected) - set(order))[:5]
+        raise RuntimeError(
+            f"Order changed the frozen episode set; missing={missing}"
         )
     for uid in order:
         item = lookup[uid]

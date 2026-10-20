@@ -1,0 +1,13 @@
+{
+  "train_episodes": 2450,
+  "validation_points": 12,
+  "return_mean": 0.14244948484185127,
+  "return_std": 0.43156702545805836,
+  "ma100_peak": 0.27635429936217926,
+  "ma100_peak_episode": 105,
+  "jointr_abs_error_max": 1.2212453270876722e-15,
+  "jointr_abs_error_mean": 1.6951576197165687e-16,
+  "best_validation_episode": 1200,
+  "best_validation_joint": 0.18729713747722665,
+  "last_validation_joint": 0.12656100783206858
+}

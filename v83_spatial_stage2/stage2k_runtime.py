@@ -52,6 +52,14 @@ from v83_spatial_stage2.stage2k_jointr_reward import (
     delay_reward_increment,
 )
 from v83_spatial_stage2.stage2k_latency import Stage2KLatency
+from v83_spatial_stage2.stage2k_no_visual_state import (
+    build_no_visual_state,
+    no_visual_candidate_features,
+)
+from v83_spatial_stage2.stage2k_pure_mec_state import (
+    build_pure_mec_state,
+    pure_mec_candidate_features,
+)
 from v83_spatial_stage2.stage2k_state import (
     build_state,
     candidate_features,
@@ -192,8 +200,12 @@ class EpisodeRunner:
         scene_cache=None,
         device=None,
         jointr_aligned=False,
+        no_visual_state=False,
+        pure_mec_state=False,
     ):
         self.jointr_aligned = bool(jointr_aligned)
+        self.no_visual_state = bool(no_visual_state)
+        self.pure_mec_state = bool(pure_mec_state)
         self.spec = spec
         self.topology = topology
         self.nodes = topology["nodes"]
@@ -284,37 +296,58 @@ class EpisodeRunner:
         )
         current_goal_similarity = float(similarity.max().item())
         visual = visual_descriptor(current_tokens)[0].cpu().float().numpy()
-        summary = visual_summary(
-            current_tokens[0].detach().cpu().float().numpy(),
-            self.goal_tokens[0].detach().cpu().float().numpy(),
-            history[0],
-            history[3],
-            gab,
-            map_feat,
-        )
-        visual128 = self.projector.project(summary)
-        candidate, mask, metrics, fallback = candidate_features(
-            self.nodes,
-            pose,
-            self.latency_model,
-            previous_selected=self.previous_selected,
-            quality_prior=self.quality_prior,
-        )
-        state_e2e_ms = (
-            self.running_mean_e2e_ms
-            if self.jointr_aligned else self.previous_e2e_ms
-        )
-        global10 = global_features(
-            self.step_index,
-            MAX_STEPS,
-            history[3],
-            current_goal_similarity,
-            gab,
-            state_e2e_ms,
-            self.previous_action,
-            clip_e2e=not self.jointr_aligned,
-        )
-        state = build_state(visual128, global10, candidate)
+        if self.pure_mec_state:
+            candidate, mask, metrics, fallback = (
+                pure_mec_candidate_features(
+                    self.nodes,
+                    pose,
+                    self.latency_model,
+                    quality_prior=self.quality_prior,
+                )
+            )
+            state = build_pure_mec_state(pose, candidate)
+        elif self.no_visual_state:
+            candidate, mask, metrics, fallback = (
+                no_visual_candidate_features(
+                    self.nodes,
+                    pose,
+                    self.latency_model,
+                    quality_prior=self.quality_prior,
+                )
+            )
+            state = build_no_visual_state(pose, candidate)
+        else:
+            summary = visual_summary(
+                current_tokens[0].detach().cpu().float().numpy(),
+                self.goal_tokens[0].detach().cpu().float().numpy(),
+                history[0],
+                history[3],
+                gab,
+                map_feat,
+            )
+            visual128 = self.projector.project(summary)
+            candidate, mask, metrics, fallback = candidate_features(
+                self.nodes,
+                pose,
+                self.latency_model,
+                previous_selected=self.previous_selected,
+                quality_prior=self.quality_prior,
+            )
+            state_e2e_ms = (
+                self.running_mean_e2e_ms
+                if self.jointr_aligned else self.previous_e2e_ms
+            )
+            global10 = global_features(
+                self.step_index,
+                MAX_STEPS,
+                history[3],
+                current_goal_similarity,
+                gab,
+                state_e2e_ms,
+                self.previous_action,
+                clip_e2e=not self.jointr_aligned,
+            )
+            state = build_state(visual128, global10, candidate)
         inputs = {
             "current_tokens": current_tokens,
             "goal_tokens": self.goal_tokens,

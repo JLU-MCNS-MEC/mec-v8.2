@@ -47,6 +47,8 @@ def main():
         "--run-dir", type=Path,
         default=Path("runs/v83_spatial_stage2/stage2k_jointr_v2"),
     )
+    parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument("--prefix", default="dqn_v2")
     args = parser.parse_args()
     run_dir = args.run_dir
     history = json.loads(
@@ -56,8 +58,9 @@ def main():
     validation = history["validation"]
     if not train:
         raise SystemExit("No training rows")
-    plot_dir = run_dir / "plots"
+    plot_dir = args.output_dir or (run_dir / "plots")
     plot_dir.mkdir(parents=True, exist_ok=True)
+    prefix = str(args.prefix)
 
     episodes = np.asarray([row["episode"] for row in train], dtype=np.int64)
     returns = np.asarray(
@@ -102,7 +105,7 @@ def main():
     axis.axhline(0.0, color=GRAY, linewidth=0.8, linestyle="--")
     style(axis, "training episode", "episode return",
           "Train episode return (raw; Return = JointR per episode)")
-    figure.savefig(plot_dir / "dqn_v2_return_raw.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_return_raw.png", dpi=200)
     plt.close(figure)
 
     # 2 moving average
@@ -124,7 +127,7 @@ def main():
     style(axis, "training episode", "episode return",
           "Train episode return: raw + 100-episode moving average")
     axis.legend(frameon=False, fontsize=8)
-    figure.savefig(plot_dir / "dqn_v2_return_ma100.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_return_ma100.png", dpi=200)
     plt.close(figure)
 
     # 3 validation JointR
@@ -145,7 +148,7 @@ def main():
     style(axis, "training episode", "validation JointR",
           "Dev validation JointR (60 Dev episodes, true Dev split)")
     axis.legend(frameon=False, fontsize=8)
-    figure.savefig(plot_dir / "dqn_v2_validation_joint_reward.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_validation_joint_reward.png", dpi=200)
     plt.close(figure)
 
     # 4 validation metrics
@@ -171,7 +174,7 @@ def main():
         "Dev validation metrics (60 Dev episodes; 6/10/4 per scenario)",
         fontsize=10.5,
     )
-    figure.savefig(plot_dir / "dqn_v2_validation_metrics.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_validation_metrics.png", dpi=200)
     plt.close(figure)
 
     # 5 reward components
@@ -186,16 +189,16 @@ def main():
     style(axis, "training episode", "episode-sum reward",
           "Reward components (sum per episode, 100-episode moving average)")
     axis.legend(frameon=False, fontsize=8)
-    figure.savefig(plot_dir / "dqn_v2_reward_components.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_reward_components.png", dpi=200)
     plt.close(figure)
 
     # 6 Q values and loss
     figure, axes = plt.subplots(2, 1, figsize=(9.0, 6.8),
                                 constrained_layout=True)
     axes[0].plot(episodes, q_mean, color=BLUE, linewidth=0.8,
-                 label="Q mean (100-MA)")
+                 label="Q mean (raw per episode)")
     axes[0].plot(episodes, q_max, color=ORANGE, linewidth=0.8,
-                 label="Q max (100-MA)")
+                 label="Q max (raw per episode)")
     style(axes[0], "training episode", "Q value",
           "Q value mean / max (raw per episode)")
     axes[0].legend(frameon=False, fontsize=8)
@@ -204,7 +207,7 @@ def main():
     style(axes[1], "training episode", "loss",
           "TD loss (Smooth L1, raw per episode)")
     axes[1].legend(frameon=False, fontsize=8)
-    figure.savefig(plot_dir / "dqn_v2_qvalue_loss.png", dpi=200)
+    figure.savefig(plot_dir / f"{prefix}_qvalue_loss.png", dpi=200)
     plt.close(figure)
 
     summary = {
@@ -230,12 +233,12 @@ def main():
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     for name in (
-        "dqn_v2_return_raw.png",
-        "dqn_v2_return_ma100.png",
-        "dqn_v2_validation_joint_reward.png",
-        "dqn_v2_validation_metrics.png",
-        "dqn_v2_reward_components.png",
-        "dqn_v2_qvalue_loss.png",
+        f"{prefix}_return_raw.png",
+        f"{prefix}_return_ma100.png",
+        f"{prefix}_validation_joint_reward.png",
+        f"{prefix}_validation_metrics.png",
+        f"{prefix}_reward_components.png",
+        f"{prefix}_qvalue_loss.png",
     ):
         print("WROTE", plot_dir / name)
 

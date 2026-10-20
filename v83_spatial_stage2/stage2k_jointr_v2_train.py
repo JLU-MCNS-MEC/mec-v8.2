@@ -6,12 +6,18 @@ Key changes from v1:
   * gamma = 1.0 (no discounting), standard TD target without terminal
     bootstrap.
   * validation uses the real 60 Dev episodes, never train episodes.
-  * the 4000 training episodes are band/scenario-interleaved.
+  * state_mode selects full (478-D), no_visual (342-D) or pure_mec
+    (322-D input + 20-D action mask).
+  * order_mode=random draws a stratified random sample from Train (used by
+    the pure-MEC 3500-episode protocol); stratified keeps the legacy
+    deterministic 3x3 round-robin.
+  * train_topology_split separates training topology from Dev validation
+    topology; pure_mec requires "train".
   * the full checkpoint includes replay buffer, RNG state, epsilon and
     episode for strict resume.
 
 The five T5 MECs are frozen.  No MEC training, no baseline rerun, no Final
-Test read.
+Test read during training.
 """
 
 from __future__ import annotations
@@ -20,7 +26,7 @@ import argparse
 import json
 import sys
 import time
-from collections import Counter
+from collections import Counter, deque
 from pathlib import Path
 
 import numpy as np
@@ -65,8 +71,10 @@ from v83_spatial_stage2.stage2k_dqn import (
 )
 from v83_spatial_stage2.stage2k_jointr_v2_agent import DQNAgentV2, GAMMA_V2
 from v83_spatial_stage2.stage2k_jointr_v2_order import (
+    RANDOM_ORDER_SEED,
     dev_validation_specs,
     order_statistics,
+    random_training_order,
     stratified_training_order,
     verify_order,
     verify_validation_isolation,
@@ -78,8 +86,19 @@ from v83_spatial_stage2.stage2k_runtime import (
     load_gab_config,
     load_runtime,
 )
-from v83_spatial_stage2.stage2k_state import VisualProjector, masked_argmax
+from v83_spatial_stage2.stage2k_no_visual_state import (
+    STATE_DIM_NO_VISUAL,
+)
+from v83_spatial_stage2.stage2k_pure_mec_state import (
+    STATE_DIM_PURE_MEC,
+)
+from v83_spatial_stage2.stage2k_state import (
+    STATE_DIM,
+    VisualProjector,
+    masked_argmax,
+)
 
+STAGE_NAME = "stage2k_jointr_v2"
 RUN_DIR = Path("runs/v83_spatial_stage2/stage2k_jointr_v2")
 CHECKPOINT_DIR = RUN_DIR / "checkpoints"
 TENSORBOARD_DIR = Path("runs/tensorboard/association_stage2k_jointr_v2")
@@ -95,7 +114,7 @@ BEST_MODEL = CHECKPOINT_DIR / "best.pt"
 
 def update_progress(**fields):
     payload = read_json(PROGRESS_PATH) or {
-        "stage": "stage2k_jointr_v2",
+        "stage": STAGE_NAME,
         "created_utc": utc_now(),
         "final_test": "pending",
         "final_test_read": False,
@@ -112,19 +131,47 @@ def setup_run():
     TENSORBOARD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def build_order():
+def build_order(order_mode="stratified", random_total=3500):
     train_payload = load_split_specs("train")
-    order = stratified_training_order(train_payload)
-    lookup = verify_order(order, train_payload)
-    stats = order_statistics(order, lookup)
-    payload = {
-        "version": "stage2k-jointr-v2-order-v1",
-        "created_utc": utc_now(),
-        "seed": SEED,
-        "strategy": (
+    target_counts = None
+    if order_mode == "random":
+        order, targets = random_training_order(
+            train_payload, total=int(random_total)
+        )
+        lookup = verify_order(
+            order, train_payload, require_full=False
+        )
+        target_counts = {
+            f"{scenario}/{band}": int(count)
+            for (scenario, band), count in targets.items()
+        }
+        strategy = (
+            "stratified random sample without replacement from Train "
+            "(scenario x band targets) + global shuffle"
+        )
+        version = "stage2k-pure-mec-order-v1"
+    elif order_mode == "stratified":
+        order = stratified_training_order(train_payload)
+        lookup = verify_order(order, train_payload)
+        strategy = (
             "deterministic round-robin over 3 scenarios x 3 bands, "
             "per-group seeded shuffle"
+        )
+        version = "stage2k-jointr-v2-order-v1"
+    else:
+        raise ValueError(f"Unknown order_mode {order_mode}")
+    stats = order_statistics(order, lookup)
+    payload = {
+        "version": version,
+        "created_utc": utc_now(),
+        "seed": SEED,
+        "sampling_seed": (
+            int(RANDOM_ORDER_SEED) if order_mode == "random" else None
         ),
+        "strategy": strategy,
+        "order_mode": str(order_mode),
+        "random_total": int(random_total) if order_mode == "random" else None,
+        "target_counts": target_counts,
         "statistics": stats,
         "order": order,
     }
@@ -161,7 +208,8 @@ def verify_isolation():
 
 
 def evaluate_aligned(agent, specs, topologies, encoder, backends, projector,
-                     quality, gab_config, device):
+                     quality, gab_config, device, no_visual_state=False,
+                     pure_mec_state=False):
     cache = SceneCache(encoder, device, max_entries=60)
     rows = []
     for spec in specs:
@@ -176,6 +224,8 @@ def evaluate_aligned(agent, specs, topologies, encoder, backends, projector,
             scene_cache=cache,
             device=device,
             jointr_aligned=True,
+            no_visual_state=no_visual_state,
+            pure_mec_state=pure_mec_state,
         )
         while True:
             state = runner.step_data["state"]
@@ -258,11 +308,65 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--max-episodes", type=int, default=MAX_EPISODES)
     parser.add_argument("--smoke-episodes", type=int, default=None)
+    parser.add_argument(
+        "--state-mode",
+        choices=("full", "no_visual", "pure_mec"), default="full",
+    )
+    parser.add_argument(
+        "--order-mode", choices=("stratified", "random"),
+        default="stratified",
+    )
+    parser.add_argument(
+        "--train-topology-split", choices=("train", "dev"),
+        default="dev",
+        help=(
+            "Topology used for training rollouts.  Use 'train' for the "
+            "pure-MEC protocol so Dev topology is validation-only."
+        ),
+    )
     parser.add_argument("--run-dir", type=Path, default=RUN_DIR)
     parser.add_argument(
-        "--tensorboard-dir", type=Path, default=TENSORBOARD_DIR
+        "--tensorboard-dir", type=Path, default=None
     )
     args = parser.parse_args()
+    no_visual = args.state_mode == "no_visual"
+    pure_mec = args.state_mode == "pure_mec"
+    if pure_mec:
+        state_dim = STATE_DIM_PURE_MEC
+    elif no_visual:
+        state_dim = STATE_DIM_NO_VISUAL
+    else:
+        state_dim = STATE_DIM
+    if args.tensorboard_dir is None:
+        if pure_mec:
+            args.tensorboard_dir = Path(
+                "runs/tensorboard/association_stage2k_pure_mec_state"
+            )
+        elif no_visual:
+            args.tensorboard_dir = Path(
+                "runs/tensorboard/association_stage2k_no_visual"
+            )
+        else:
+            args.tensorboard_dir = TENSORBOARD_DIR
+    global STAGE_NAME
+    STAGE_NAME = (
+        "stage2k_pure_mec_state" if pure_mec else
+        ("stage2k_no_visual" if no_visual else "stage2k_jointr_v2")
+    )
+    if pure_mec and args.order_mode != "random":
+        raise SystemExit("pure_mec requires --order-mode random")
+    if pure_mec and args.train_topology_split != "train":
+        raise SystemExit(
+            "pure_mec requires --train-topology-split train"
+        )
+    if (
+        pure_mec
+        and args.smoke_episodes is None
+        and int(args.max_episodes) != 3500
+    ):
+        raise SystemExit(
+            "pure_mec formal training requires --max-episodes 3500"
+        )
 
     RUN_DIR = args.run_dir
     CHECKPOINT_DIR = RUN_DIR / "checkpoints"
@@ -284,20 +388,31 @@ def main():
     if args.smoke_episodes is not None:
         args.max_episodes = int(args.smoke_episodes)
 
-    order, lookup, order_stats = build_order()
+    order, lookup, order_stats = build_order(
+        args.order_mode, random_total=3500
+    )
     validation_specs_list = verify_isolation()
     quality_payload = read_json(QUALITY_PRIOR_PATH)
     if quality_payload is None:
         raise SystemExit("Missing quality prior")
     quality = flat_quality(quality_payload)
-    topologies = {
+    train_topologies = {
+        scenario: load_topology(scenario, args.train_topology_split)
+        for scenario in SCENARIOS
+    }
+    dev_topologies = {
         scenario: load_topology(scenario, "dev") for scenario in SCENARIOS
     }
-    projector = VisualProjector.load(VISUAL_PCA_PATH)
+    projector = (
+        None if (no_visual or pure_mec)
+        else VisualProjector.load(VISUAL_PCA_PATH)
+    )
     device, encoder, backends = load_runtime(args.device)
     gab_config = load_gab_config()
 
-    agent = DQNAgentV2(device, seed=SEED)
+    agent = DQNAgentV2(
+        device, seed=SEED, state_dim=state_dim, state_mode=args.state_mode
+    )
     history = {"train": [], "validation": [], "config": {
         **agent.config(),
         "max_episodes": int(args.max_episodes),
@@ -305,11 +420,23 @@ def main():
         "validation_every": VALIDATION_EVERY,
         "validation_source": "60 Dev episodes (6/10/4 per scenario)",
         "training_order": str(ORDER_PATH),
+        "order_mode": str(args.order_mode),
+        "sampling_frame": (
+            "train_4000 stratified random sample (3500)"
+            if args.order_mode == "random" else
+            "train_4000 full deterministic order"
+        ),
+        "train_topology_split": str(args.train_topology_split),
+        "validation_topology_split": "dev",
         "reward": (
             "r_nav_t + (-0.25/100)*(running_mean_E2E_t - "
             "running_mean_E2E_{t-1})"
         ),
-        "state_e2e_field": "running_mean_E2E_ms / 100",
+        "state_e2e_field": (
+            "none (pure MEC state)" if pure_mec else
+            ("none (no visual state)" if no_visual
+             else "running_mean_E2E_ms / 100")
+        ),
     }}
     start_episode = 0
     best_joint = -1e9
@@ -335,6 +462,19 @@ def main():
         )
     if start_episode > len(order):
         raise SystemExit("Resume episode exceeds training order length")
+
+    return_window = deque(
+        (float(row["episode_return"]) for row in history["train"][-99:]),
+        maxlen=100,
+    )
+    navigation_window = deque(
+        (float(row["navigation_reward"]) for row in history["train"][-99:]),
+        maxlen=100,
+    )
+    latency_window = deque(
+        (float(row["latency_penalty"]) for row in history["train"][-99:]),
+        maxlen=100,
+    )
 
     writer = SummaryWriter(str(TENSORBOARD_DIR))
     started = time.time()
@@ -365,7 +505,7 @@ def main():
     for episode_index in range(start_episode, min(len(order), args.max_episodes)):
         episode_number = episode_index + 1
         spec = lookup[order[episode_index]]
-        topology = topologies[spec["scenario"]]
+        topology = train_topologies[spec["scenario"]]
         runner = EpisodeRunner(
             spec=spec,
             topology=topology,
@@ -377,6 +517,8 @@ def main():
             scene=build_scene(spec, encoder, device),
             device=device,
             jointr_aligned=True,
+            no_visual_state=no_visual,
+            pure_mec_state=pure_mec,
         )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]
@@ -482,6 +624,22 @@ def main():
         writer.add_scalar("train/q_max", row["q_max"], episode_number)
         writer.add_scalar("train/jointr_abs_error", row["jointr_abs_error"],
                           episode_number)
+        return_window.append(row["episode_return"])
+        navigation_window.append(row["navigation_reward"])
+        latency_window.append(row["latency_penalty"])
+        if len(return_window) == return_window.maxlen:
+            writer.add_scalar(
+                "train/episode_return_ma100",
+                float(np.mean(return_window)), episode_number,
+            )
+            writer.add_scalar(
+                "train/navigation_reward_ma100",
+                float(np.mean(navigation_window)), episode_number,
+            )
+            writer.add_scalar(
+                "train/latency_penalty_ma100",
+                float(np.mean(latency_window)), episode_number,
+            )
         if episode_number % 10 == 0:
             atomic_write_json(HISTORY_PATH, history)
             update_progress(
@@ -520,8 +678,10 @@ def main():
 
         if episode_number % VALIDATION_EVERY == 0:
             validation_rows = evaluate_aligned(
-                agent, validation_specs_list, topologies, encoder, backends,
-                projector, quality, gab_config, device,
+                agent, validation_specs_list, dev_topologies, encoder,
+                backends, projector, quality, gab_config, device,
+                no_visual_state=no_visual,
+                pure_mec_state=pure_mec,
             )
             summary = summarize_episodes(validation_rows)
             val_errors = [
