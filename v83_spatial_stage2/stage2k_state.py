@@ -287,8 +287,14 @@ def global_features(
     gab,
     previous_e2e_ms,
     previous_action,
+    clip_e2e=True,
 ):
-    """10-D global context."""
+    """10-D global context.
+
+    In the legacy mode the sixth feature is the previous-step E2E delay.  In
+    the JointR-aligned mode the caller passes the running mean E2E delay and
+    ``clip_e2e=False`` so the feature is exactly ``running_mean_ms / 100``.
+    """
     mask = np.asarray(history_mask, dtype=np.float32)
     gab = np.asarray(gab, dtype=np.float32)
     previous_action = int(previous_action)
@@ -296,14 +302,14 @@ def global_features(
         _one_hot(previous_action, 4)
         if 0 <= previous_action < 4 else np.zeros(4, dtype=np.float32)
     )
-    previous_e2e = (
-        0.0 if previous_e2e_ms is None
-        else float(np.clip(
-            float(previous_e2e_ms) / LATENCY_SCALE_MS,
-            0.0,
-            E2E_CLIP_SCALE,
-        ))
-    )
+    if previous_e2e_ms is None:
+        previous_e2e = 0.0
+    else:
+        scaled = float(previous_e2e_ms) / LATENCY_SCALE_MS
+        previous_e2e = (
+            float(np.clip(scaled, 0.0, E2E_CLIP_SCALE))
+            if clip_e2e else max(0.0, float(scaled))
+        )
     values = np.asarray([
         float(step) / max(float(max_steps), 1.0),
         float(mask.sum()) / 16.0,

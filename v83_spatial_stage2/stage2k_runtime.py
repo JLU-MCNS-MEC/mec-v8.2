@@ -47,6 +47,10 @@ from v83_spatial_stage2.stage2k_common import (
     joint_reward,
     latency_penalty,
 )
+from v83_spatial_stage2.stage2k_jointr_reward import (
+    aligned_episode_jointr,
+    delay_reward_increment,
+)
 from v83_spatial_stage2.stage2k_latency import Stage2KLatency
 from v83_spatial_stage2.stage2k_state import (
     build_state,
@@ -187,7 +191,9 @@ class EpisodeRunner:
         scene=None,
         scene_cache=None,
         device=None,
+        jointr_aligned=False,
     ):
+        self.jointr_aligned = bool(jointr_aligned)
         self.spec = spec
         self.topology = topology
         self.nodes = topology["nodes"]
@@ -229,6 +235,9 @@ class EpisodeRunner:
         self.previous_action = -1
         self.previous_selected = -1
         self.previous_e2e_ms = 0.0
+        self.running_mean_e2e_ms = 0.0
+        self.running_mean_steps = 0
+        self.return_sum = 0.0
         self.step_index = 0
         self.trajectory = [self.env.position.copy()]
         self.success = False
@@ -291,14 +300,19 @@ class EpisodeRunner:
             previous_selected=self.previous_selected,
             quality_prior=self.quality_prior,
         )
+        state_e2e_ms = (
+            self.running_mean_e2e_ms
+            if self.jointr_aligned else self.previous_e2e_ms
+        )
         global10 = global_features(
             self.step_index,
             MAX_STEPS,
             history[3],
             current_goal_similarity,
             gab,
-            self.previous_e2e_ms,
+            state_e2e_ms,
             self.previous_action,
+            clip_e2e=not self.jointr_aligned,
         )
         state = build_state(visual128, global10, candidate)
         inputs = {
@@ -443,8 +457,16 @@ class EpisodeRunner:
         nav_reward, _ = self.reward_tracker.advance(
             new_position=self.env.position.copy(), done=bool(done)
         )
-        penalty = float(latency_penalty(e2e_ms))
+        if self.jointr_aligned:
+            step_index = self.step_index + 1
+            self.running_mean_e2e_ms, penalty = delay_reward_increment(
+                e2e_ms, self.running_mean_e2e_ms, step_index
+            )
+            self.running_mean_steps = step_index
+        else:
+            penalty = float(latency_penalty(e2e_ms))
         reward = float(nav_reward + penalty)
+        self.return_sum += reward
         self.model_usage[node["model_type"]] += 1
         self.step_records.append({
             "step": int(step_data["step"]),
@@ -462,6 +484,7 @@ class EpisodeRunner:
             "navigation_reward": float(nav_reward),
             "latency_penalty": penalty,
             "reward": reward,
+            "running_mean_e2e_ms": float(self.running_mean_e2e_ms),
             "success": bool(success),
             "done": bool(done),
             "fallback": bool(step_data["fallback"]),
@@ -529,6 +552,12 @@ class EpisodeRunner:
             [row["e2e_ms"] > 100.0 for row in self.step_records],
             dtype=np.float64,
         )
+        mean_e2e = float(e2e.mean()) if len(e2e) else 0.0
+        episode_return = float(self.return_sum)
+        episode_joint = (
+            aligned_episode_jointr(ndtw, mean_e2e)
+            if self.jointr_aligned else joint_reward(ndtw, mean_e2e)
+        )
         return {
             "strategy": strategy,
             "episode_uid": self.spec["episode_uid"],
@@ -559,10 +588,14 @@ class EpisodeRunner:
             ])) if self.step_records else 0.0,
             "model_usage": dict(self.model_usage),
             "fallback_steps": int(self.fallback_steps),
-            "joint_reward": joint_reward(
-                ndtw,
-                float(e2e.mean()) if len(e2e) else 0.0,
-            ),
+            "mean_episode_e2e_ms": mean_e2e,
+            "final_ndtw": ndtw,
+            "episode_return": episode_return,
+            "episode_jointR": float(episode_joint),
+            "jointr_abs_error": abs(episode_return - episode_joint),
+            "jointr_delay_weight": 0.25,
+            "running_mean_e2e_ms": float(self.running_mean_e2e_ms),
+            "joint_reward": float(episode_joint),
             "trajectory": trajectory.astype(np.float32).tolist(),
             "step_records": self.step_records,
         }

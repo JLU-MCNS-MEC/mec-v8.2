@@ -148,6 +148,53 @@ class ReplayBuffer:
     def __len__(self):
         return self.size
 
+    def state_dict(self):
+        """Serializable state for strict resume (valid entries only)."""
+        count = int(self.size)
+        return {
+            "capacity": int(self.capacity),
+            "state_dim": int(self.state_dim),
+            "action_dim": int(self.action_dim),
+            "size": count,
+            "position": int(self.position),
+            "states": self.states[:count].copy(),
+            "actions": self.actions[:count].copy(),
+            "rewards": self.rewards[:count].copy(),
+            "next_states": self.next_states[:count].copy(),
+            "dones": self.dones[:count].copy(),
+            "next_masks": self.next_masks[:count].copy(),
+            "rng_state": self.rng.bit_generator.state,
+        }
+
+    def load_state_dict(self, payload):
+        self.capacity = int(payload["capacity"])
+        self.state_dim = int(payload["state_dim"])
+        self.action_dim = int(payload["action_dim"])
+        self.states = np.zeros(
+            (self.capacity, self.state_dim), dtype=np.float32
+        )
+        self.actions = np.zeros(self.capacity, dtype=np.int64)
+        self.rewards = np.zeros(self.capacity, dtype=np.float32)
+        self.next_states = np.zeros(
+            (self.capacity, self.state_dim), dtype=np.float32
+        )
+        self.dones = np.zeros(self.capacity, dtype=np.float32)
+        self.next_masks = np.zeros(
+            (self.capacity, self.action_dim), dtype=bool
+        )
+        count = int(payload["size"])
+        if count > self.capacity:
+            raise ValueError("Replay buffer payload exceeds capacity")
+        self.states[:count] = payload["states"][:count]
+        self.actions[:count] = payload["actions"][:count]
+        self.rewards[:count] = payload["rewards"][:count]
+        self.next_states[:count] = payload["next_states"][:count]
+        self.dones[:count] = payload["dones"][:count]
+        self.next_masks[:count] = payload["next_masks"][:count]
+        self.size = count
+        self.position = int(payload["position"])
+        self.rng.bit_generator.state = payload["rng_state"]
+
 
 class DQNAgent:
     def __init__(self, device, seed=SEED):
