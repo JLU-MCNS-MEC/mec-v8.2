@@ -1,0 +1,99 @@
+{
+  "case": "case_01_clear_match",
+  "offline_only": true,
+  "not_model_input": true,
+  "warning": "Simulator ground truth / post-hoc diagnostics. Never concatenate or feed any value in this file to the MEC.",
+  "selection": {
+    "rule": "Maximize the current Goal-Current match confidence (current_evidence confidence of the archived 3x8x8 heatmap); ties by smallest episode_id then step_id.",
+    "current_confidence": 0.9917296700179353,
+    "current_confidence_percentile": 100.0,
+    "history_valid_slots": 16,
+    "gab_confidence": 0.9810682535171509,
+    "gab_valid": 1,
+    "map_top5_spread": 0.008416056632995605,
+    "map_top5_spread_percentile": 11.2633503319542
+  },
+  "episode": {
+    "episode_id": 143,
+    "step_id": 19,
+    "trajectory_band": "short",
+    "band_id": 0,
+    "episode_seed": 1000173,
+    "episode_natural_steps": 67,
+    "actions_executed_to_state": [
+      2,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      2
+    ]
+  },
+  "replay_and_correctness": {
+    "oracle_replay_mismatches": 0,
+    "pose_xy_yaw": [
+      960.3218383789062,
+      959.7328491210938,
+      -2.4522228240966797
+    ],
+    "true_distance_to_goal_m": 137.9248046875,
+    "goal_visible_by_simulator_projection": true,
+    "goal_rank_in_retrieval": 1,
+    "retrieval_top1_is_goal": 1,
+    "retrieval_top5_contains_goal": 1,
+    "goal_similarity": 0.9999999669918817,
+    "retrieval_top1_similarity": 0.9999999669918817,
+    "render_reencode_cosine_vs_archived": 0.9999977350234985,
+    "render_reencode_max_abs_vs_archived": 0.0009760856628417969
+  },
+  "current_evidence": {
+    "bins": [
+      0.0004979268634718903,
+      0.0004437759794976127,
+      0.000623613370311294,
+      0.9937094249448796,
+      0.0011392947408191655,
+      0.0009036422722343897,
+      0.0006614942523409231,
+      0.002020827576445301
+    ],
+    "confidence": 0.9917296700179353,
+    "entropy": 0.023814765921414443,
+    "peak_x_column": 3,
+    "peak_y_row": 2
+  },
+  "local_similarity": {
+    "per_scale_max": [
+      0.9620157480239868,
+      0.9851843118667603,
+      0.986642599105835
+    ],
+    "per_scale_peak_cell": [
+      [
+        9,
+        9
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        7,
+        9
+      ]
+    ]
+  }
+}

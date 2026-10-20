@@ -1,0 +1,88 @@
+{
+  "case": "case_03_ambiguous_map",
+  "offline_only": true,
+  "not_model_input": true,
+  "warning": "Simulator ground truth / post-hoc diagnostics. Never concatenate or feed any value in this file to the MEC.",
+  "selection": {
+    "rule": "Distinct episode; top-1 retrieval similarity >= the pool median; minimize round(top-1 minus top-5 similarity, 6 decimals); ties by larger top-1, then smallest episode_id then step_id.",
+    "current_confidence": 0.1517599606182136,
+    "current_confidence_percentile": 70.71297989031079,
+    "history_valid_slots": 8,
+    "gab_confidence": 0.07587998360395432,
+    "gab_valid": 1,
+    "map_top5_spread": 0.002053499221801758,
+    "map_top5_spread_percentile": 0.23284903300298276
+  },
+  "episode": {
+    "episode_id": 204,
+    "step_id": 8,
+    "trajectory_band": "long",
+    "band_id": 2,
+    "episode_seed": 1000245,
+    "episode_natural_steps": 121,
+    "actions_executed_to_state": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "replay_and_correctness": {
+    "oracle_replay_mismatches": 0,
+    "pose_xy_yaw": [
+      1356.2213134765625,
+      611.9557495117188,
+      2.304307222366333
+    ],
+    "true_distance_to_goal_m": 378.67840576171875,
+    "goal_visible_by_simulator_projection": true,
+    "goal_rank_in_retrieval": 1,
+    "retrieval_top1_is_goal": 1,
+    "retrieval_top5_contains_goal": 1,
+    "goal_similarity": 0.9999998800904166,
+    "retrieval_top1_similarity": 0.9999998800904166,
+    "render_reencode_cosine_vs_archived": 0.9999992251396179,
+    "render_reencode_max_abs_vs_archived": 0.0009765625
+  },
+  "current_evidence": {
+    "bins": [
+      0.10752317574584105,
+      0.08828884438903357,
+      0.08638690598270345,
+      0.08637074288810229,
+      0.15213077148156767,
+      0.12204409431794609,
+      0.0967189187736241,
+      0.2605365464211818
+    ],
+    "confidence": 0.1517599606182136,
+    "entropy": 0.960200532957338,
+    "peak_x_column": 7,
+    "peak_y_row": 1
+  },
+  "local_similarity": {
+    "per_scale_max": [
+      0.9088114500045776,
+      0.903322696685791,
+      0.8564715385437012
+    ],
+    "per_scale_peak_cell": [
+      [
+        5,
+        21
+      ],
+      [
+        5,
+        21
+      ],
+      [
+        5,
+        21
+      ]
+    ]
+  }
+}

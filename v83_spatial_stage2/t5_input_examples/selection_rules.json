@@ -1,0 +1,111 @@
+{
+  "created_utc": "2026-10-20T01:06:01.896306+00:00",
+  "split": "train_600",
+  "final_test_read": false,
+  "pool": {
+    "natural_samples": 51965,
+    "episodes": 600,
+    "sample_type_counts": {
+      "0": 51965,
+      "1": 1200,
+      "2": 1200,
+      "3": 1200
+    }
+  },
+  "observable_definitions": {
+    "current_match_confidence": "max softmax probability of the archived 3x8x8 Goal-Current similarity heatmap after max-over-scales at temperature 0.10",
+    "history_valid_slots": "sum(history_mask)",
+    "gab_confidence": "gab[16] from the Stage-2i sidecar",
+    "gab_valid": "gab[19] from the Stage-2i sidecar",
+    "map_top5_spread": "map_feat[0] - map_feat[16]",
+    "map_top5_margin": "map_feat[0] - map_feat[4]"
+  },
+  "rules": {
+    "pool": "All natural (sample_type=0) samples of Train 600; hard-positive, boundary-negative and distractor-negative samples are excluded.",
+    "common_eligibility": "history_valid_slots >= 8",
+    "case_01_clear_match": "Maximize the current Goal-Current match confidence (current_evidence confidence of the archived 3x8x8 heatmap); ties by smallest episode_id then step_id.",
+    "case_02_weak_match_history": "Distinct episode; GAB valid=1 and GAB confidence >= the Train-fitted reliability threshold; minimize current match confidence; ties by smallest episode_id then step_id.",
+    "case_03_ambiguous_map": "Distinct episode; top-1 retrieval similarity >= the pool median; minimize round(top-1 minus top-5 similarity, 6 decimals); ties by larger top-1, then smallest episode_id then step_id."
+  },
+  "gab_reliability_threshold": 0.09289754098983038,
+  "top1_similarity_median": 0.9999998807907104,
+  "selected": [
+    {
+      "case": "case_01_clear_match",
+      "row_index": 12407,
+      "candidate_pool": 47165,
+      "episode_id": 143,
+      "step_id": 19,
+      "band_id": 0,
+      "episode_seed": 1000173,
+      "shard": 132,
+      "shard_row": 65,
+      "current_confidence": 0.9917296700179353,
+      "current_confidence_percentile": 100.0,
+      "history_valid_slots": 16,
+      "gab_confidence": 0.9810682535171509,
+      "gab_entropy": 0.2976703345775604,
+      "gab_valid": 1,
+      "map_top1": 0.9999999403953552,
+      "map_top2": 0.9992151260375977,
+      "map_top5": 0.9915838837623596,
+      "map_top5_spread": 0.008416056632995605,
+      "map_top5_spread_percentile": 11.2633503319542,
+      "map_top5_margin": 0.0007848143577575684
+    },
+    {
+      "case": "case_02_weak_match_history",
+      "row_index": 9854,
+      "candidate_pool": 19837,
+      "episode_id": 116,
+      "step_id": 105,
+      "band_id": 2,
+      "episode_seed": 1000143,
+      "shard": 105,
+      "shard_row": 50,
+      "current_confidence": 0.021663931164160852,
+      "current_confidence_percentile": 0.7832194746463966,
+      "history_valid_slots": 16,
+      "gab_confidence": 0.1266661137342453,
+      "gab_entropy": 0.9819223284721375,
+      "gab_valid": 1,
+      "map_top1": 0.9999997615814209,
+      "map_top2": 0.9885957837104797,
+      "map_top5": 0.9853811860084534,
+      "map_top5_spread": 0.01461857557296753,
+      "map_top5_spread_percentile": 33.82468969498701,
+      "map_top5_margin": 0.011403977870941162
+    },
+    {
+      "case": "case_03_ambiguous_map",
+      "row_index": 17576,
+      "candidate_pool": 23936,
+      "episode_id": 204,
+      "step_id": 8,
+      "band_id": 2,
+      "episode_seed": 1000245,
+      "shard": 188,
+      "shard_row": 0,
+      "current_confidence": 0.1517599606182136,
+      "current_confidence_percentile": 70.71297989031079,
+      "history_valid_slots": 8,
+      "gab_confidence": 0.07587998360395432,
+      "gab_entropy": 0.9893398284912109,
+      "gab_valid": 1,
+      "map_top1": 0.9999998807907104,
+      "map_top2": 0.999190628528595,
+      "map_top5": 0.9979463815689087,
+      "map_top5_spread": 0.002053499221801758,
+      "map_top5_spread_percentile": 0.23284903300298276,
+      "map_top5_margin": 0.0008092522621154785
+    }
+  ],
+  "constraints": {
+    "navigation_success_used": false,
+    "true_distance_used": false,
+    "goal_coordinates_used": false,
+    "oracle_action_used": false,
+    "final_test_read": false,
+    "distinct_episodes": true
+  }
+}

@@ -1,0 +1,926 @@
+{
+  "case": "case_02_weak_match_history",
+  "title": "Weak current match with valid history and GAB belief",
+  "description": "Current local match confidence is low, but the 16-step visual history is valid and the GAB has valid, reliable-branch evidence.",
+  "selection_rule": "Distinct episode; GAB valid=1 and GAB confidence >= the Train-fitted reliability threshold; minimize current match confidence; ties by smallest episode_id then step_id.",
+  "selection_values": {
+    "current_confidence": 0.021663931164160852,
+    "current_confidence_percentile": 0.7832194746463966,
+    "history_valid_slots": 16,
+    "gab_confidence": 0.1266661137342453,
+    "gab_valid": 1,
+    "map_top1": 0.9999997615814209,
+    "map_top2": 0.9885957837104797,
+    "map_top5": 0.9853811860084534,
+    "map_top5_spread": 0.01461857557296753,
+    "map_top5_margin": 0.011403977870941162
+  },
+  "provenance": {
+    "split": "train_600",
+    "episode_id": 116,
+    "step_id": 105,
+    "trajectory_band": "long",
+    "band_id": 2,
+    "episode_seed": 1000143,
+    "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+    "shard_sha256": "72a5b749d1e55f4724ea14df52d64ed531dfb1862d300f58df27d4e05067a670",
+    "shard_row": 50,
+    "aux_file": "runs/v83_spatial_stage2/stage2i/aux/train/aux_shard_0105.npz",
+    "aux_sha256": "c3e9f9aeefb275e6ae0c4a2b9468dacf68b054b60e87688fd650003c278263a5",
+    "aux_row": 50,
+    "episode_natural_steps": [
+      {
+        "step": 0,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 45,
+        "action": 2
+      },
+      {
+        "step": 1,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 46,
+        "action": 2
+      },
+      {
+        "step": 2,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 47,
+        "action": 0
+      },
+      {
+        "step": 3,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 48,
+        "action": 0
+      },
+      {
+        "step": 4,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 49,
+        "action": 0
+      },
+      {
+        "step": 5,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 50,
+        "action": 0
+      },
+      {
+        "step": 6,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 51,
+        "action": 0
+      },
+      {
+        "step": 7,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 52,
+        "action": 0
+      },
+      {
+        "step": 8,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 53,
+        "action": 0
+      },
+      {
+        "step": 9,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 54,
+        "action": 0
+      },
+      {
+        "step": 10,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 55,
+        "action": 0
+      },
+      {
+        "step": 11,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 56,
+        "action": 0
+      },
+      {
+        "step": 12,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 57,
+        "action": 0
+      },
+      {
+        "step": 13,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 58,
+        "action": 0
+      },
+      {
+        "step": 14,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 59,
+        "action": 0
+      },
+      {
+        "step": 15,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 60,
+        "action": 0
+      },
+      {
+        "step": 16,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 61,
+        "action": 0
+      },
+      {
+        "step": 17,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 62,
+        "action": 0
+      },
+      {
+        "step": 18,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 63,
+        "action": 0
+      },
+      {
+        "step": 19,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 64,
+        "action": 0
+      },
+      {
+        "step": 20,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 65,
+        "action": 0
+      },
+      {
+        "step": 21,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 66,
+        "action": 0
+      },
+      {
+        "step": 22,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 67,
+        "action": 0
+      },
+      {
+        "step": 23,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 68,
+        "action": 0
+      },
+      {
+        "step": 24,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 69,
+        "action": 0
+      },
+      {
+        "step": 25,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 70,
+        "action": 0
+      },
+      {
+        "step": 26,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 71,
+        "action": 0
+      },
+      {
+        "step": 27,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 72,
+        "action": 0
+      },
+      {
+        "step": 28,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 73,
+        "action": 0
+      },
+      {
+        "step": 29,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 74,
+        "action": 0
+      },
+      {
+        "step": 30,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 75,
+        "action": 0
+      },
+      {
+        "step": 31,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 76,
+        "action": 0
+      },
+      {
+        "step": 32,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 77,
+        "action": 0
+      },
+      {
+        "step": 33,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 78,
+        "action": 0
+      },
+      {
+        "step": 34,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 79,
+        "action": 0
+      },
+      {
+        "step": 35,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 80,
+        "action": 0
+      },
+      {
+        "step": 36,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 81,
+        "action": 0
+      },
+      {
+        "step": 37,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 82,
+        "action": 0
+      },
+      {
+        "step": 38,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 83,
+        "action": 0
+      },
+      {
+        "step": 39,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 84,
+        "action": 0
+      },
+      {
+        "step": 40,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 85,
+        "action": 0
+      },
+      {
+        "step": 41,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 86,
+        "action": 0
+      },
+      {
+        "step": 42,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 87,
+        "action": 0
+      },
+      {
+        "step": 43,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 88,
+        "action": 0
+      },
+      {
+        "step": 44,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 89,
+        "action": 0
+      },
+      {
+        "step": 45,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 90,
+        "action": 0
+      },
+      {
+        "step": 46,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 91,
+        "action": 0
+      },
+      {
+        "step": 47,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 92,
+        "action": 0
+      },
+      {
+        "step": 48,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 93,
+        "action": 0
+      },
+      {
+        "step": 49,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 94,
+        "action": 0
+      },
+      {
+        "step": 50,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 95,
+        "action": 0
+      },
+      {
+        "step": 51,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 96,
+        "action": 0
+      },
+      {
+        "step": 52,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 97,
+        "action": 0
+      },
+      {
+        "step": 53,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 98,
+        "action": 0
+      },
+      {
+        "step": 54,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0104.pt",
+        "row": 99,
+        "action": 0
+      },
+      {
+        "step": 55,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 0,
+        "action": 0
+      },
+      {
+        "step": 56,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 1,
+        "action": 0
+      },
+      {
+        "step": 57,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 2,
+        "action": 0
+      },
+      {
+        "step": 58,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 3,
+        "action": 0
+      },
+      {
+        "step": 59,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 4,
+        "action": 0
+      },
+      {
+        "step": 60,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 5,
+        "action": 0
+      },
+      {
+        "step": 61,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 6,
+        "action": 0
+      },
+      {
+        "step": 62,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 7,
+        "action": 0
+      },
+      {
+        "step": 63,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 8,
+        "action": 0
+      },
+      {
+        "step": 64,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 9,
+        "action": 1
+      },
+      {
+        "step": 65,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 10,
+        "action": 0
+      },
+      {
+        "step": 66,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 11,
+        "action": 2
+      },
+      {
+        "step": 67,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 12,
+        "action": 0
+      },
+      {
+        "step": 68,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 13,
+        "action": 1
+      },
+      {
+        "step": 69,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 14,
+        "action": 0
+      },
+      {
+        "step": 70,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 15,
+        "action": 2
+      },
+      {
+        "step": 71,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 16,
+        "action": 0
+      },
+      {
+        "step": 72,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 17,
+        "action": 1
+      },
+      {
+        "step": 73,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 18,
+        "action": 0
+      },
+      {
+        "step": 74,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 19,
+        "action": 2
+      },
+      {
+        "step": 75,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 20,
+        "action": 0
+      },
+      {
+        "step": 76,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 21,
+        "action": 1
+      },
+      {
+        "step": 77,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 22,
+        "action": 0
+      },
+      {
+        "step": 78,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 23,
+        "action": 2
+      },
+      {
+        "step": 79,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 24,
+        "action": 0
+      },
+      {
+        "step": 80,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 25,
+        "action": 1
+      },
+      {
+        "step": 81,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 26,
+        "action": 0
+      },
+      {
+        "step": 82,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 27,
+        "action": 2
+      },
+      {
+        "step": 83,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 28,
+        "action": 0
+      },
+      {
+        "step": 84,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 29,
+        "action": 1
+      },
+      {
+        "step": 85,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 30,
+        "action": 0
+      },
+      {
+        "step": 86,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 31,
+        "action": 2
+      },
+      {
+        "step": 87,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 32,
+        "action": 0
+      },
+      {
+        "step": 88,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 33,
+        "action": 1
+      },
+      {
+        "step": 89,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 34,
+        "action": 0
+      },
+      {
+        "step": 90,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 35,
+        "action": 2
+      },
+      {
+        "step": 91,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 36,
+        "action": 0
+      },
+      {
+        "step": 92,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 37,
+        "action": 1
+      },
+      {
+        "step": 93,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 38,
+        "action": 0
+      },
+      {
+        "step": 94,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 39,
+        "action": 2
+      },
+      {
+        "step": 95,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 40,
+        "action": 0
+      },
+      {
+        "step": 96,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 41,
+        "action": 1
+      },
+      {
+        "step": 97,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 42,
+        "action": 0
+      },
+      {
+        "step": 98,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 43,
+        "action": 2
+      },
+      {
+        "step": 99,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 44,
+        "action": 0
+      },
+      {
+        "step": 100,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 45,
+        "action": 1
+      },
+      {
+        "step": 101,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 46,
+        "action": 0
+      },
+      {
+        "step": 102,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 47,
+        "action": 2
+      },
+      {
+        "step": 103,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 48,
+        "action": 0
+      },
+      {
+        "step": 104,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 49,
+        "action": 1
+      },
+      {
+        "step": 105,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 50,
+        "action": 0
+      },
+      {
+        "step": 106,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 51,
+        "action": 2
+      },
+      {
+        "step": 107,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 52,
+        "action": 0
+      },
+      {
+        "step": 108,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 53,
+        "action": 1
+      },
+      {
+        "step": 109,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 54,
+        "action": 0
+      },
+      {
+        "step": 110,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 55,
+        "action": 2
+      },
+      {
+        "step": 111,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 56,
+        "action": 0
+      },
+      {
+        "step": 112,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 57,
+        "action": 1
+      },
+      {
+        "step": 113,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 58,
+        "action": 0
+      },
+      {
+        "step": 114,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 59,
+        "action": 2
+      },
+      {
+        "step": 115,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 60,
+        "action": 0
+      },
+      {
+        "step": 116,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 61,
+        "action": 1
+      },
+      {
+        "step": 117,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 62,
+        "action": 0
+      },
+      {
+        "step": 118,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 63,
+        "action": 2
+      },
+      {
+        "step": 119,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 64,
+        "action": 0
+      },
+      {
+        "step": 120,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 65,
+        "action": 1
+      },
+      {
+        "step": 121,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 66,
+        "action": 0
+      },
+      {
+        "step": 122,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 67,
+        "action": 2
+      },
+      {
+        "step": 123,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 68,
+        "action": 0
+      },
+      {
+        "step": 124,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 69,
+        "action": 1
+      },
+      {
+        "step": 125,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 70,
+        "action": 0
+      },
+      {
+        "step": 126,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 71,
+        "action": 2
+      },
+      {
+        "step": 127,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 72,
+        "action": 0
+      },
+      {
+        "step": 128,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 73,
+        "action": 1
+      },
+      {
+        "step": 129,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 74,
+        "action": 0
+      },
+      {
+        "step": 130,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 75,
+        "action": 2
+      },
+      {
+        "step": 131,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 76,
+        "action": 0
+      },
+      {
+        "step": 132,
+        "shard": "runs/v83_spatial_stage2/datasets/train_600/shard_0105.pt",
+        "row": 77,
+        "action": 3
+      }
+    ]
+  },
+  "npz": {
+    "file": "t5_inputs.npz",
+    "sha256": "b3f074254eb29b37bd56af9010006eb42fe5f3dcd6d2b374fe592faffe48ae43",
+    "bytes": 434178
+  },
+  "arrays": {
+    "current_tokens": {
+      "shape": [
+        576,
+        384
+      ],
+      "dtype": "float16",
+      "source": "archived Train-600 token shard",
+      "definition": "Frozen shared-encoder tokens of the current 336x336 RGB observation, 24x24 patch grid, row-major."
+    },
+    "goal_tokens": {
+      "shape": [
+        3,
+        384
+      ],
+      "dtype": "float16",
+      "source": "archived Train-600 token shard",
+      "definition": "Foreground-weighted frozen-encoder tokens for the 14/28/56-px Goal reference canvases."
+    },
+    "history_vis": {
+      "shape": [
+        16,
+        768
+      ],
+      "dtype": "float16",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "Causal past visual descriptors: mean+max pooled Current tokens, slot 0 = t-1."
+    },
+    "history_pose": {
+      "shape": [
+        16,
+        10
+      ],
+      "dtype": "float32",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "Causal relative motion/pose history (6 dims) plus the executed action one-hot (4 dims)."
+    },
+    "history_action": {
+      "shape": [
+        16,
+        4
+      ],
+      "dtype": "float16",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "Executed-action one-hot history; slot 0 = t-1."
+    },
+    "history_mask": {
+      "shape": [
+        16
+      ],
+      "dtype": "uint8",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "Causal validity mask: 1 for real past slots, 0 for padding."
+    },
+    "gab": {
+      "shape": [
+        20
+      ],
+      "dtype": "float32",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "20-D Goal-Anchor Belief: 8 current bearing bins, 8 last-reliable bins, confidence, entropy, age/max_age, valid."
+    },
+    "map_feat": {
+      "shape": [
+        22
+      ],
+      "dtype": "float32",
+      "source": "Stage-2i aux/train sidecar",
+      "definition": "Anonymous landmark Top-5 retrieval: 5 x (similarity, relative forward, relative right, normalized distance), then top-1 similarity and top-1 minus top-2 margin."
+    }
+  },
+  "input_contract": {
+    "validator": "stage2j_model._validate_common_inputs",
+    "batch_wrapper": "unsqueeze(0) on every array",
+    "heatmap": null,
+    "network_state": null,
+    "model_input_arrays_only": [
+      "current_tokens",
+      "gab",
+      "goal_tokens",
+      "history_action",
+      "history_mask",
+      "history_pose",
+      "history_vis",
+      "map_feat"
+    ]
+  },
+  "final_test_read": false,
+  "exported_utc": "2026-10-20T01:06:04.217062+00:00"
+}
