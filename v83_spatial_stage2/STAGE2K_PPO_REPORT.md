@@ -411,6 +411,34 @@ Max-Quality / Heuristic 的 ΔJointR 95% CI 全部位于 0 以下——两者都
 PPO 从 0.1466 降到 0.1037（−0.0429）。60 个 Dev Episode 的选模对其余 120 个
 Dev Episode 存在明显选择偏差，PPO 更严重；因此不能只看 Dev60 的最佳值。
 
+### 最佳 vs 最后 Checkpoint（补充）
+
+| Checkpoint | SR | OSR | SPL | nDTW | E2E (ms) | JointR |
+|---|---:|---:|---:|---:|---:|---:|
+| DQN A best（Ep600） | 39.44% | 65.56% | 0.3942 | 0.4851 | 149.38 | **0.1116** |
+| DQN A last（Ep3500） | **46.11%** | **72.78%** | **0.4611** | 0.4753 | 146.87 | 0.1082 |
+| PPO best（Ep2000） | 38.33% | 68.33% | 0.3786 | 0.4223 | **127.45** | **0.1037** |
+| PPO last（Ep3500） | 40.00% | 67.78% | 0.3931 | 0.4304 | 136.22 | 0.0898 |
+
+DQN A 的 last 比 best 的 SR/OSR/SPL 更高，但 nDTW 略低，JointR 从 0.1116 降到
+0.1082；PPO last 的 SR 也略高于 best（40.00% vs 38.33%），但 nDTW 只略高、
+E2E 更高，JointR 从 0.1037 降到 0.0898。两个 last 都显著低于全部四个非特权
+Baseline（ΔJointR 95% CI 均低于 0）。
+
+逐 Episode 比较 last − best（n=180，95% CI）：
+
+| 算法 | JointR 差 | 95% CI | last 胜 / best 胜 |
+|---|---:|---|---:|
+| DQN A | −0.0034 | [−0.0544, +0.0465] | 104 / 76 |
+| PPO | −0.0139 | [−0.0637, +0.0377] | 76 / 98 |
+
+两边 last−best 都不显著，但 **best 按 JointR 选择仍是更优 Checkpoint**
+（DQN 0.1116 > 0.1082；PPO 0.1037 > 0.0898）。配套 Q 审计（另一会话）显示
+DQN best→last：Q mean **1.13 → 10.17**、Q max **2.43 → 21.74**、贪心动作
+一致率仅 **17.1%**——最后 Checkpoint 的策略已经明显漂移，不能把 last 当作
+best 的等价替代；PPO last 的 JointR 也低于 best。最终报告仍以 best Checkpoint
+为正式比较对象。
+
 **最终结论：**
 
 - DQN A 与 PPO 都 `not_converged`，都不能标记为有效最终策略，也未进入 Final Test。
