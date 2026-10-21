@@ -25,7 +25,7 @@ B/DQN、B/PPO 仍处于暂停状态（分别约 1,030 / 1,120 Episode），不�
 
 - 监听：`127.0.0.1:6006`
 - tmux session：`tb_stage2l_dashboard`
-- 进程 PID：`588396`（本次启动；以 `tensorboard_service.json` 为准）
+- 进程 PID：`596999`（当前；以 `tensorboard_service.json` 为准）
 - 采样参数：`--samples_per_plugin scalars=5000`
 - 日志：`runs/tensorboard/rl_stage2k_stage2l_dashboard/tensorboard.log`
 - 汇总事件：`runs/tensorboard/rl_stage2k_stage2l_dashboard/events/`
@@ -129,7 +129,52 @@ TensorBoard 只监听服务器 `127.0.0.1`，所以必须经过 VS Code 的端�
 优先排查视觉特征尺度、目标网络稳定性与 replay 分布；这是训练侧问题，不是
 TensorBoard 缺数据或绘图错误。
 
-## 6. 重新生成与启动
+## 6. 离线图片导出
+
+不需要启动 TensorBoard 也能从同一批 Event 离线导出比较图：
+
+```bash
+cd /home/ubuntu5/Workspace/MEC-V8.2
+
+# 只读现有 Event，导出图片；不重建 Event
+/home/ubuntu5/miniconda3/envs/DRL/bin/python \
+  v83_spatial_stage2/stage2l_tensorboard_dashboard.py --figures-only
+
+# 先重建 Event，再导出图片
+/home/ubuntu5/miniconda3/envs/DRL/bin/python \
+  v83_spatial_stage2/stage2l_tensorboard_dashboard.py --figures
+```
+
+输出目录：`runs/tensorboard/rl_stage2k_stage2l_dashboard/figures/`
+
+- **30 张图**：同一指标的所有 Run 画在同一张图上，方便比较 DQN / PPO 与
+  Pure MEC / Visual / A / C 设计。
+  - 通用 16 张：6 个训练指标 × 逐 Episode / MA100，加 4 个 Dev 验证指标。
+  - DQN 7 张：TD loss、Q mean（线性 + symlog）、Q max（线性 + symlog）、
+    grad norm、epsilon。
+  - PPO 7 张：policy loss、value loss、policy entropy、update entropy、
+    approx KL、clip fraction、explained variance。
+- **PNG**：300 dpi，适合快速检查。
+- **PDF**：矢量图，字体嵌入（`pdf.fonttype=42`），可直接用于论文排版。
+- **CSV**：每张图一个 `data/<figure>.csv`，保存全部绘图点，作为颜色对比度的
+  表格视图；`series_summary.csv` 是每条曲线的统计摘要。
+- **`FIGURE_INDEX.md`**：全部 30 张图的索引、Run 数、点数与文件链接。
+- **`figure_manifest.json`**：来源 tag、点数、首末 Episode、末值和极值。
+
+数据保留策略：
+
+| 图类型 | 每 Run 点数 |
+|---|---:|
+| 逐 Episode 训练图 | 3,500 |
+| MA100 训练图 | 3,401 |
+| Dev 验证图 | 18 |
+| PPO 更新诊断 | A 222 / C 218 |
+
+所有点直接来自 Event，没有插值或平滑。DQN 用实线，PPO 用虚线；Q mean / Q max
+同时提供线性图和 symlog 图，避免视觉 DQN 的约 2,000 量级 Q 值压扁其他 Run。
+图片目录在 `runs/` 下，不进入 Git，保留在服务器。
+
+## 7. 重新生成与启动
 
 ```bash
 cd /home/ubuntu5/Workspace/MEC-V8.2
@@ -146,12 +191,14 @@ bash v83_spatial_stage2/start_tensorboard_dashboard.sh
 `--samples_per_plugin scalars=5000`，在 tmux 中运行，关闭 SSH 终端后仍保留。
 
 重新生成只替换 `runs/tensorboard/rl_stage2k_stage2l_dashboard/events/`，
-不会改写原始 Event、Checkpoint 或 `training_history.json`。`runs/` 不进入
+不会改写原始 Event、Checkpoint 或 `training_history.json`。重建先写入
+`.events_build`，最后原子替换，TensorBoard 服务可以保持运行。`runs/` 不进入
 Git，Event 文件保留在服务器。
 
-## 7. 配置文件
+## 8. 配置文件
 
 - `v83_spatial_stage2/tensorboard_dashboard_config.json`：六组实验、标签、采样节奏
 - `v83_spatial_stage2/stage2l_tensorboard_dashboard.py`：汇总/重放脚本
 - `v83_spatial_stage2/start_tensorboard_dashboard.sh`：持久化启动脚本
 - `v83_spatial_stage2/verify_tensorboard_dashboard.py`：数据级服务检查（HTTP 外的标量点校验）
+- `runs/tensorboard/rl_stage2k_stage2l_dashboard/figures/FIGURE_INDEX.md`：离线图索引（运行生成，runs 不提交）
