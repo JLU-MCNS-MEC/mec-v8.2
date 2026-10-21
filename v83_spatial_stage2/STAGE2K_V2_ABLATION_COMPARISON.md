@@ -1,6 +1,6 @@
 # Stage-2k v2 视觉消融对照：A Pure MEC vs B +128-D Visual
 
-- 日期：2026-10-21T11:10:03.172470+00:00
+- 日期：2026-10-21T11:12:08.410806+00:00
 - 分支：`experiment/v83-spatial-foundation`
 - 两个变体共享 Train 3500 任务清单、随机顺序、种子、Train/Dev 拓扑、奖励、MLP 结构与 Dev60 验证。
 - 未读取 Stage-2j Final Test 300；Final Test 180 是否读取由预注册门槛决定。
@@ -89,7 +89,14 @@
 | best | +8.89 | +11.67 | +0.0891 | +0.0311 | -10.37 | +0.0570 |
 | last | +1.11 | +0.56 | +0.0111 | +0.0208 | -4.02 | +0.0309 |
 
-同一 Dev180 上的 Baseline JointR：Random 0.2010、Min-Latency 0.2477、Max-Quality 0.2256、Heuristic 0.2617、Oracle 0.4236（特权）。A best 0.1116 与 B best 0.1687 都低于 Random，也低于最强非特权 Min-Latency 0.2477；B 相对 A 的提升是真实的同清单差值，但尚未达到任何非特权 Baseline 的水平。
+同一 Dev180 上的 Baseline JointR：Random 0.2010、Min-Latency 0.2477、Max-Quality 0.2256、Heuristic 0.2617、Oracle 0.4236（特权）。A best 0.1116 与 B best 0.1687 都低于所有非特权 Baseline 的点估计；B 相对 A 的提升是真实的同清单差值，但尚未达到任何非特权 Baseline 的水平。
+
+| best Checkpoint | ΔJointR vs Random [95% CI] | vs Min-Latency | vs Max-Quality | vs Heuristic |
+|---|---:|---:|---:|---:|
+| A | -0.0894 [-0.1455, -0.0349] | -0.1360 [-0.1962, -0.0752] | -0.1140 [-0.1621, -0.0674] | -0.1500 [-0.2044, -0.0956] |
+| B | -0.0324 [-0.0836, +0.0171] | -0.0790 [-0.1304, -0.0267] | -0.0569 [-0.1083, -0.0045] | -0.0930 [-0.1443, -0.0388] |
+
+A best 对四个非特权 Baseline 的 95% CI 都完全位于 0 以下；B best 对 Min-Latency、Max-Quality、Heuristic 的 CI 也完全位于 0 以下，但对 Random 的 CI 为 [−0.0836, +0.0171]，跨 0，因此只能报告“点估计低于 Random”，不能声称显著优于 Random。两个变体都没有击败任何非特权 Baseline。
 
 ![Dev180 bars](figures/stage2k_v2_ablation/dev180_best_last.png)
 

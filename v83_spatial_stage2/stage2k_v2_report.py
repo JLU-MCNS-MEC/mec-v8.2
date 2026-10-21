@@ -948,9 +948,34 @@ def comparison_markdown(runs, decisions, figures, parity):
         "",
         "同一 Dev180 上的 Baseline JointR：Random 0.2010、Min-Latency 0.2477、"
         "Max-Quality 0.2256、Heuristic 0.2617、Oracle 0.4236（特权）。"
-        "A best 0.1116 与 B best 0.1687 都低于 Random，也低于最强非特权 "
-        "Min-Latency 0.2477；B 相对 A 的提升是真实的同清单差值，但尚未达到"
-        "任何非特权 Baseline 的水平。",
+        "A best 0.1116 与 B best 0.1687 都低于所有非特权 Baseline 的点估计；"
+        "B 相对 A 的提升是真实的同清单差值，但尚未达到任何非特权 Baseline 的水平。",
+        "",
+        "| best Checkpoint | ΔJointR vs Random [95% CI] | vs Min-Latency | "
+        "vs Max-Quality | vs Heuristic |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for key in ("A", "B"):
+        paired = {
+            item["strategy"]: item["delta_JointR"]
+            for item in runs[key]["evals"]["best"]["paired"]
+        }
+        cells = []
+        for strategy in ("random", "min_latency", "max_quality", "heuristic"):
+            item = paired[strategy]
+            cells.append(
+                f"{item['mean']:+.4f} [{item['low']:+.4f}, {item['high']:+.4f}]"
+            )
+        lines.append(
+            f"| {key} | " + " | ".join(cells) + " |"
+        )
+    lines += [
+        "",
+        "A best 对四个非特权 Baseline 的 95% CI 都完全位于 0 以下；"
+        "B best 对 Min-Latency、Max-Quality、Heuristic 的 CI 也完全位于 0 以下，"
+        "但对 Random 的 CI 为 [−0.0836, +0.0171]，跨 0，"
+        "因此只能报告“点估计低于 Random”，不能声称显著优于 Random。"
+        "两个变体都没有击败任何非特权 Baseline。",
         "",
         f"![Dev180 bars]({figures['dev180']})",
         "",
