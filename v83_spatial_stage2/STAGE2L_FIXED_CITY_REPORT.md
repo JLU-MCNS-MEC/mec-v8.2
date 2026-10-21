@@ -6,7 +6,8 @@
 协议：`STAGE2L_FIXED_CITY_PROTOCOL.md`  
 启动前报告：`STAGE2L_FIXED_CITY_SETUP.md`
 
-> 状态：A/DQN、A/PPO 继续训练到 3500 Episodes；B/DQN、B/PPO 已于
+> 状态：A/PPO 已完成 3500 Episodes（`plateaued_not_converged`，
+> best 0.1801 @ Ep1800）；A/DQN 继续跑到 3500；B/DQN、B/PPO 已于
 > 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
 > C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
 > `stage2l_progress_logger.py` 继续写 `PROGRESS.md`。本文档在训练/验证
@@ -164,6 +165,7 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 | A | 3000 | PPO | 0.1033 | 35.00% | 0.4086 | 122.1 | 0.3500 | 48.33% |
 | A | 3200 | PPO | 0.0980 | 36.67% | 0.4085 | 124.2 | 0.3667 | 55.00% |
 | A | 3400 | PPO | 0.1289 | 38.33% | 0.4374 | 123.4 | 0.3833 | 58.33% |
+| A | 3500 | PPO | 0.0627 | 30.00% | 0.3824 | 127.9 | 0.3000 | 53.33% |
 | B | 200 | DQN | 0.0402 | 43.33% | 0.4341 | 157.6 | 0.4316 | 58.33% |
 | B | 200 | PPO | 0.0089 | 43.33% | 0.4493 | 176.1 | 0.4333 | 65.00% |
 | B | 400 | DQN | 0.0390 | 40.00% | 0.4100 | 148.4 | 0.3994 | 55.00% |
@@ -241,6 +243,18 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
   它用于观察多拓扑训练是否稳定。
 - 完整 Baseline 对照必须在固定环境、同一 60 条 Dev 任务上单独运行，
   且只在训练收敛后解释。
+
+### A/PPO 最终状态（已完成 3500 Episodes）
+
+- 最终验证 Ep3500：JointR 0.0627 / SR 30.00% / nDTW 0.3824 /
+  E2E 127.9 ms / SPL 0.3000。
+- best Dev JointR：**0.1801（Ep1800）**；best checkpoint：
+  `runs/v83_spatial_stage2/stage2l_fixed_city/A/ppo/checkpoints/best.pt`。
+- `classify_status`：`plateaued_not_converged`，
+  `converged=False`，`stable_platform=False`，`reached_cap=True`。
+- 结论：A/PPO 跑满 3500 Episodes，但**未形成稳定平台**；0.1801 是
+  中途峰值，不能当作收敛成绩。后续固定环境内评估应同时报告
+  best checkpoint 与 final checkpoint，并明确这一区别。
 
 ---
 
