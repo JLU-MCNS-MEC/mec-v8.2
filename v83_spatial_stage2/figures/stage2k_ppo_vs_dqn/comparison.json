@@ -1,0 +1,238 @@
+{
+  "version": "stage2k-ppo-vs-dqn-comparison-v1",
+  "created_utc": "2026-10-21T04:07:10.520709+00:00",
+  "dqn": {
+    "name": "DQN A",
+    "run_dir": "runs/v83_spatial_stage2/stage2k_pure_mec_v2",
+    "episodes": 3500,
+    "best_episode": 600,
+    "best_joint": 0.13357302934868087,
+    "last_episode": 3500,
+    "last_joint": 0.11245644455914638,
+    "last3_trend": 0.008817729375051318,
+    "status": "not_converged",
+    "converged": false,
+    "policy_entropy_final": null,
+    "value_loss_final": null,
+    "approx_kl_final": null,
+    "episodes_trained": 3500,
+    "completed": true
+  },
+  "ppo": {
+    "name": "PPO",
+    "run_dir": "runs/v83_spatial_stage2/stage2k_ppo",
+    "episodes": 3500,
+    "best_episode": 2000,
+    "best_joint": 0.14663481488980284,
+    "last_episode": 3500,
+    "last_joint": 0.13294144663809754,
+    "last3_trend": 0.02457146369357732,
+    "status": "not_converged",
+    "converged": false,
+    "policy_entropy_final": 1.2903481785124529,
+    "value_loss_final": 0.007525888138227742,
+    "approx_kl_final": 0.014643722505376953,
+    "episodes_trained": 3500,
+    "completed": true
+  },
+  "dqn_eval": {
+    "episodes": 180,
+    "SR": 0.39444444444444443,
+    "OSR": 0.6555555555555556,
+    "SPL": 0.3942411605709981,
+    "nDTW": 0.48506233508045304,
+    "E2E_ms": 149.38095529839615,
+    "P95_ms": 222.72965871692546,
+    "delay_violation_rate": 0.7102318381811668,
+    "mean_steps": 161.23333333333332,
+    "JointR": 0.11160994683446268,
+    "model_usage": {
+      "Small": 5571,
+      "Large": 4507,
+      "Transformer-M": 5230,
+      "Transformer-S": 8712,
+      "Medium": 5002
+    },
+    "model_usage_ratio": {
+      "Small": 0.19195782509820136,
+      "Large": 0.15529598235821102,
+      "Transformer-M": 0.18020811797946384,
+      "Transformer-S": 0.30018606574322926,
+      "Medium": 0.1723520088208945
+    }
+  },
+  "ppo_eval": {
+    "episodes": 180,
+    "SR": 0.38333333333333336,
+    "OSR": 0.6833333333333333,
+    "SPL": 0.37856379455821254,
+    "nDTW": 0.4223018276576899,
+    "E2E_ms": 127.45393222107123,
+    "P95_ms": 191.47810456943034,
+    "delay_violation_rate": 0.5785109476483578,
+    "mean_steps": 166.92222222222222,
+    "JointR": 0.10366699710501187,
+    "model_usage": {
+      "Large": 11332,
+      "Transformer-S": 6357,
+      "Medium": 6086,
+      "Small": 3462,
+      "Transformer-M": 2809
+    },
+    "model_usage_ratio": {
+      "Large": 0.37715502895560143,
+      "Transformer-S": 0.2115755841043733,
+      "Medium": 0.20255608067629635,
+      "Small": 0.11522332423617121,
+      "Transformer-M": 0.09348998202755775
+    }
+  },
+  "paired_ppo_minus_dqn": {
+    "n": 180,
+    "wins": 105,
+    "losses": 73,
+    "ties": 2,
+    "delta_JointR": {
+      "mean": -0.007942949729450992,
+      "low": -0.06891477048445314,
+      "high": 0.05259510813669241
+    },
+    "delta_nDTW": {
+      "mean": -0.0627605074227632,
+      "low": -0.12457969468182141,
+      "high": -0.00205927813274256
+    },
+    "delta_SR": {
+      "mean": -0.011111111111111112,
+      "low": -0.08888888888888889,
+      "high": 0.06666666666666667
+    },
+    "delta_E2E_ms": {
+      "mean": -21.927023077324883,
+      "low": -29.999873475170975,
+      "high": -14.027657988925926
+    }
+  },
+  "baselines": {
+    "random": {
+      "episodes": 180,
+      "SR": 0.5555555555555556,
+      "nDTW": 0.5581870923479005,
+      "E2E_ms": 142.8715881202114,
+      "P95_ms": 246.01062267865478,
+      "delay_violation_rate": 0.652578056990811,
+      "mean_steps": 138.81666666666666,
+      "JointR": 0.201008122047372,
+      "model_usage": {
+        "Large": 5518,
+        "Medium": 4749,
+        "Small": 3672,
+        "Transformer-M": 5074,
+        "Transformer-S": 5974
+      },
+      "model_usage_ratio": {
+        "Large": 0.22083483411373914,
+        "Medium": 0.19005883059190778,
+        "Small": 0.14695641733701525,
+        "Transformer-M": 0.20306559410893665,
+        "Transformer-S": 0.23908432384840117
+      }
+    },
+    "min_latency": {
+      "episodes": 180,
+      "SR": 0.3611111111111111,
+      "nDTW": 0.4191592921490111,
+      "E2E_ms": 68.60323522466821,
+      "P95_ms": 94.176492290088,
+      "delay_violation_rate": 0.1474681976304189,
+      "mean_steps": 157.9777777777778,
+      "JointR": 0.24765120408734057,
+      "model_usage": {
+        "Medium": 7462,
+        "Small": 4597,
+        "Transformer-M": 6295,
+        "Transformer-S": 6478,
+        "Large": 3604
+      },
+      "model_usage_ratio": {
+        "Medium": 0.26241384160922776,
+        "Small": 0.16166127444084963,
+        "Transformer-M": 0.22137431424954282,
+        "Transformer-S": 0.22780981853987903,
+        "Large": 0.12674075116050076
+      }
+    },
+    "max_quality": {
+      "episodes": 180,
+      "SR": 0.5277777777777778,
+      "nDTW": 0.5417400840141121,
+      "E2E_ms": 126.46819797443996,
+      "P95_ms": 171.10709894620769,
+      "delay_violation_rate": 0.5512465206706842,
+      "mean_steps": 143.85555555555555,
+      "JointR": 0.22556958907801222,
+      "model_usage": {
+        "Transformer-M": 18451,
+        "Transformer-S": 6671,
+        "Medium": 115,
+        "Large": 657
+      },
+      "model_usage_ratio": {
+        "Transformer-M": 0.7125588939522669,
+        "Transformer-S": 0.2576272495558817,
+        "Medium": 0.0044411832857032514,
+        "Large": 0.025372673206148142
+      }
+    },
+    "heuristic": {
+      "episodes": 180,
+      "SR": 0.43333333333333335,
+      "nDTW": 0.4809549341026067,
+      "E2E_ms": 87.7181806852528,
+      "P95_ms": 134.96110605215517,
+      "delay_violation_rate": 0.2394301190640407,
+      "mean_steps": 154.17222222222222,
+      "JointR": 0.2616594823894747,
+      "model_usage": {
+        "Transformer-M": 10365,
+        "Transformer-S": 7805,
+        "Medium": 3996,
+        "Large": 3817,
+        "Small": 1768
+      },
+      "model_usage_ratio": {
+        "Transformer-M": 0.37350005405210623,
+        "Transformer-S": 0.2812511260855465,
+        "Medium": 0.14399481099780187,
+        "Large": 0.13754459298764007,
+        "Small": 0.06370941587690533
+      }
+    },
+    "oracle": {
+      "episodes": 180,
+      "SR": 0.6666666666666666,
+      "nDTW": 0.6496389930146397,
+      "E2E_ms": 90.43553640836446,
+      "P95_ms": 160.38951401173264,
+      "delay_violation_rate": 0.31346930059746436,
+      "mean_steps": 113.11666666666666,
+      "JointR": 0.42355015199372853,
+      "model_usage": {
+        "Large": 3128,
+        "Medium": 3706,
+        "Small": 3412,
+        "Transformer-M": 6049,
+        "Transformer-S": 4066
+      },
+      "model_usage_ratio": {
+        "Large": 0.15362703207111636,
+        "Medium": 0.18201463582338784,
+        "Small": 0.16757526644074455,
+        "Transformer-M": 0.2970875693728206,
+        "Transformer-S": 0.19969549629193065
+      }
+    }
+  },
+  "final_plot": true,
+  "final_test_read": false
+}
