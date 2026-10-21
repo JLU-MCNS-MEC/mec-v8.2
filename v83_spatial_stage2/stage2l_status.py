@@ -27,6 +27,7 @@ def main():
 
     payload = {}
     for config in args.configs:
+        paused = read_json(args.run_root / config / "PAUSED.json")
         for algorithm in ("dqn", "ppo"):
             run_dir = args.run_root / config / algorithm
             if not (run_dir / "progress.json").is_file():
@@ -35,7 +36,11 @@ def main():
                     "run_dir": str(run_dir),
                 }
                 continue
-            payload[f"{config}/{algorithm}"] = status_summary(run_dir)
+            entry = status_summary(run_dir)
+            if paused and paused.get("paused"):
+                entry["status"] = "已暂停(SIGSTOP)"
+                entry["paused"] = paused
+            payload[f"{config}/{algorithm}"] = entry
 
     if args.json:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
