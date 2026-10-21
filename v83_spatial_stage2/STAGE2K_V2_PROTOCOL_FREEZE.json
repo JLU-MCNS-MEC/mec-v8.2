@@ -27,7 +27,7 @@
     "order_seed": 40522062,
     "order_total": 3500,
     "early_stop_disabled": true,
-    "q_divergence_abs": 100000.0
+    "q_divergence_abs": 1000000.0
   },
   "convergence_criteria": {
     "completed_cap": true,
@@ -80,7 +80,7 @@
     {
       "path": "v83_spatial_stage2/STAGE2K_V2_PROTOCOL.md",
       "exists": true,
-      "sha256": "77a1fd85002b3e9d8ff661af4fa21114e1ce6fd69ff3a31979257e7dadc26b1b"
+      "sha256": "b2888185029cb2b0b18c80a708730da4c2d12336b429e5925229969e3f8c60de"
     },
     {
       "path": "v83_spatial_stage2/stage2k_pure_mec_v2_state.py",
@@ -135,7 +135,7 @@
     {
       "path": "v83_spatial_stage2/test_stage2k_v2_protocol.py",
       "exists": true,
-      "sha256": "5f7b38939365f963f1b5f5ab7ff87a283dfa1cf2b850105de3c0f54f0b86d302"
+      "sha256": "833dfafcb6bbb92e721374c5f6da88c8271ef3f8f560cffc07cb6a01609974a9"
     },
     {
       "path": "v83_spatial_stage2/stage2k_v2_preexperiment_audit.py",
@@ -207,5 +207,6 @@
     "device_name": "NVIDIA GeForce RTX 5090",
     "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39"
   },
-  "final_test_read": false
+  "final_test_read": false,
+  "post_training_update_note": "Protocol text aligned to the actual Q-divergence threshold (1e6); added protocol tests are hashed. Training/eval/state source hashes were unchanged during the formal runs."
 }

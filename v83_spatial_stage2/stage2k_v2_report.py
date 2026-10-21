@@ -210,12 +210,17 @@ def plot_validation_curves(runs, path):
         ax.set_xlabel("Training episode")
         if ymax is not None:
             ax.set_ylim(0.0, ymax)
-    axes[0, 0].legend(loc="lower right")
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    if handles:
+        fig.legend(
+            handles, labels, loc="lower center", ncol=2,
+            frameon=False, bbox_to_anchor=(0.5, 0.005),
+        )
     fig.suptitle(
         "固定 Dev60 上的 Validation 曲线（每个点对应一次真实评估）",
         fontsize=11, fontweight="bold", color=INK,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.tight_layout(rect=(0, 0.05, 1, 0.95))
     fig.savefig(path, dpi=180)
     plt.close(fig)
 
@@ -579,6 +584,36 @@ def run_markdown(key, run, figures, decision):
         f"早停禁用 = **{summary['early_stop_disabled']}**。",
         f"- 收敛门槛与 Final Test 决策：**{decision['decision']}**"
         f"（Final Test read = **{decision['final_test_read']}**）。",
+    ]
+    q_audit = run["q_audit"]
+    if q_audit is not None:
+        q_best = q_audit["checkpoints"]["best"]
+        q_last = q_audit["checkpoints"]["last"]
+        ratio = (
+            q_last["q_mean"] / q_best["q_mean"]
+            if q_best["q_mean"] else None
+        )
+        lines.append(
+            f"- Q 审计（固定 Dev 状态）：best→last Q mean "
+            f"**{q_best['q_mean']:.3f} → {q_last['q_mean']:.3f}**"
+            + (f"（{ratio:.1f}×）" if ratio is not None else "")
+            + f"，Q max **{q_best['q_max']:.3f} → "
+            f"{q_last['q_max']:.3f}**；贪心一致率 "
+            f"**{100*q_audit['best_last_greedy_agreement']:.2f}%**。"
+        )
+        if q_last["q_mean"] > 100.0 or q_last["q_max"] > 500.0:
+            lines.append(
+                "- **Q 尺度警告**：last Checkpoint 的 Q 尺度达到 "
+                f"{q_last['q_mean']:.1f}（mean）/ {q_last['q_max']:.1f}"
+                "（max），远超奖励量级，属于明显的 Q 过估计/尺度漂移；"
+                "虽然未触发 1e6 数值中止阈值，但**不能**据此认为策略收敛或可部署。"
+            )
+        elif ratio is not None and ratio > 5.0:
+            lines.append(
+                "- Q 尺度在 best→last 之间有明显增长，但不构成收敛证据；"
+                "收敛判定只看固定 Dev60 Validation 的稳定平台。"
+            )
+    lines += [
         "",
         "## 1. 状态空间",
         "",
@@ -892,6 +927,31 @@ def comparison_markdown(runs, decisions, figures, parity):
             )
     lines += [
         "",
+        "### 4.1 B − A 的配对差值（同一 Dev180 清单）",
+        "",
+        "| Checkpoint | ΔSR (pp) | ΔOSR (pp) | ΔSPL | ΔnDTW | "
+        "ΔE2E (ms) | ΔJointR |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for which in ("best", "last"):
+        a = runs["A"]["evals"][which]["overall"]
+        b = runs["B"]["evals"][which]["overall"]
+        lines.append(
+            f"| {which} | {100*(b['SR']-a['SR']):+.2f} | "
+            f"{100*(b['OSR']-a['OSR']):+.2f} | "
+            f"{b['SPL']-a['SPL']:+.4f} | "
+            f"{b['nDTW']-a['nDTW']:+.4f} | "
+            f"{b['E2E_ms']-a['E2E_ms']:+.2f} | "
+            f"{b['JointR']-a['JointR']:+.4f} |"
+        )
+    lines += [
+        "",
+        "同一 Dev180 上的 Baseline JointR：Random 0.2010、Min-Latency 0.2477、"
+        "Max-Quality 0.2256、Heuristic 0.2617、Oracle 0.4236（特权）。"
+        "A best 0.1116 与 B best 0.1687 都低于 Random，也低于最强非特权 "
+        "Min-Latency 0.2477；B 相对 A 的提升是真实的同清单差值，但尚未达到"
+        "任何非特权 Baseline 的水平。",
+        "",
         f"![Dev180 bars]({figures['dev180']})",
         "",
         "## 5. Q 值稳定性",
@@ -919,6 +979,27 @@ def comparison_markdown(runs, decisions, figures, parity):
         "Q 审计使用同一组固定 Dev 状态（确定性 Min-Latency 行为策略），"
         "best/last 在完全相同的状态上前向；不同变体的 Q 尺度不直接可比，"
         "稳定性只在同一变体内部比较。",
+        "",
+        f"- A 的训练 Q mean 从 Ep200 的 "
+        f"{runs['A']['train'][199]['q_mean']:.3f} 升到 Ep3500 的 "
+        f"{runs['A']['train'][-1]['q_mean']:.3f}；best→last 审计 Q mean "
+        f"{runs['A']['q_audit']['checkpoints']['best']['q_mean']:.2f}→"
+        f"{runs['A']['q_audit']['checkpoints']['last']['q_mean']:.2f}，"
+        "属于中等尺度漂移。",
+        f"- B 的训练 Q mean 从 Ep200 的 "
+        f"{runs['B']['train'][199]['q_mean']:.3f} 升到 Ep3500 的 "
+        f"{runs['B']['train'][-1]['q_mean']:.3f}（约 "
+        f"{runs['B']['train'][-1]['q_mean']/runs['B']['train'][199]['q_mean']:.0f}×），"
+        f"TD Loss 从 {runs['B']['train'][199]['loss']:.4f} 升到 "
+        f"{runs['B']['train'][-1]['loss']:.2f}，梯度范数从 "
+        f"{runs['B']['train'][199]['grad_norm']:.3f} 升到 "
+        f"{runs['B']['train'][-1]['grad_norm']:.1f}。best→last 审计 Q mean "
+        f"{runs['B']['q_audit']['checkpoints']['best']['q_mean']:.2f}→"
+        f"{runs['B']['q_audit']['checkpoints']['last']['q_mean']:.2f}、Q max "
+        f"{runs['B']['q_audit']['checkpoints']['best']['q_max']:.2f}→"
+        f"{runs['B']['q_audit']['checkpoints']['last']['q_max']:.2f}。"
+        "**这是明显的 Q 过估计/尺度漂移，不是收敛。** 它未触发预注册的 "
+        "1e6 数值中止阈值，但足以否定 B 作为可部署候选。",
         "",
         "## 6. MEC 选择频率",
         "",
@@ -974,8 +1055,10 @@ def comparison_markdown(runs, decisions, figures, parity):
         "但保留了 current/goal/history 视觉 token 的池化信息。",
         "- 能力先验来自 Stage-2j Dev Val 180（seeds 2,000,000+），与 Stage-2k "
         "Train/Dev/Test（5M/6M/7M）不相交，且 `final_test_read=false`。",
-        "- Q 值尺度随状态维度、奖励尺度和探索分布变化；本报告不把 Q 上升单独"
-        "解释为收敛或发散，收敛只看固定 Dev Validation 的稳定平台。",
+        "- Q 值尺度随状态维度、奖励尺度和探索分布变化；本报告不把 Q 上升"
+        "当作收敛。B 的 Q 绝对尺度（审计约 505–741，训练末 1726）和约 669× "
+        "的增长已超出可解释的尺度差异，标记为明显的 Q 过估计/尺度漂移；"
+        "A 也有约 60× 的增长，但绝对尺度较小。两者都未形成收敛平台。",
         "- 若未满足 G1/G2，Final Test 180 保持未读取；本报告不给出测试集成绩。",
         "",
         "## 9. 产物",
