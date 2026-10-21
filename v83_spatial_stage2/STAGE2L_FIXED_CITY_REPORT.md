@@ -6,8 +6,9 @@
 协议：`STAGE2L_FIXED_CITY_PROTOCOL.md`  
 启动前报告：`STAGE2L_FIXED_CITY_SETUP.md`
 
-> 状态：A/PPO 已完成 3500 Episodes（`plateaued_not_converged`，
-> best 0.1801 @ Ep1800）；A/DQN 继续跑到 3500；B/DQN、B/PPO 已于
+> 状态：A/PPO（best 0.1801 @ Ep1800）与 A/DQN（best 0.0860 @ Ep2400）
+> 均已完成 3500 Episodes，最终状态都是 `plateaued_not_converged`；
+> B/DQN、B/PPO 已于
 > 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
 > C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
 > `stage2l_progress_logger.py` 继续写 `PROGRESS.md`。本文档在训练/验证
@@ -161,6 +162,7 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 | A | 3000 | DQN | 0.0004 | 33.33% | 0.3623 | 144.8 | 0.3333 | 50.00% |
 | A | 3200 | DQN | -0.0357 | 25.00% | 0.3266 | 144.9 | 0.2495 | 43.33% |
 | A | 3400 | DQN | 0.0356 | 33.33% | 0.3875 | 140.8 | 0.3333 | 58.33% |
+| A | 3500 | DQN | 0.0068 | 33.33% | 0.3698 | 145.2 | 0.3206 | 60.00% |
 | A | 2400 | PPO | 0.1201 | 43.33% | 0.4374 | 126.9 | 0.4333 | 66.67% |
 | A | 2600 | PPO | 0.1546 | 45.00% | 0.4473 | 117.1 | 0.4280 | 65.00% |
 | A | 2800 | PPO | 0.1284 | 36.67% | 0.4087 | 112.1 | 0.3667 | 56.67% |
@@ -266,6 +268,17 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 - 结论：A/PPO 跑满 3500 Episodes，但**未形成稳定平台**；0.1801 是
   中途峰值，不能当作收敛成绩。后续固定环境内评估应同时报告
   best checkpoint 与 final checkpoint，并明确这一区别。
+
+### A/DQN 最终状态（已完成 3500 Episodes）
+
+- 最终验证 Ep3500：JointR 0.0068 / SR 33.33% / nDTW 0.3698 /
+  E2E 145.2 ms / SPL 0.3206。
+- best Dev JointR：**0.0860（Ep2400）**；best checkpoint：
+  `runs/v83_spatial_stage2/stage2l_fixed_city/A/dqn/checkpoints/best.pt`。
+- `classify_status`：`plateaued_not_converged`，
+  `converged=False`，`stable_platform=False`，`reached_cap=True`。
+- 结论：A/DQN 也跑满 3500，但**未形成稳定平台**；明显弱于 A/PPO，
+  best checkpoint 仍取中途的 Ep2400。
 
 ---
 
