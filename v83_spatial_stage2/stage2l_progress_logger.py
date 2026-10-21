@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from v83_spatial_stage2.stage2k_common import utc_now
+import time as _time
 from v83_spatial_stage2.stage2l_fixed_city import STAGE2L_ROOT
 
 
@@ -58,13 +58,18 @@ def _parse_existing(path: Path) -> dict:
     return last
 
 
+def _now_local():
+    return _time.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+
 def _row(config, algorithm, record, best):
+    best_text = "-" if best is None else f"{float(best):.4f}"
     return (
-        f"| {utc_now()} | {config} | {algorithm.upper()} | "
+        f"| {_now_local()} | {config} | {algorithm.upper()} | "
         f"{record.get('episode')} | {record.get('joint_reward', 0):.4f} | "
         f"{100*record.get('SR', 0):.2f}% | {record.get('nDTW', 0):.4f} | "
         f"{record.get('E2E_ms', 0):.1f} | {record.get('SPL', 0):.4f} | "
-        f"{best if best is not None else '-'} |\n"
+        f"{best_text} |\n"
     )
 
 
