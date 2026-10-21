@@ -20,6 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from v83_spatial_stage2.stage2k_common import (
+    MAX_STEPS,
     MODEL_NAMES,
     SCENARIOS,
     atomic_write_json,
@@ -56,7 +57,17 @@ def state_dim_for(mode):
 
 def collect_states(args):
     _, capability = load_capability_prior(args.capability_prior)
-    specs = dev_validation_specs()[: int(args.episodes)]
+    all_specs = dev_validation_specs()
+    specs = []
+    for scenario in SCENARIOS:
+        scenario_specs = [
+            item for item in all_specs if item["scenario"] == scenario
+        ]
+        specs.extend(scenario_specs[: int(args.episodes)])
+    per_episode = max(
+        1, int(np.ceil(float(args.max_states) / max(len(specs), 1)))
+    )
+    stride = max(1, MAX_STEPS // per_episode)
     topologies = {
         scenario: load_topology(scenario, "dev") for scenario in SCENARIOS
     }
@@ -88,21 +99,29 @@ def collect_states(args):
                 args.state_mode == "visual_ablation_v2"
             ),
         )
+        step_index = 0
+        states_this_episode = 0
         while True:
             if len(states) >= int(args.max_states):
                 break
-            state = np.asarray(
-                runner.step_data["state"], dtype=np.float32
-            )
-            mask = np.asarray(runner.step_data["mask"], dtype=bool)
-            states.append(state.copy())
-            masks.append(mask.copy())
-            node_models.append([
-                node["model_type"] for node in runner.nodes
-            ])
-            episodes.append(spec["episode_uid"])
+            if (
+                states_this_episode < per_episode
+                and step_index % stride == 0
+            ):
+                state = np.asarray(
+                    runner.step_data["state"], dtype=np.float32
+                )
+                mask = np.asarray(runner.step_data["mask"], dtype=bool)
+                states.append(state.copy())
+                masks.append(mask.copy())
+                node_models.append([
+                    node["model_type"] for node in runner.nodes
+                ])
+                episodes.append(spec["episode_uid"])
+                states_this_episode += 1
             action = runner.select_node("min_latency")
             transition = runner.apply(action)
+            step_index += 1
             if transition["done"]:
                 break
         if len(states) >= int(args.max_states):
@@ -120,11 +139,12 @@ def checkpoint_stats(net, states, masks):
     greedy = []
     q_abs_max = 0.0
     finite = True
+    device = next(net.parameters()).device
     with torch.inference_mode():
         for state, mask in zip(states, masks):
             tensor = torch.from_numpy(
                 np.asarray(state, dtype=np.float32)
-            ).unsqueeze(0)
+            ).unsqueeze(0).to(device)
             q = net(tensor)[0].detach().cpu().numpy()
             available = np.where(mask)[0]
             if len(available) == 0:
@@ -180,7 +200,10 @@ def main():
     )
     parser.add_argument("--capability-prior", type=Path,
                         default=CAPABILITY_PRIOR_PATH)
-    parser.add_argument("--episodes", type=int, default=5)
+    parser.add_argument(
+        "--episodes", type=int, default=6,
+        help="Validation episodes per scenario used for state collection.",
+    )
     parser.add_argument("--max-states", type=int, default=60)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--output", type=Path, default=None)
