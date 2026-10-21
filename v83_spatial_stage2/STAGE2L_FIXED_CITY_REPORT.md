@@ -6,10 +6,10 @@
 协议：`STAGE2L_FIXED_CITY_PROTOCOL.md`  
 启动前报告：`STAGE2L_FIXED_CITY_SETUP.md`
 
-> 状态：A/PPO（best 0.1801 @ Ep1800）与 A/DQN（best 0.0860 @ Ep2400）
-> 均已完成 3500 Episodes，最终状态都是 `plateaued_not_converged`；
-> C/PPO 也已完成 3500（best 0.1636 @ Ep1800，同样
-> `plateaued_not_converged`）；C/DQN 继续训练；B/DQN、B/PPO 已于
+> 状态：A/PPO（best 0.1801 @ Ep1800）、A/DQN（best 0.0860 @ Ep2400）、
+> C/PPO（best 0.1636 @ Ep1800）、C/DQN（best 0.1462 @ Ep3200）
+> 均已完成 3500 Episodes，最终状态全部是 `plateaued_not_converged`；
+> B/DQN、B/PPO 已于
 > 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
 > C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
 > `stage2l_progress_logger.py` 继续写 `PROGRESS.md`。本文档在训练/验证
@@ -210,6 +210,7 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 | C | 3000 | DQN | 0.1437 | 40.00% | 0.4710 | 130.9 | 0.4000 | 55.00% |
 | C | 3200 | DQN | **0.1462** | 36.67% | 0.4707 | 129.8 | 0.3667 | 53.33% |
 | C | 3400 | DQN | 0.0886 | 35.00% | 0.4093 | 128.3 | 0.3420 | 60.00% |
+| C | 3500 | DQN | 0.1088 | 41.67% | 0.4361 | 130.9 | 0.4167 | 60.00% |
 | C | 2600 | PPO | 0.0533 | 31.67% | 0.4034 | 140.1 | 0.3167 | 50.00% |
 | C | 2800 | PPO | 0.0816 | 35.00% | 0.4217 | 136.0 | 0.3500 | 55.00% |
 | C | 3000 | PPO | 0.1077 | 41.67% | 0.4758 | 147.2 | 0.4167 | 68.33% |
@@ -305,6 +306,17 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 - 结论：C/PPO 跑满 3500，但**未形成稳定平台**；Ep1600–1800 的
   0.1545–0.1636 是中途峰值，最终验证只有 0.0940。
 
+### C/DQN 最终状态（已完成 3500 Episodes）
+
+- 最终验证 Ep3500：JointR 0.1088 / SR 41.67% / nDTW 0.4361 /
+  E2E 130.9 ms / SPL 0.4167。
+- best Dev JointR：**0.1462（Ep3200）**；best checkpoint：
+  `runs/v83_spatial_stage2/stage2l_fixed_city/C/dqn/checkpoints/best.pt`。
+- `classify_status`：`plateaued_not_converged`，
+  `converged=False`，`stable_platform=False`，`reached_cap=True`。
+- 结论：C/DQN 跑满 3500，但**未形成稳定平台**；最终验证 0.1088
+  高于 A/DQN 的 0.0068，但 best 低于 C/PPO 的 0.1636。
+
 ---
 
 ## 5. 配置 B 暂停记录（2026-10-21 13:16）
@@ -340,8 +352,8 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 
 ## 6. 待完成
 
-- [ ] 每 200 Episodes 记录 DQN/PPO 的 Validation JointR、SR、nDTW、E2E；
-- [ ] 训练结束后判断是否形成稳定平台（不以早停作为收敛证据）；
+- [x] 每 200 Episodes 记录 DQN/PPO 的 Validation JointR、SR、nDTW、E2E；
+- [x] 训练结束后判断是否形成稳定平台（A/C 均 `plateaued_not_converged`）；
 - [ ] 在固定城市、固定配置拓扑、独立 Dev 任务上评估 DQN、PPO 与五种 Baseline；
 - [ ] 生成收敛曲线与 Baseline 对照表；
 - [ ] 仅在固定环境内 baseline 成立后，另行规划新拓扑/新城市泛化；
