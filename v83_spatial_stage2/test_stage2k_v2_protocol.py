@@ -15,6 +15,7 @@ from v83_spatial_stage2.stage2k_common import (
     BANDS,
     SCENARIOS,
     load_split_specs,
+    summarize_episodes,
 )
 from v83_spatial_stage2.stage2k_jointr_v2_agent import epsilon_at
 from v83_spatial_stage2.stage2k_jointr_v2_order import (
@@ -145,6 +146,37 @@ class CapabilityPriorProtocolTest(unittest.TestCase):
             self.assertEqual(
                 set(values), {"sr", "osr", "spl", "ndtw"}
             )
+
+
+
+class SummarizeEpisodesTest(unittest.TestCase):
+    def test_osr_spl_and_usage_ratio_are_reported(self):
+        rows = [
+            {
+                "success": True, "osr": True, "spl": 0.5, "ndtw": 0.6,
+                "mean_e2e_ms": 100.0, "p95_e2e_ms": 120.0,
+                "delay_violation_rate": 0.5, "steps": 10,
+                "model_usage": {"Small": 2, "Large": 1},
+            },
+            {
+                "success": False, "osr": False, "spl": 0.0, "ndtw": 0.2,
+                "mean_e2e_ms": 200.0, "p95_e2e_ms": 250.0,
+                "delay_violation_rate": 1.0, "steps": 20,
+                "model_usage": {"Large": 3},
+            },
+        ]
+        summary = summarize_episodes(rows)
+        self.assertAlmostEqual(summary["SR"], 0.5)
+        self.assertAlmostEqual(summary["OSR"], 0.5)
+        self.assertAlmostEqual(summary["SPL"], 0.25)
+        self.assertAlmostEqual(summary["nDTW"], 0.4)
+        self.assertAlmostEqual(summary["E2E_ms"], 150.0)
+        self.assertAlmostEqual(
+            summary["JointR"], 0.4 - 0.25 * 150.0 / 100.0
+        )
+        ratio = summary["model_usage_ratio"]
+        self.assertAlmostEqual(ratio["Small"], 2.0 / 6.0)
+        self.assertAlmostEqual(ratio["Large"], 4.0 / 6.0)
 
 
 if __name__ == "__main__":
