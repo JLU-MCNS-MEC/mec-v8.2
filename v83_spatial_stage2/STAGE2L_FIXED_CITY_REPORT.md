@@ -6,9 +6,10 @@
 协议：`STAGE2L_FIXED_CITY_PROTOCOL.md`  
 启动前报告：`STAGE2L_FIXED_CITY_SETUP.md`
 
-> 状态：A 的 DQN 与 PPO 继续训练；B/DQN、B/PPO 已于
-> 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint），
-> C 因监督脚本仍把 B 视为 running 而保持 queued。本文档在训练/验证
+> 状态：A/DQN、A/PPO 继续训练到 3500 Episodes；B/DQN、B/PPO 已于
+> 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
+> C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
+> `stage2l_progress_logger.py` 继续写 `PROGRESS.md`。本文档在训练/验证
 > 推进后更新，收敛结论与 Baseline 对照表以最终版本为准。
 
 ---
@@ -113,16 +114,19 @@ python v83_spatial_stage2/stage2l_status.py
 当前启动顺序：
 
 1. A/DQN、A/PPO 已启动（2026-10-21 11:40 本地时间，PID 439796 / 439797），
-   继续训练；
+   继续训练到 3500 Episodes；
 2. 旧 Stage-2k DQN 已完成 3500 Episodes 并退出；B/DQN、B/PPO
    于约 12:07 启动（PID 446206 / 446207）；
 3. **2026-10-21 13:16：按用户决定，B/DQN（Ep1030）与 B/PPO（Ep1120）
    以 SIGSTOP 暂停**；checkpoint、TensorBoard、日志全部保留；
-4. 监督脚本仍把 B 视为 running，因此 C/DQN、C/PPO 保持 queued，
-   不会自动启动。
+4. **2026-10-21 13:19：手动启动 C/DQN、C/PPO**（PID 469303 / 469304），
+   同样跑到 3500 Episodes；
+5. 原监督脚本已停止，避免 A 完成后重复启动 C；改由
+   `stage2l_progress_logger.py` 持续把 A/C 验证写入 `PROGRESS.md`。
 
-A 的验证每 200 Episodes 写入 `PROGRESS.md`。B 暂停的 PID、checkpoint
-和恢复/终止命令见 `runs/v83_spatial_stage2/stage2l_fixed_city/PAUSE_NOTES.md`。
+B 暂停的 PID、checkpoint 和恢复/终止命令见
+`runs/v83_spatial_stage2/stage2l_fixed_city/PAUSE_NOTES.md`；C 的启动记录见
+`runs/v83_spatial_stage2/stage2l_fixed_city/C/LAUNCH.json`。
 
 ### 固定 Dev 验证记录
 
@@ -196,11 +200,23 @@ A 的验证每 200 Episodes 写入 `PROGRESS.md`。B 暂停的 PID、checkpoint
   但仍保留 CUDA 上下文/显存。
 - Checkpoint、TensorBoard、`training_history.json`、`progress.json`
   全部保留，未删除、未覆盖。
-- 监督脚本仍把 B 视为 running，C 保持 queued；A/DQN、A/PPO 不受影响。
+- A/DQN、A/PPO 不受影响。
 - 恢复：`kill -CONT 446206 446207`。
 - 若确认不再恢复并需要释放显存：`kill -TERM 446206 446207`，之后可用
   `last_full.pt` 续训。
 - 详细记录：`runs/v83_spatial_stage2/stage2l_fixed_city/PAUSE_NOTES.md`。
+
+### C 启动记录（2026-10-21 13:19）
+
+- 原监督脚本停止后，C/DQN、C/PPO 手动启动：
+  - PID 469303 / 469304
+  - 参数：`--config C --max-episodes 3500 --validation-every 200 --threads 4`
+  - 日志：`logs/C_dqn.log`、`logs/C_ppo.log`
+  - 启动记录：`C/LAUNCH.json`
+- C 使用三种部署场景（Balanced / Quality-rich / Tradeoff-stress），
+  每种一张固定拓扑；任务清单、任务顺序与奖励与 A/B 相同。
+- A 完成后不会再触发 C 的重复启动；验证由
+  `stage2l_progress_logger.py` 写入 `PROGRESS.md`。
 
 ---
 
