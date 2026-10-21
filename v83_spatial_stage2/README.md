@@ -308,6 +308,7 @@ shaping.
 - Report/figures: `python v83_spatial_stage2/stage2l_report.py`
 - Training curves / diagnostics: `STAGE2L_TRAINING_CURVES_ANALYSIS.md`
   (`python v83_spatial_stage2/stage2l_plot_training_curves.py`)
+- TensorBoard dashboard (six Stage-2k/2l runs): `TENSORBOARD_DASHBOARD.md`
 - Dev evaluation: `python v83_spatial_stage2/stage2l_eval.py --config A --split dev`
 
 All run artifacts live under `runs/v83_spatial_stage2/stage2l_fixed_city/`

@@ -1,0 +1,151 @@
+{
+  "version": "stage2k-stage2l-tensorboard-dashboard-v1",
+  "dashboard_root": "runs/tensorboard/rl_stage2k_stage2l_dashboard",
+  "events_root": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events",
+  "session": "tb_stage2l_dashboard",
+  "preferred_port": 6006,
+  "host": "127.0.0.1",
+  "log": "runs/tensorboard/rl_stage2k_stage2l_dashboard/tensorboard.log",
+  "runs": [
+    {
+      "key": "01_Stage2k_V2_PureMEC_DQN_384D",
+      "label": "Stage-2k V2 · Pure MEC DQN (384D)",
+      "algorithm": "dqn",
+      "state": "Pure MEC v2：384-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2k V2 ToyUAVEnv：每个 Episode 重新生成城市与目标；不是 Stage-2l 固定城市",
+      "topology": "Balanced / Quality-rich / Tradeoff-stress 三部署场景；每个场景一张固定 Train 拓扑，验证使用各自的 Dev 拓扑",
+      "validation": "60 Dev episodes（6/10/4 per scenario）",
+      "protocol": "stage2k-v2-3500-no-early-stop",
+      "history": "runs/v83_spatial_stage2/stage2k_pure_mec_v2/training_history.json",
+      "original_tensorboard": "runs/tensorboard/association_stage2k_pure_mec_v2",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/01_Stage2k_V2_PureMEC_DQN_384D",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    },
+    {
+      "key": "02_Stage2k_V2_PureMEC_Visual_DQN_512D",
+      "label": "Stage-2k V2 · Pure MEC + Visual DQN (512D)",
+      "algorithm": "dqn",
+      "state": "128-D frozen VisualProjector + 384-D Pure MEC v2 = 512-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2k V2 ToyUAVEnv：每个 Episode 重新生成城市与目标；不是 Stage-2l 固定城市",
+      "topology": "Balanced / Quality-rich / Tradeoff-stress 三部署场景；每个场景一张固定 Train 拓扑，验证使用各自的 Dev 拓扑",
+      "validation": "60 Dev episodes（6/10/4 per scenario）",
+      "protocol": "stage2k-v2-3500-no-early-stop",
+      "history": "runs/v83_spatial_stage2/stage2k_visual_ablation_v2/training_history.json",
+      "original_tensorboard": "runs/tensorboard/association_stage2k_visual_ablation_v2",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/02_Stage2k_V2_PureMEC_Visual_DQN_512D",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    },
+    {
+      "key": "03_Stage2l_A_DQN",
+      "label": "Stage-2l A · DQN",
+      "algorithm": "dqn",
+      "state": "Pure MEC v2：384-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2l 固定城市：map_seed=10,000,001；task_seed 决定起点、航向与目标；城市地标/道路/背景固定",
+      "topology": "Balanced 单张固定拓扑 A_fixed（训练与验证共用）",
+      "validation": "60 条独立 Dev 任务（20 Short / 20 Medium / 20 Long）",
+      "protocol": "stage2l-fixed-city-v1",
+      "history": "runs/v83_spatial_stage2/stage2l_fixed_city/A/dqn/training_history.json",
+      "original_tensorboard": "runs/v83_spatial_stage2/stage2l_fixed_city/A/dqn/tensorboard",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/03_Stage2l_A_DQN",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    },
+    {
+      "key": "04_Stage2l_A_PPO",
+      "label": "Stage-2l A · PPO",
+      "algorithm": "ppo",
+      "state": "Pure MEC v2：384-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2l 固定城市：map_seed=10,000,001；task_seed 决定起点、航向与目标；城市地标/道路/背景固定",
+      "topology": "Balanced 单张固定拓扑 A_fixed（训练与验证共用）",
+      "validation": "60 条独立 Dev 任务（20 Short / 20 Medium / 20 Long）",
+      "protocol": "stage2l-fixed-city-v1",
+      "history": "runs/v83_spatial_stage2/stage2l_fixed_city/A/ppo/training_history.json",
+      "original_tensorboard": "runs/v83_spatial_stage2/stage2l_fixed_city/A/ppo/tensorboard",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/04_Stage2l_A_PPO",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    },
+    {
+      "key": "05_Stage2l_C_DQN",
+      "label": "Stage-2l C · DQN",
+      "algorithm": "dqn",
+      "state": "Pure MEC v2：384-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2l 固定城市：map_seed=10,000,001；task_seed 决定起点、航向与目标；城市地标/道路/背景固定",
+      "topology": "Balanced / Quality-rich / Tradeoff-stress 三种部署场景；每种各一张固定拓扑（C_balanced / C_quality_rich / C_tradeoff_stress）",
+      "validation": "60 条独立 Dev 任务（20 Short / 20 Medium / 20 Long）",
+      "protocol": "stage2l-fixed-city-v1",
+      "history": "runs/v83_spatial_stage2/stage2l_fixed_city/C/dqn/training_history.json",
+      "original_tensorboard": "runs/v83_spatial_stage2/stage2l_fixed_city/C/dqn/tensorboard",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/05_Stage2l_C_DQN",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    },
+    {
+      "key": "06_Stage2l_C_PPO",
+      "label": "Stage-2l C · PPO",
+      "algorithm": "ppo",
+      "state": "Pure MEC v2：384-D MLP 输入 + 20-D 可用性 mask",
+      "environment": "Stage-2l 固定城市：map_seed=10,000,001；task_seed 决定起点、航向与目标；城市地标/道路/背景固定",
+      "topology": "Balanced / Quality-rich / Tradeoff-stress 三种部署场景；每种各一张固定拓扑（C_balanced / C_quality_rich / C_tradeoff_stress）",
+      "validation": "60 条独立 Dev 任务（20 Short / 20 Medium / 20 Long）",
+      "protocol": "stage2l-fixed-city-v1",
+      "history": "runs/v83_spatial_stage2/stage2l_fixed_city/C/ppo/training_history.json",
+      "original_tensorboard": "runs/v83_spatial_stage2/stage2l_fixed_city/C/ppo/tensorboard",
+      "dashboard_events": "runs/tensorboard/rl_stage2k_stage2l_dashboard/events/06_Stage2l_C_PPO",
+      "train_episodes": 3500,
+      "validation_points": 18,
+      "missing_metrics": []
+    }
+  ],
+  "tags": {
+    "all_agents": [
+      "train/jointr",
+      "train/jointr_ma100",
+      "train/navigation_reward",
+      "train/latency_penalty",
+      "train/sr",
+      "train/sr_ma100",
+      "train/ndtw",
+      "train/ndtw_ma100",
+      "train/e2e_ms",
+      "train/e2e_ms_ma100"
+    ],
+    "dqn": [
+      "dqn/td_loss",
+      "dqn/q_mean",
+      "dqn/q_max",
+      "dqn/grad_norm",
+      "dqn/epsilon"
+    ],
+    "ppo": [
+      "ppo/policy_entropy",
+      "ppo/policy_loss",
+      "ppo/value_loss",
+      "ppo/approx_kl",
+      "ppo/clip_fraction",
+      "ppo/explained_variance",
+      "ppo/update_entropy"
+    ],
+    "validation": [
+      "validation/jointr",
+      "validation/sr",
+      "validation/osr",
+      "validation/spl",
+      "validation/ndtw",
+      "validation/e2e_ms"
+    ]
+  },
+  "cadence": {
+    "train_scalars": "per training episode",
+    "ma100": "from episode 100, 100-episode mean, no interpolation",
+    "ppo_update_scalars": "original TensorBoard update steps (222/218 points); fallback is validation cadence",
+    "validation": "18 points at episodes 200..3400 and 3500"
+  }
+}
