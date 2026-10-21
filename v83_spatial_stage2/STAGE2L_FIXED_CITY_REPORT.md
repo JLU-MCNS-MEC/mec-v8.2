@@ -9,6 +9,9 @@
 > 状态：A/PPO（best 0.1801 @ Ep1800）、A/DQN（best 0.0860 @ Ep2400）、
 > C/PPO（best 0.1636 @ Ep1800）、C/DQN（best 0.1462 @ Ep3200）
 > 均已完成 3500 Episodes，最终状态全部是 `plateaued_not_converged`；
+> 固定 Dev Baseline 对照已完成：A/PPO best 0.1801 低于 Max-Quality
+> 0.2179 与 Heuristic 0.2131，C/PPO best 0.1636 低于 Min-Latency
+> 0.1833 与 Heuristic 0.1843，学习策略尚未优于全部非特权 Baseline。
 > B/DQN、B/PPO 已于
 > 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
 > C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
@@ -317,6 +320,70 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 - 结论：C/DQN 跑满 3500，但**未形成稳定平台**；最终验证 0.1088
   高于 A/DQN 的 0.0068，但 best 低于 C/PPO 的 0.1636。
 
+### 固定 Dev Baseline 对照（best checkpoints，2026-10-21 18:47）
+
+评测使用每个配置固定的 60 条 Dev 任务；DQN/PPO 使用 best checkpoint；
+Oracle 为特权上界，只作参考。B 的 DQN/PPO 使用暂停时的 best checkpoint
+（B 训练未完成）。**未读取 Final Test。**
+
+#### A（`A_fixed`，Balanced）
+
+| 算法 | SR | SPL | nDTW | E2E (ms) | JointR |
+|---|---:|---:|---:|---:|---:|
+| DQN | 38.33% | 0.3833 | 0.4377 | 140.7 | 0.0860 |
+| PPO | 45.00% | 0.4500 | 0.4859 | 122.3 | 0.1801 |
+| Random | 40.00% | 0.4000 | 0.3843 | 152.6 | 0.0028 |
+| Min-Latency | 33.33% | 0.3333 | 0.3701 | 78.2 | 0.1747 |
+| Max-Quality | **53.33%** | **0.5333** | **0.5461** | 131.3 | **0.2179** |
+| Heuristic | 48.33% | 0.4833 | 0.4787 | 106.2 | 0.2131 |
+| Oracle（特权） | 53.33% | 0.5333 | 0.6178 | 97.5 | 0.3741 |
+
+#### B（`B_dev`，Balanced；训练暂停，未完成）
+
+| 算法 | SR | SPL | nDTW | E2E (ms) | JointR |
+|---|---:|---:|---:|---:|---:|
+| DQN（Ep200 best） | 43.33% | 0.4316 | 0.4341 | 157.6 | 0.0402 |
+| PPO（Ep400 best） | 48.33% | 0.4833 | 0.4782 | 154.8 | 0.0911 |
+| Random | 50.00% | 0.4988 | 0.5170 | 153.4 | 0.1335 |
+| Min-Latency | 35.00% | 0.3500 | 0.4522 | 83.4 | 0.2437 |
+| Max-Quality | 53.33% | 0.5321 | 0.5249 | 144.6 | 0.1634 |
+| Heuristic | 48.33% | 0.4821 | 0.5213 | 104.0 | **0.2612** |
+| Oracle（特权） | 55.00% | 0.5500 | 0.6058 | 106.0 | 0.3408 |
+
+#### C（Balanced / Quality-rich / Tradeoff-stress 固定拓扑）
+
+| 算法 | SR | SPL | nDTW | E2E (ms) | JointR |
+|---|---:|---:|---:|---:|---:|
+| DQN | 36.67% | 0.3667 | 0.4707 | 129.8 | 0.1462 |
+| PPO | 45.00% | 0.4379 | 0.4760 | 125.0 | 0.1636 |
+| Random | 41.67% | 0.4161 | 0.4387 | 146.9 | 0.0715 |
+| Min-Latency | 26.67% | 0.2667 | 0.3674 | 73.7 | 0.1833 |
+| Max-Quality | 46.67% | 0.4667 | 0.5144 | 142.2 | 0.1589 |
+| Heuristic | 40.00% | 0.4000 | 0.4359 | 100.6 | 0.1843 |
+| Oracle（特权） | 58.33% | 0.5833 | 0.6253 | 94.3 | 0.3896 |
+
+#### 排名与结论
+
+按 JointR 排名（高到低）：
+
+- A：Oracle 0.3741 > Max-Quality 0.2179 > Heuristic 0.2131 >
+  **PPO 0.1801** > Min-Latency 0.1747 > **DQN 0.0860** > Random 0.0028。
+- B：Oracle 0.3408 > Heuristic 0.2612 > Min-Latency 0.2437 >
+  Max-Quality 0.1634 > Random 0.1335 > **PPO 0.0911** > **DQN 0.0402**。
+- C：Oracle 0.3896 > Heuristic 0.1843 > Min-Latency 0.1833 >
+  **PPO 0.1636** > Max-Quality 0.1589 > **DQN 0.1462** > Random 0.0715。
+
+**关键负结果：**
+
+- A/PPO 的 best 0.1801 没有超过 Max-Quality（0.2179）和 Heuristic
+  （0.2131），只略高于 Min-Latency（0.1747）。
+- C/PPO 的 best 0.1636 没有超过 Min-Latency（0.1833）和 Heuristic
+  （0.1843）。
+- B 两臂（训练暂停）低于全部非特权 baseline；不能作为完整训练结论。
+- 因此，在固定 Dev 基准上，**当前 DQN/PPO 关联策略还没有优于全部
+  非特权 Baseline**。DQN 尤其明显落后。没有据此修改奖励或算法，
+  Final Test 保持封存。
+
 ---
 
 ## 5. 配置 B 暂停记录（2026-10-21 13:16）
@@ -354,7 +421,8 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 
 - [x] 每 200 Episodes 记录 DQN/PPO 的 Validation JointR、SR、nDTW、E2E；
 - [x] 训练结束后判断是否形成稳定平台（A/C 均 `plateaued_not_converged`）；
-- [ ] 在固定城市、固定配置拓扑、独立 Dev 任务上评估 DQN、PPO 与五种 Baseline；
+- [x] 在固定城市、固定配置拓扑、独立 Dev 任务上评估 DQN、PPO 与五种 Baseline；
+      结论：学习策略尚未优于全部非特权 Baseline（A/C 均如此，B 未完成）；
 - [ ] 生成收敛曲线与 Baseline 对照表；
 - [ ] 仅在固定环境内 baseline 成立后，另行规划新拓扑/新城市泛化；
 - [ ] Final Test 保持封存，直到方案冻结。
