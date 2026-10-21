@@ -111,11 +111,13 @@ python v83_spatial_stage2/stage2l_status.py
 
 当前启动顺序：
 
-1. A/DQN、A/PPO 已启动（2026-10-21 11:40 本地时间）；
+1. A/DQN、A/PPO 已启动（2026-10-21 11:40 本地时间，PID 439796 / 439797）；
 2. 现有 Stage-2k DQN 进程退出后，B/DQN、B/PPO 启动；
 3. 新训练进程达到 4 个并发后，C 排队。
 
-监督脚本不会停止、重启或修改现有 Stage-2k 进程。
+监督脚本不会停止、重启或修改现有 Stage-2k 进程。A 的验证每 200
+Episodes 执行一次，结果写入 `PROGRESS.md`；首次验证（Ep200）完成后，
+本节将补充 DQN/PPO 的 Validation JointR、SR、nDTW 与 E2E。
 
 ---
 

@@ -213,7 +213,7 @@ def _summary_markdown(payload):
         "",
         "## 2. 五种冻结 MEC 的闭环表现（Dev 固定任务）",
         "",
-        "| MEC | Episodes | SR | nDTW | E2E (ms) | JointR | 平均步数 | 成功率下界（Dev prior SR） |",
+        "| MEC | Episodes | SR | nDTW | E2E (ms) | JointR | 平均步数 | Dev prior SR（参考） |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for name in MODEL_NAMES:
