@@ -8,7 +8,8 @@
 
 > 状态：A/PPO（best 0.1801 @ Ep1800）与 A/DQN（best 0.0860 @ Ep2400）
 > 均已完成 3500 Episodes，最终状态都是 `plateaued_not_converged`；
-> B/DQN、B/PPO 已于
+> C/PPO 也已完成 3500（best 0.1636 @ Ep1800，同样
+> `plateaued_not_converged`）；C/DQN 继续训练；B/DQN、B/PPO 已于
 > 2026-10-21 13:16 按用户决定暂停（SIGSTOP，保留 checkpoint）；
 > C/DQN、C/PPO 已于 13:19 手动启动。原监督脚本已停止，改由
 > `stage2l_progress_logger.py` 继续写 `PROGRESS.md`。本文档在训练/验证
@@ -213,6 +214,7 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
 | C | 3000 | PPO | 0.1077 | 41.67% | 0.4758 | 147.2 | 0.4167 | 68.33% |
 | C | 3200 | PPO | 0.1379 | 46.67% | 0.5038 | 146.4 | 0.4667 | 70.00% |
 | C | 3400 | PPO | 0.0549 | 38.33% | 0.4308 | 150.4 | 0.3833 | 66.67% |
+| C | 3500 | PPO | 0.0940 | 40.00% | 0.4545 | 144.2 | 0.4000 | 68.33% |
 
 说明：
 
@@ -290,6 +292,17 @@ B 暂停的 PID、checkpoint 和恢复/终止命令见
   `converged=False`，`stable_platform=False`，`reached_cap=True`。
 - 结论：A/DQN 也跑满 3500，但**未形成稳定平台**；明显弱于 A/PPO，
   best checkpoint 仍取中途的 Ep2400。
+
+### C/PPO 最终状态（已完成 3500 Episodes）
+
+- 最终验证 Ep3500：JointR 0.0940 / SR 40.00% / nDTW 0.4545 /
+  E2E 144.2 ms / SPL 0.4000。
+- best Dev JointR：**0.1636（Ep1800）**；best checkpoint：
+  `runs/v83_spatial_stage2/stage2l_fixed_city/C/ppo/checkpoints/best.pt`。
+- `classify_status`：`plateaued_not_converged`，
+  `converged=False`，`stable_platform=False`，`reached_cap=True`。
+- 结论：C/PPO 跑满 3500，但**未形成稳定平台**；Ep1600–1800 的
+  0.1545–0.1636 是中途峰值，最终验证只有 0.0940。
 
 ---
 
