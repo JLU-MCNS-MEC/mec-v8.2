@@ -27,13 +27,13 @@ def _band_line(item):
     steps = item["oracle_steps"]
     distances = item["start_goal_distance_m"]
     return (
-        f"| {bands['short']} / {bands['medium']} / {bands['long']} | "
+        f"{bands['short']} / {bands['medium']} / {bands['long']} | "
         f"{steps['short']['min']}–{steps['short']['max']} / "
         f"{steps['medium']['min']}–{steps['medium']['max']} / "
         f"{steps['long']['min']}–{steps['long']['max']} | "
         f"{distances['short']['mean']:.1f} / "
         f"{distances['medium']['mean']:.1f} / "
-        f"{distances['long']['mean']:.1f} |"
+        f"{distances['long']['mean']:.1f}"
     )
 
 
