@@ -110,6 +110,9 @@ Seed / ID 隔离与封存检查全部通过；完整分布见
 
 ## 4. 训练状态与验证
 
+训练奖励曲线、验证曲线与中后期下降诊断见
+`STAGE2L_TRAINING_CURVES_ANALYSIS.md`（图、CSV 与复现命令均在文中）。
+
 每次固定 Dev 验证（每 200 Episodes）写入
 `stage2l_fixed_city/PROGRESS.md`；实时状态可用：
 
