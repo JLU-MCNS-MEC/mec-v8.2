@@ -116,8 +116,26 @@ python v83_spatial_stage2/stage2l_status.py
 3. 新训练进程达到 4 个并发后，C 排队。
 
 监督脚本不会停止、重启或修改现有 Stage-2k 进程。A 的验证每 200
-Episodes 执行一次，结果写入 `PROGRESS.md`；首次验证（Ep200）完成后，
-本节将补充 DQN/PPO 的 Validation JointR、SR、nDTW 与 E2E。
+Episodes 执行一次，结果写入 `PROGRESS.md`。
+
+### 首次固定 Dev 验证（Ep200）
+
+| 运行 | JointR | SR | nDTW | E2E (ms) | SPL | OSR | P95 (ms) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A/PPO | 0.0258 | 35.00% | 0.4166 | 156.3 | 0.3500 | 55.00% | 229.7 |
+| A/DQN | 0.0056 | 33.33% | 0.3754 | 147.9 | 0.3333 | 50.00% | 224.6 |
+
+说明：
+
+- 这是训练早期结果（DQN ε≈0.94，PPO 约 15 次更新），只用于检查
+  新环境是否可训练；**不构成收敛结论，也不构成优于/劣于 Baseline 的结论**。
+- 两臂 Ep200 的量级与旧 Stage-2k 同轮次接近：
+  - 旧 Stage-2k PPO Ep200：JointR 0.0344 / SR 38.33% / nDTW 0.427 / E2E 156.9 ms；
+  - 旧 Stage-2k Pure-MEC DQN Ep200：JointR 0.0750 / SR 35.00% / nDTW 0.450 / E2E 150.1 ms。
+- 因此固定城市切换没有造成闭环性能崩溃；但 Dev 任务分布已改为
+  20/20/20 单一 Balanced 场景，不能直接用旧数值做严格横比。
+- 完整 Baseline 对照必须在固定环境、同一 60 条 Dev 任务上单独运行，
+  且只在训练收敛后解释。
 
 ---
 
