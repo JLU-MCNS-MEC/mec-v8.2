@@ -1,0 +1,211 @@
+{
+  "version": "stage2k-v2-protocol-freeze-v1",
+  "created_utc": "2026-10-21T00:01:54.089063+00:00",
+  "branch": "experiment/v83-spatial-foundation",
+  "protocol": "v83_spatial_stage2/STAGE2K_V2_PROTOCOL.md",
+  "state_modes": {
+    "A": {
+      "name": "pure_mec_v2",
+      "mlp_input": 384,
+      "decision_state": 404
+    },
+    "B": {
+      "name": "visual_ablation_v2",
+      "mlp_input": 512,
+      "decision_state": 532
+    }
+  },
+  "training": {
+    "episodes": 3500,
+    "validation_every": 200,
+    "validation_episodes": 60,
+    "epsilon_decay_steps": 500000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "gamma": 1.0,
+    "seed": 20261031,
+    "order_seed": 40522062,
+    "order_total": 3500,
+    "early_stop_disabled": true,
+    "q_divergence_abs": 100000.0
+  },
+  "convergence_criteria": {
+    "completed_cap": true,
+    "numerically_finite": true,
+    "min_validations": 5,
+    "last3_jointr_range_max": 0.01,
+    "last_minus_best_min": -0.005,
+    "improving": false
+  },
+  "final_test_gate": {
+    "G1": "converged == true",
+    "G2": "best Dev60 JointR > strongest non-oracle baseline",
+    "dev60_baseline": {
+      "source": "runs/v83_spatial_stage2/stage2k/baselines/dev/per_episode.csv",
+      "source_sha256": "88fc79978fe154e626f62c895b4392aad344b9dbf4e7db04b2f7853a201772f7",
+      "validation_episodes": 60,
+      "strategies": {
+        "random": {
+          "episodes": 60,
+          "nDTW": 0.5597923543991216,
+          "E2E_ms": 146.68688488448052,
+          "JointR": 0.19307514218792027
+        },
+        "min_latency": {
+          "episodes": 60,
+          "nDTW": 0.46135963591470025,
+          "E2E_ms": 71.40556357932327,
+          "JointR": 0.2828457269663921
+        },
+        "max_quality": {
+          "episodes": 60,
+          "nDTW": 0.5404861042690539,
+          "E2E_ms": 132.53901626046365,
+          "JointR": 0.20913856361789473
+        },
+        "heuristic": {
+          "episodes": 60,
+          "nDTW": 0.523639837841676,
+          "E2E_ms": 97.22190634456766,
+          "JointR": 0.28058507198025684
+        }
+      },
+      "strongest_non_oracle": "min_latency",
+      "threshold_jointr": 0.2828457269663921,
+      "oracle_excluded": true
+    },
+    "final_test_read": false
+  },
+  "sources": [
+    {
+      "path": "v83_spatial_stage2/STAGE2K_V2_PROTOCOL.md",
+      "exists": true,
+      "sha256": "77a1fd85002b3e9d8ff661af4fa21114e1ce6fd69ff3a31979257e7dadc26b1b"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_pure_mec_v2_state.py",
+      "exists": true,
+      "sha256": "4d4b40e76ca8cb27cdd96aaf6ab8e1bfd059757614a3ca80abc01ce305aa1f4e"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_v2_common.py",
+      "exists": true,
+      "sha256": "bc5624889d3542c4a48e7d0a0a69cad3730b237c1dd69588b3c204c170736d2f"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_build_capability_prior_v2.py",
+      "exists": true,
+      "sha256": "91798d2238607ae158c80f2b646cdf33e774021e7728cf74f58dd9a54b508f09"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_runtime.py",
+      "exists": true,
+      "sha256": "682237c900c52a65d739d86b3220722913fd86fb110f68b9f4132cf69a513717"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_jointr_v2_train.py",
+      "exists": true,
+      "sha256": "5aa9a37ac803da06a9a3eb6866ff887461a25619e9eeb4e18abe71c574d1e67f"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_jointr_v2_eval.py",
+      "exists": true,
+      "sha256": "82db5d35dd60309bd459bd7a8556f2d35d380791684fb4fd80b25d79e34ae355"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_jointr_v2_agent.py",
+      "exists": true,
+      "sha256": "ac5a44f79bf2e51b6230bd790b66ec195829f6dbcd82606be71b489898755097"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_jointr_v2_order.py",
+      "exists": true,
+      "sha256": "ce1dd690763731bc441f07293afaabcd86de772d6ef07d26346038a22be955f8"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_common.py",
+      "exists": true,
+      "sha256": "be1553060fe93c124874e9760d4cae69261f3028014a83a4450b56ed4fbbfb47"
+    },
+    {
+      "path": "v83_spatial_stage2/test_stage2k_pure_mec_v2.py",
+      "exists": true,
+      "sha256": "0a6cf168102ea0bf109409a7c7b9dcb28e729fa8bee031b5637b656c4919d375"
+    },
+    {
+      "path": "v83_spatial_stage2/test_stage2k_v2_protocol.py",
+      "exists": true,
+      "sha256": "5f7b38939365f963f1b5f5ab7ff87a283dfa1cf2b850105de3c0f54f0b86d302"
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_v2_preexperiment_audit.py",
+      "exists": true,
+      "sha256": "8d62417ce445512e694aee215ea6663fab8fbce0b72f564cc5d05b0f22abb883"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/capability_prior_v2.json",
+      "exists": true,
+      "sha256": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/visual_pca.npz",
+      "exists": true,
+      "sha256": "e3cf2e84935d8a82108f7aa8fa54395c39186b90383da58df3c9fa72cdd153bd"
+    }
+  ],
+  "specs": [
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/specs/train_episodes.json",
+      "exists": true,
+      "sha256": "225587079fba6174a38f05e566733ef6a4eb68ba8e45a53c7af3399f7f992469"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/specs/dev_episodes.json",
+      "exists": true,
+      "sha256": "5ed3f40456a532e2f87e3c21c7ad736be6865678627ae3304712e6ecd87316b2"
+    }
+  ],
+  "topologies": [
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/train_balanced.json",
+      "exists": true,
+      "sha256": "18970f4d01c8b0895f4902e8a97c9a5e1629190d436962dd9dc60cea3f911a04"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/train_quality_rich.json",
+      "exists": true,
+      "sha256": "d2d3ec1b24e8d9e34d9a79b21053dff20ff73c819ec07be43f2d82d9b979c7a5"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/train_tradeoff_stress.json",
+      "exists": true,
+      "sha256": "0e26251ce84e31888ef5a5652c180161ff222b50f4af516d56ebcea8b38d90c1"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/dev_balanced.json",
+      "exists": true,
+      "sha256": "f66721b26e75662eb164222b2120e1f3fd2b1487462a55c22da8d92cbca3c4e0"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/dev_quality_rich.json",
+      "exists": true,
+      "sha256": "c1c9f88d82af01f346dc18323ad0579549e1fca04a0a46c57b7aa5e06e0fd4c9"
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2k/topologies/dev_tradeoff_stress.json",
+      "exists": true,
+      "sha256": "4b43af998e1f4491025d1534be05755d0a0e864e18d39b7b6cd1b1df8ebbbe8d"
+    }
+  ],
+  "environment": {
+    "python": "3.11.16 (main, Aug 27 2026, 14:44:21) [GCC 14.3.0]",
+    "executable": "/home/ubuntu5/miniconda3/envs/DRL/bin/python",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "device_name": "NVIDIA GeForce RTX 5090",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39"
+  },
+  "final_test_read": false
+}

@@ -42,6 +42,14 @@ from v83_spatial_stage2.stage2k_no_visual_state import (
 from v83_spatial_stage2.stage2k_pure_mec_state import (
     STATE_DIM_PURE_MEC,
 )
+from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
+    STATE_DIM_PURE_MEC_V2,
+    STATE_DIM_VISUAL_ABLATION_V2,
+)
+from v83_spatial_stage2.stage2k_v2_common import (
+    CAPABILITY_PRIOR_PATH,
+    load_capability_prior,
+)
 from v83_spatial_stage2.stage2k_state import (
     STATE_DIM,
     VisualProjector,
@@ -106,6 +114,8 @@ def markdown(path, summary, baselines, paired_rows, per_episode):
         f"- 日期：{summary['created_utc']}",
         f"- Checkpoint：`{summary['checkpoint']}`",
         f"- Episode：{summary['checkpoint_episode']}",
+        f"- 状态：`{summary.get('state_mode', 'full')}`，"
+        f"{summary.get('state_dim', '—')} 维",
         "- 数据：完整 Dev Validation 180；未读取 Final Test。",
         "- Baseline：复用已有 Dev180 结果，未重跑。",
         "",
@@ -151,16 +161,20 @@ def markdown(path, summary, baselines, paired_rows, per_episode):
         "",
         "## 分部署条件（DQN）",
         "",
-        "| 场景 | SR | nDTW | E2E (ms) | P95 (ms) | JointR |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| 场景 | SR | OSR | SPL | nDTW | E2E (ms) | P95 (ms) | JointR |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for scenario in SCENARIOS:
         item = summary["by_scenario"][scenario]
         if not item.get("episodes"):
-            lines.append(f"| {scenario} | — | — | — | — | — |")
+            lines.append(
+                f"| {scenario} | — | — | — | — | — | — | — |"
+            )
             continue
         lines.append(
-            f"| {scenario} | {100*item['SR']:.2f}% | {item['nDTW']:.4f} | "
+            f"| {scenario} | {100*item['SR']:.2f}% | "
+            f"{100*item['OSR']:.2f}% | {item['SPL']:.4f} | "
+            f"{item['nDTW']:.4f} | "
             f"{item['E2E_ms']:.2f} | {item['P95_ms']:.2f} | "
             f"{item['JointR']:.4f} |"
         )
@@ -193,12 +207,26 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument(
         "--state-mode",
-        choices=("full", "no_visual", "pure_mec"), default="full",
+        choices=(
+            "full", "no_visual", "pure_mec",
+            "pure_mec_v2", "visual_ablation_v2",
+        ),
+        default="full",
+    )
+    parser.add_argument(
+        "--capability-prior", type=Path, default=CAPABILITY_PRIOR_PATH
     )
     args = parser.parse_args()
     no_visual = args.state_mode == "no_visual"
     pure_mec = args.state_mode == "pure_mec"
-    if pure_mec:
+    pure_mec_v2 = args.state_mode == "pure_mec_v2"
+    visual_ablation_v2 = args.state_mode == "visual_ablation_v2"
+    v2_state = pure_mec_v2 or visual_ablation_v2
+    if pure_mec_v2:
+        state_dim = STATE_DIM_PURE_MEC_V2
+    elif visual_ablation_v2:
+        state_dim = STATE_DIM_VISUAL_ABLATION_V2
+    elif pure_mec:
         state_dim = STATE_DIM_PURE_MEC
     elif no_visual:
         state_dim = STATE_DIM_NO_VISUAL
@@ -211,19 +239,23 @@ def main():
         raise SystemExit(f"{output_dir}/summary.json exists; refusing to overwrite")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    quality = flat_quality(read_json(QUALITY_PRIOR_PATH))
+    if v2_state:
+        _, quality = load_capability_prior(args.capability_prior)
+    else:
+        quality = flat_quality(read_json(QUALITY_PRIOR_PATH))
     specs_payload = load_split_specs("dev")
     topologies = {
         scenario: load_topology(scenario, "dev") for scenario in SCENARIOS
     }
     projector = (
-        None if (no_visual or pure_mec)
+        None if (no_visual or pure_mec or pure_mec_v2)
         else VisualProjector.load(VISUAL_PCA_PATH)
     )
     device, encoder, backends = load_runtime(args.device)
     gab_config = load_gab_config()
     agent = DQNAgentV2(
-        device, state_dim=state_dim, state_mode=args.state_mode
+        device, state_dim=state_dim, state_mode=args.state_mode,
+        epsilon_decay_steps=(500_000 if v2_state else None),
     )
     payload = agent.load_model(checkpoint)
     config = payload.get("config", {})
@@ -253,6 +285,8 @@ def main():
                 jointr_aligned=True,
                 no_visual_state=no_visual,
                 pure_mec_state=pure_mec,
+                pure_mec_v2_state=pure_mec_v2,
+                visual_ablation_v2_state=visual_ablation_v2,
             )
             while True:
                 state = runner.step_data["state"]
@@ -297,8 +331,13 @@ def main():
         "created_utc": utc_now(),
         "checkpoint": str(checkpoint),
         "checkpoint_episode": int(payload.get("episode", 0)),
+        "run_dir": str(run_dir),
+        "state_mode": str(args.state_mode),
+        "state_dim": int(state_dim),
         "episodes": len(rows),
         "overall": overall,
+        "model_usage": overall["model_usage"],
+        "model_usage_ratio": overall["model_usage_ratio"],
         "by_scenario": by_scenario,
         "baselines": baselines,
         "paired": paired_rows,

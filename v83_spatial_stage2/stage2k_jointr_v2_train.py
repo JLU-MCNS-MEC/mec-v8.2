@@ -47,6 +47,7 @@ from v83_spatial_stage2.stage2k_common import (
     load_split_specs,
     load_topology,
     read_json,
+    sha256_file,
     summarize_episodes,
     utc_now,
 )
@@ -91,6 +92,16 @@ from v83_spatial_stage2.stage2k_no_visual_state import (
 )
 from v83_spatial_stage2.stage2k_pure_mec_state import (
     STATE_DIM_PURE_MEC,
+)
+from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
+    STATE_DIM_PURE_MEC_V2,
+    STATE_DIM_VISUAL_ABLATION_V2,
+    state_layout_pure_mec_v2,
+    state_layout_visual_ablation_v2,
+)
+from v83_spatial_stage2.stage2k_v2_common import (
+    CAPABILITY_PRIOR_PATH,
+    load_capability_prior,
 )
 from v83_spatial_stage2.stage2k_state import (
     STATE_DIM,
@@ -209,7 +220,8 @@ def verify_isolation():
 
 def evaluate_aligned(agent, specs, topologies, encoder, backends, projector,
                      quality, gab_config, device, no_visual_state=False,
-                     pure_mec_state=False):
+                     pure_mec_state=False, pure_mec_v2_state=False,
+                     visual_ablation_v2_state=False):
     cache = SceneCache(encoder, device, max_entries=60)
     rows = []
     for spec in specs:
@@ -226,6 +238,8 @@ def evaluate_aligned(agent, specs, topologies, encoder, backends, projector,
             jointr_aligned=True,
             no_visual_state=no_visual_state,
             pure_mec_state=pure_mec_state,
+            pure_mec_v2_state=pure_mec_v2_state,
+            visual_ablation_v2_state=visual_ablation_v2_state,
         )
         while True:
             state = runner.step_data["state"]
@@ -258,6 +272,18 @@ def should_early_stop(episode, no_improve, joints):
                 "trend is flat/declining"
             )
     return False, None
+
+
+def early_stop_decision(episode, no_improve, joints, disabled):
+    """The v2 protocol disables early stopping entirely.
+
+    Only numerical/program errors abort those runs; normal reward decline does
+    not.  Keeping this in one function makes the rule testable without running
+    the training loop.
+    """
+    if disabled:
+        return False, None
+    return should_early_stop(episode, no_improve, joints)
 
 
 def classify_status(joints, early_stop_triggered, reached_cap):
@@ -310,7 +336,11 @@ def main():
     parser.add_argument("--smoke-episodes", type=int, default=None)
     parser.add_argument(
         "--state-mode",
-        choices=("full", "no_visual", "pure_mec"), default="full",
+        choices=(
+            "full", "no_visual", "pure_mec",
+            "pure_mec_v2", "visual_ablation_v2",
+        ),
+        default="full",
     )
     parser.add_argument(
         "--order-mode", choices=("stratified", "random"),
@@ -324,21 +354,74 @@ def main():
             "pure-MEC protocol so Dev topology is validation-only."
         ),
     )
-    parser.add_argument("--run-dir", type=Path, default=RUN_DIR)
+    parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument(
         "--tensorboard-dir", type=Path, default=None
+    )
+    parser.add_argument(
+        "--epsilon-decay-steps", type=int, default=None,
+        help=(
+            "Actual environment-step epsilon budget.  Defaults to 200000 "
+            "for legacy modes and 500000 for the v2 ablations."
+        ),
+    )
+    parser.add_argument(
+        "--disable-early-stop", action="store_true",
+        help=(
+            "Never stop for reward/validation decline; only NaN/Inf, "
+            "Q divergence or program errors abort.  Required for the v2 "
+            "formal 3500-episode protocol."
+        ),
+    )
+    parser.add_argument(
+        "--capability-prior", type=Path, default=CAPABILITY_PRIOR_PATH,
+        help="Frozen Dev-only v2 capability prior JSON.",
     )
     args = parser.parse_args()
     no_visual = args.state_mode == "no_visual"
     pure_mec = args.state_mode == "pure_mec"
-    if pure_mec:
+    pure_mec_v2 = args.state_mode == "pure_mec_v2"
+    visual_ablation_v2 = args.state_mode == "visual_ablation_v2"
+    v2_state = pure_mec_v2 or visual_ablation_v2
+    if pure_mec_v2:
+        state_dim = STATE_DIM_PURE_MEC_V2
+    elif visual_ablation_v2:
+        state_dim = STATE_DIM_VISUAL_ABLATION_V2
+    elif pure_mec:
         state_dim = STATE_DIM_PURE_MEC
     elif no_visual:
         state_dim = STATE_DIM_NO_VISUAL
     else:
         state_dim = STATE_DIM
+    if args.run_dir is None:
+        if pure_mec_v2:
+            args.run_dir = Path(
+                "runs/v83_spatial_stage2/stage2k_pure_mec_v2"
+            )
+        elif visual_ablation_v2:
+            args.run_dir = Path(
+                "runs/v83_spatial_stage2/stage2k_visual_ablation_v2"
+            )
+        elif pure_mec:
+            args.run_dir = Path(
+                "runs/v83_spatial_stage2/stage2k_pure_mec_state"
+            )
+        elif no_visual:
+            args.run_dir = Path(
+                "runs/v83_spatial_stage2/stage2k_no_visual"
+            )
+        else:
+            args.run_dir = RUN_DIR
     if args.tensorboard_dir is None:
-        if pure_mec:
+        if pure_mec_v2:
+            args.tensorboard_dir = Path(
+                "runs/tensorboard/association_stage2k_pure_mec_v2"
+            )
+        elif visual_ablation_v2:
+            args.tensorboard_dir = Path(
+                "runs/tensorboard/association_stage2k_visual_ablation_v2"
+            )
+        elif pure_mec:
             args.tensorboard_dir = Path(
                 "runs/tensorboard/association_stage2k_pure_mec_state"
             )
@@ -350,15 +433,41 @@ def main():
             args.tensorboard_dir = TENSORBOARD_DIR
     global STAGE_NAME
     STAGE_NAME = (
-        "stage2k_pure_mec_state" if pure_mec else
-        ("stage2k_no_visual" if no_visual else "stage2k_jointr_v2")
+        "stage2k_pure_mec_v2" if pure_mec_v2 else
+        ("stage2k_visual_ablation_v2" if visual_ablation_v2 else
+         ("stage2k_pure_mec_state" if pure_mec else
+          ("stage2k_no_visual" if no_visual else "stage2k_jointr_v2")))
     )
-    if pure_mec and args.order_mode != "random":
-        raise SystemExit("pure_mec requires --order-mode random")
-    if pure_mec and args.train_topology_split != "train":
+    if (pure_mec or v2_state) and args.order_mode != "random":
+        raise SystemExit(f"{args.state_mode} requires --order-mode random")
+    if (pure_mec or v2_state) and args.train_topology_split != "train":
         raise SystemExit(
-            "pure_mec requires --train-topology-split train"
+            f"{args.state_mode} requires --train-topology-split train"
         )
+    if v2_state:
+        if args.epsilon_decay_steps is None:
+            args.epsilon_decay_steps = 500_000
+        if (
+            args.smoke_episodes is None
+            and int(args.epsilon_decay_steps) != 500_000
+        ):
+            raise SystemExit(
+                "v2 formal training requires --epsilon-decay-steps 500000"
+            )
+        if args.smoke_episodes is None and not args.disable_early_stop:
+            raise SystemExit(
+                "v2 formal training requires --disable-early-stop"
+            )
+        if (
+            args.smoke_episodes is None
+            and int(args.max_episodes) != 3500
+        ):
+            raise SystemExit(
+                "v2 formal training requires --max-episodes 3500"
+            )
+    else:
+        if args.epsilon_decay_steps is None:
+            args.epsilon_decay_steps = EPSILON_DECAY_STEPS
     if (
         pure_mec
         and args.smoke_episodes is None
@@ -392,10 +501,19 @@ def main():
         args.order_mode, random_total=3500
     )
     validation_specs_list = verify_isolation()
-    quality_payload = read_json(QUALITY_PRIOR_PATH)
-    if quality_payload is None:
-        raise SystemExit("Missing quality prior")
-    quality = flat_quality(quality_payload)
+    capability_payload = None
+    capability_prior_sha = None
+    if v2_state:
+        capability_payload, capability_flat = load_capability_prior(
+            args.capability_prior
+        )
+        quality = capability_flat
+        capability_prior_sha = sha256_file(args.capability_prior)
+    else:
+        quality_payload = read_json(QUALITY_PRIOR_PATH)
+        if quality_payload is None:
+            raise SystemExit("Missing quality prior")
+        quality = flat_quality(quality_payload)
     train_topologies = {
         scenario: load_topology(scenario, args.train_topology_split)
         for scenario in SCENARIOS
@@ -404,15 +522,22 @@ def main():
         scenario: load_topology(scenario, "dev") for scenario in SCENARIOS
     }
     projector = (
-        None if (no_visual or pure_mec)
+        None if (no_visual or pure_mec or pure_mec_v2)
         else VisualProjector.load(VISUAL_PCA_PATH)
     )
     device, encoder, backends = load_runtime(args.device)
     gab_config = load_gab_config()
 
     agent = DQNAgentV2(
-        device, seed=SEED, state_dim=state_dim, state_mode=args.state_mode
+        device, seed=SEED, state_dim=state_dim, state_mode=args.state_mode,
+        epsilon_decay_steps=args.epsilon_decay_steps,
     )
+    if pure_mec_v2:
+        state_layout = state_layout_pure_mec_v2()
+    elif visual_ablation_v2:
+        state_layout = state_layout_visual_ablation_v2()
+    else:
+        state_layout = None
     history = {"train": [], "validation": [], "config": {
         **agent.config(),
         "max_episodes": int(args.max_episodes),
@@ -433,9 +558,37 @@ def main():
             "running_mean_E2E_{t-1})"
         ),
         "state_e2e_field": (
-            "none (pure MEC state)" if pure_mec else
-            ("none (no visual state)" if no_visual
-             else "running_mean_E2E_ms / 100")
+            "running_mean_E2E_ms / 100" if (pure_mec_v2 or visual_ablation_v2)
+            else ("none (pure MEC state)" if pure_mec else
+                  ("none (no visual state)" if no_visual
+                   else "running_mean_E2E_ms / 100"))
+        ),
+        "state_layout": state_layout,
+        "protocol": (
+            "stage2k-v2-3500-no-early-stop"
+            if v2_state else "stage2k-jointr-v2"
+        ),
+        "early_stop_disabled": bool(args.disable_early_stop),
+        "capability_prior": (
+            {
+                "path": str(args.capability_prior),
+                "sha256": capability_prior_sha,
+                "split": capability_payload["split"],
+                "metrics": capability_payload["metrics"],
+                "final_test_read": capability_payload["final_test_read"],
+            }
+            if capability_payload is not None else None
+        ),
+        "visual_projector": (
+            {
+                "path": str(VISUAL_PCA_PATH),
+                "sha256": sha256_file(VISUAL_PCA_PATH),
+                "usage": (
+                    "frozen 128-D context; GAB/map blocks neutralized to "
+                    "the training mean"
+                ),
+            }
+            if visual_ablation_v2 else None
         ),
     }}
     start_episode = 0
@@ -519,6 +672,8 @@ def main():
             jointr_aligned=True,
             no_visual_state=no_visual,
             pure_mec_state=pure_mec,
+            pure_mec_v2_state=pure_mec_v2,
+            visual_ablation_v2_state=visual_ablation_v2,
         )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]
@@ -619,6 +774,7 @@ def main():
         writer.add_scalar("train/mean_episode_e2e_ms",
                           row["mean_episode_e2e_ms"], episode_number)
         writer.add_scalar("train/loss", row["loss"], episode_number)
+        writer.add_scalar("train/grad_norm", row["grad_norm"], episode_number)
         writer.add_scalar("train/epsilon", row["epsilon"], episode_number)
         writer.add_scalar("train/q_mean", row["q_mean"], episode_number)
         writer.add_scalar("train/q_max", row["q_max"], episode_number)
@@ -676,12 +832,17 @@ def main():
                 "no_improve": no_improve,
             })
 
-        if episode_number % VALIDATION_EVERY == 0:
+        if (
+            episode_number % VALIDATION_EVERY == 0
+            or episode_number == int(args.max_episodes)
+        ):
             validation_rows = evaluate_aligned(
                 agent, validation_specs_list, dev_topologies, encoder,
                 backends, projector, quality, gab_config, device,
                 no_visual_state=no_visual,
                 pure_mec_state=pure_mec,
+                pure_mec_v2_state=pure_mec_v2,
+                visual_ablation_v2_state=visual_ablation_v2,
             )
             summary = summarize_episodes(validation_rows)
             val_errors = [
@@ -704,11 +865,14 @@ def main():
                 "episode": episode_number,
                 "joint_reward": float(summary["JointR"]),
                 "SR": float(summary["SR"]),
+                "OSR": float(summary["OSR"]),
+                "SPL": float(summary["SPL"]),
                 "nDTW": float(summary["nDTW"]),
                 "E2E_ms": float(summary["E2E_ms"]),
                 "P95_ms": float(summary["P95_ms"]),
                 "mean_steps": float(summary["mean_steps"]),
                 "model_usage": summary["model_usage"],
+                "model_usage_ratio": summary["model_usage_ratio"],
                 "train_loss_mean": float(np.mean(recent_losses)),
                 "train_q_mean": float(np.mean(recent_q)),
                 "train_q_max": float(np.max(recent_qmax)),
@@ -724,6 +888,10 @@ def main():
                               validation_record["joint_reward"],
                               episode_number)
             writer.add_scalar("validation/SR", validation_record["SR"],
+                              episode_number)
+            writer.add_scalar("validation/OSR", validation_record["OSR"],
+                              episode_number)
+            writer.add_scalar("validation/SPL", validation_record["SPL"],
                               episode_number)
             writer.add_scalar("validation/nDTW", validation_record["nDTW"],
                               episode_number)
@@ -741,6 +909,13 @@ def main():
             for name, count in validation_record["model_usage"].items():
                 writer.add_scalar(f"validation/model_usage/{name}", count,
                                   episode_number)
+            for name, ratio in validation_record[
+                "model_usage_ratio"
+            ].items():
+                writer.add_scalar(
+                    f"validation/model_usage_ratio/{name}", ratio,
+                    episode_number,
+                )
             improved = (
                 validation_record["joint_reward"] > best_joint
                 + VALIDATION_IMPROVEMENT
@@ -769,9 +944,10 @@ def main():
                 "validation": validation_record,
             })
             atomic_write_json(HISTORY_PATH, history)
-            stop, reason = should_early_stop(
+            stop, reason = early_stop_decision(
                 episode_number, no_improve,
                 [item["joint_reward"] for item in history["validation"]],
+                args.disable_early_stop,
             )
             status_payload = classify_status(
                 [item["joint_reward"] for item in history["validation"]],
@@ -793,6 +969,8 @@ def main():
                 f"[Validation] Ep{episode_number} "
                 f"JointR={validation_record['joint_reward']:.4f} "
                 f"SR={validation_record['SR']:.4f} "
+                f"OSR={validation_record['OSR']:.4f} "
+                f"SPL={validation_record['SPL']:.4f} "
                 f"nDTW={validation_record['nDTW']:.4f} "
                 f"E2E={validation_record['E2E_ms']:.1f}ms "
                 f"best={best_joint:.4f} no_improve={no_improve} "
@@ -870,6 +1048,30 @@ def main():
         "stable_platform": bool(status_payload["stable_platform"]),
         "improving": bool(status_payload["improving"]),
         "consecutive_no_improve": int(no_improve),
+        "reached_cap": bool(reached_cap),
+        "early_stop_disabled": bool(args.disable_early_stop),
+        "total_steps": int(history["train"][-1]["total_steps"]),
+        "epsilon_final": float(history["train"][-1]["epsilon"]),
+        "q_mean_final": float(history["train"][-1]["q_mean"]),
+        "q_max_final": float(history["train"][-1]["q_max"]),
+        "loss_final": float(history["train"][-1]["loss"]),
+        "grad_norm_final": float(history["train"][-1]["grad_norm"]),
+        "convergence_criteria": {
+            "definition": (
+                "completed episode cap; no NaN/Inf or Q divergence; at "
+                "least 5 Dev validations; last-3 JointR range <= 0.01; "
+                "last JointR >= best - 0.005; no new best in the last "
+                "validation (improving=false)"
+            ),
+            "completed_cap": bool(reached_cap),
+            "stable_platform": bool(status_payload["stable_platform"]),
+            "improving": bool(status_payload["improving"]),
+            "numerically_finite": True,
+        },
+        "convergence_gate_passed": bool(status_payload["converged"]),
+        "final_test_decision": (
+            "pending_predefined_gate_review"
+        ),
         "reward_mode": "jointr_aligned_v2",
         "gamma": GAMMA_V2,
         "reward_jointr_abs_error_max": float(max(

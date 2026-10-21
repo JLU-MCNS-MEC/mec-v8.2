@@ -647,6 +647,8 @@ def summarize_episodes(rows):
     if not rows:
         return {"episodes": 0}
     successes = np.asarray([float(row["success"]) for row in rows])
+    osr = np.asarray([float(row.get("osr", 0.0)) for row in rows])
+    spl = np.asarray([float(row.get("spl", 0.0)) for row in rows])
     ndtw = np.asarray([float(row["ndtw"]) for row in rows])
     e2e = np.asarray([float(row["mean_e2e_ms"]) for row in rows])
     p95 = np.asarray([float(row["p95_e2e_ms"]) for row in rows])
@@ -663,6 +665,8 @@ def summarize_episodes(rows):
     return {
         "episodes": len(rows),
         "SR": float(successes.mean()),
+        "OSR": float(osr.mean()),
+        "SPL": float(spl.mean()),
         "nDTW": float(ndtw.mean()),
         "E2E_ms": float(e2e.mean()),
         "P95_ms": float(p95.mean()),

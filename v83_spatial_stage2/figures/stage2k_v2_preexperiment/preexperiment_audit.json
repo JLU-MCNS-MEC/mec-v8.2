@@ -1,0 +1,487 @@
+{
+  "version": "stage2k-v2-preexperiment-audit-v1",
+  "created_utc": "2026-10-20T23:51:25.026680+00:00",
+  "final_test_read": false,
+  "runs": {
+    "stage2k_v1": {
+      "key": "stage2k_v1",
+      "label": "Stage-2k v1 (478-D, stopped Ep2000)",
+      "history_path": "runs/v83_spatial_stage2/stage2k/dqn/training_history.json",
+      "result_path": "runs/v83_spatial_stage2/stage2k/dqn/training_result.json",
+      "episodes": 2000,
+      "total_steps": 265956,
+      "epsilon_decay_steps": 200000,
+      "epsilon_first": 0.99985275,
+      "epsilon_last": 0.050000000000000044,
+      "epsilon_min": 0.050000000000000044,
+      "epsilon_reached_floor_at_step": 200062,
+      "return_mean": 0.28685230353697433,
+      "return_std": 0.6111754984810446,
+      "return_min": -1.135567192958418,
+      "return_max": 0.9476622912964344,
+      "ma100_peak": 0.40542236169921053,
+      "ma100_peak_episode": 343,
+      "ma100_last": 0.22106237271466203,
+      "loss_first": 0.0,
+      "loss_last": 0.7307297635462976,
+      "loss_mean": 0.3962295019786717,
+      "grad_mean": null,
+      "q": null,
+      "validations": [
+        {
+          "episode": 200,
+          "joint_reward": 0.18033058678577907,
+          "SR": 0.55,
+          "nDTW": 0.5519225682397221,
+          "E2E_ms": 148.6367925815772
+        },
+        {
+          "episode": 400,
+          "joint_reward": 0.1709583162731817,
+          "SR": 0.55,
+          "nDTW": 0.5521478094664966,
+          "E2E_ms": 152.47579727732594
+        },
+        {
+          "episode": 600,
+          "joint_reward": 0.166063491386583,
+          "SR": 0.5,
+          "nDTW": 0.5490580091686392,
+          "E2E_ms": 153.1978071128225
+        },
+        {
+          "episode": 800,
+          "joint_reward": 0.2235284622859482,
+          "SR": 0.6,
+          "nDTW": 0.5951161437409616,
+          "E2E_ms": 148.63507258200534
+        },
+        {
+          "episode": 1000,
+          "joint_reward": 0.21985963824864196,
+          "SR": 0.5666666666666667,
+          "nDTW": 0.5778244387931121,
+          "E2E_ms": 143.18592021778804
+        },
+        {
+          "episode": 1200,
+          "joint_reward": 0.18899891535848506,
+          "SR": 0.5166666666666667,
+          "nDTW": 0.5544694531738602,
+          "E2E_ms": 146.18821512615006
+        },
+        {
+          "episode": 1400,
+          "joint_reward": 0.16057767227114594,
+          "SR": 0.5166666666666667,
+          "nDTW": 0.5279327004637893,
+          "E2E_ms": 146.94201127705733
+        },
+        {
+          "episode": 1600,
+          "joint_reward": 0.18664712552202162,
+          "SR": 0.5166666666666667,
+          "nDTW": 0.5500115456050539,
+          "E2E_ms": 145.34576803321292
+        },
+        {
+          "episode": 1800,
+          "joint_reward": 0.169088371979789,
+          "SR": 0.48333333333333334,
+          "nDTW": 0.522303760006273,
+          "E2E_ms": 141.2861552105936
+        },
+        {
+          "episode": 2000,
+          "joint_reward": 0.1439413021763063,
+          "SR": 0.48333333333333334,
+          "nDTW": 0.5072807390076722,
+          "E2E_ms": 145.33577473254638
+        }
+      ],
+      "best_validation": {
+        "episode": 800,
+        "joint_reward": 0.2235284622859482,
+        "SR": 0.6,
+        "nDTW": 0.5951161437409616,
+        "E2E_ms": 148.63507258200534
+      },
+      "last_validation": {
+        "episode": 2000,
+        "joint_reward": 0.1439413021763063,
+        "SR": 0.48333333333333334,
+        "nDTW": 0.5072807390076722,
+        "E2E_ms": 145.33577473254638
+      },
+      "stop_reason": "no JointR improvement over 5 validations and last-3 trend is flat/declining",
+      "status": null,
+      "converged": true,
+      "early_stop_triggered": null
+    },
+    "jointr_v2_full": {
+      "key": "jointr_v2_full",
+      "label": "JointR v2 full (478-D, stopped Ep1320)",
+      "history_path": "runs/v83_spatial_stage2/stage2k_jointr_v2/training_history.json",
+      "result_path": "runs/v83_spatial_stage2/stage2k_jointr_v2/training_result.json",
+      "episodes": 1320,
+      "total_steps": 194332,
+      "epsilon_decay_steps": 200000,
+      "epsilon_first": 0.9981,
+      "epsilon_last": 0.07692300000000007,
+      "epsilon_min": 0.07692300000000007,
+      "epsilon_reached_floor_at_step": null,
+      "return_mean": 0.17207812344652404,
+      "return_std": 0.4206005469331545,
+      "return_min": -0.6122052028325689,
+      "return_max": 0.8728896034319795,
+      "ma100_peak": 0.31688396201638436,
+      "ma100_peak_episode": 101,
+      "ma100_last": 0.16537520928233057,
+      "loss_first": 0.0,
+      "loss_last": 2.6527470707893372,
+      "loss_mean": 0.8262959419098923,
+      "grad_mean": 12.820990093910694,
+      "q": {
+        "first_episode": 1,
+        "anchor_episode": 200,
+        "last_episode": 1320,
+        "q_mean_first": -0.16623660113080405,
+        "q_mean_anchor": 3.2268293048396255,
+        "q_mean_last": 157.81766567230224,
+        "q_mean_max": 233.71189126407398,
+        "q_max_first": 0.6675513386726379,
+        "q_max_anchor": 4.786213397979736,
+        "q_max_last": 209.7492218017578,
+        "q_max_max": 291.6209411621094,
+        "q_mean_ratio": 48.90796839969378,
+        "q_max_ratio": 43.8236251418069
+      },
+      "validations": [
+        {
+          "episode": 200,
+          "joint_reward": 0.1590239114059226,
+          "SR": 0.43333333333333335,
+          "nDTW": 0.5211232775625482,
+          "E2E_ms": 144.83974646265023
+        },
+        {
+          "episode": 400,
+          "joint_reward": 0.17640245733432453,
+          "SR": 0.48333333333333334,
+          "nDTW": 0.5549803115096921,
+          "E2E_ms": 151.431141670147
+        },
+        {
+          "episode": 600,
+          "joint_reward": 0.1698409471053431,
+          "SR": 0.4166666666666667,
+          "nDTW": 0.5391742538512333,
+          "E2E_ms": 147.7333226983561
+        },
+        {
+          "episode": 800,
+          "joint_reward": 0.1619498049169354,
+          "SR": 0.4166666666666667,
+          "nDTW": 0.5235375590209584,
+          "E2E_ms": 144.63510164160922
+        },
+        {
+          "episode": 1000,
+          "joint_reward": 0.12664132714161835,
+          "SR": 0.4666666666666667,
+          "nDTW": 0.4923026312774656,
+          "E2E_ms": 146.2645216543389
+        },
+        {
+          "episode": 1200,
+          "joint_reward": 0.11909685330089348,
+          "SR": 0.4,
+          "nDTW": 0.48806863378974386,
+          "E2E_ms": 147.58871219554015
+        }
+      ],
+      "best_validation": {
+        "episode": 400,
+        "joint_reward": 0.17640245733432453,
+        "SR": 0.48333333333333334,
+        "nDTW": 0.5549803115096921,
+        "E2E_ms": 151.431141670147
+      },
+      "last_validation": {
+        "episode": 1200,
+        "joint_reward": 0.11909685330089348,
+        "SR": 0.4,
+        "nDTW": 0.48806863378974386,
+        "E2E_ms": 147.58871219554015
+      },
+      "stop_reason": "stopped by user after 6 validations; best JointR at Ep400 and no improvement since",
+      "status": "user_stopped_no_improvement",
+      "converged": false,
+      "early_stop_triggered": false
+    },
+    "no_visual": {
+      "key": "no_visual",
+      "label": "No-visual (342-D, stopped Ep2450)",
+      "history_path": "runs/v83_spatial_stage2/stage2k_no_visual/training_history.json",
+      "result_path": "runs/v83_spatial_stage2/stage2k_no_visual/training_result.json",
+      "episodes": 2450,
+      "total_steps": 385198,
+      "epsilon_decay_steps": 200000,
+      "epsilon_first": 0.9981,
+      "epsilon_last": 0.050000000000000044,
+      "epsilon_min": 0.050000000000000044,
+      "epsilon_reached_floor_at_step": 200108,
+      "return_mean": 0.14244948484185127,
+      "return_std": 0.43156702545805836,
+      "return_min": -0.6923788109854149,
+      "return_max": 0.8607070076883917,
+      "ma100_peak": 0.27635429936217926,
+      "ma100_peak_episode": 105,
+      "ma100_last": 0.15990738999232557,
+      "loss_first": 0.0,
+      "loss_last": 0.07822413359006697,
+      "loss_mean": 0.03681197584517214,
+      "grad_mean": 0.4234669841454615,
+      "q": {
+        "first_episode": 1,
+        "anchor_episode": 200,
+        "last_episode": 2450,
+        "q_mean_first": -0.007011893466114998,
+        "q_mean_anchor": 0.647977081889456,
+        "q_mean_last": 7.199926280975342,
+        "q_mean_max": 26.8541084058357,
+        "q_max_first": 0.09359705448150635,
+        "q_max_anchor": 0.8149677515029907,
+        "q_max_last": 8.257145881652832,
+        "q_max_max": 38.83357620239258,
+        "q_mean_ratio": 11.111390328776535,
+        "q_max_ratio": 10.13186824438725
+      },
+      "validations": [
+        {
+          "episode": 200,
+          "joint_reward": 0.15173560087137888,
+          "SR": 0.43333333333333335,
+          "nDTW": 0.4725583008686728,
+          "E2E_ms": 128.32907999891756
+        },
+        {
+          "episode": 400,
+          "joint_reward": 0.1776615127755456,
+          "SR": 0.4,
+          "nDTW": 0.4976114185413251,
+          "E2E_ms": 127.9799623063118
+        },
+        {
+          "episode": 600,
+          "joint_reward": 0.16853473408992103,
+          "SR": 0.36666666666666664,
+          "nDTW": 0.5122101304736557,
+          "E2E_ms": 137.47015855349386
+        },
+        {
+          "episode": 800,
+          "joint_reward": 0.15804023275389661,
+          "SR": 0.4,
+          "nDTW": 0.4967748574078902,
+          "E2E_ms": 135.49384986159743
+        },
+        {
+          "episode": 1000,
+          "joint_reward": 0.0841920836753875,
+          "SR": 0.31666666666666665,
+          "nDTW": 0.45291778184676645,
+          "E2E_ms": 147.49027926855157
+        },
+        {
+          "episode": 1200,
+          "joint_reward": 0.18729713747722665,
+          "SR": 0.4666666666666667,
+          "nDTW": 0.5479933430166327,
+          "E2E_ms": 144.27848221576244
+        },
+        {
+          "episode": 1400,
+          "joint_reward": 0.13306525378060297,
+          "SR": 0.5,
+          "nDTW": 0.49130374747774996,
+          "E2E_ms": 143.2953974788588
+        },
+        {
+          "episode": 1600,
+          "joint_reward": 0.08628402533946533,
+          "SR": 0.4,
+          "nDTW": 0.4439639446855723,
+          "E2E_ms": 143.0719677384428
+        },
+        {
+          "episode": 1800,
+          "joint_reward": 0.10085980127268523,
+          "SR": 0.4,
+          "nDTW": 0.4538439570715072,
+          "E2E_ms": 141.19366231952878
+        },
+        {
+          "episode": 2000,
+          "joint_reward": 0.10349222623792709,
+          "SR": 0.4166666666666667,
+          "nDTW": 0.46055921443838227,
+          "E2E_ms": 142.82679528018207
+        },
+        {
+          "episode": 2200,
+          "joint_reward": 0.15698655709247444,
+          "SR": 0.43333333333333335,
+          "nDTW": 0.5064481757916048,
+          "E2E_ms": 139.78464747965216
+        },
+        {
+          "episode": 2400,
+          "joint_reward": 0.12656100783206858,
+          "SR": 0.45,
+          "nDTW": 0.472507293322038,
+          "E2E_ms": 138.37851419598778
+        }
+      ],
+      "best_validation": {
+        "episode": 1200,
+        "joint_reward": 0.18729713747722665,
+        "SR": 0.4666666666666667,
+        "nDTW": 0.5479933430166327,
+        "E2E_ms": 144.27848221576244
+      },
+      "last_validation": {
+        "episode": 2400,
+        "joint_reward": 0.12656100783206858,
+        "SR": 0.45,
+        "nDTW": 0.472507293322038,
+        "E2E_ms": 138.37851419598778
+      },
+      "stop_reason": "stopped by user to start stage2k_pure_mec_state",
+      "status": "user_stopped",
+      "converged": false,
+      "early_stop_triggered": false
+    },
+    "pure_mec_v1": {
+      "key": "pure_mec_v1",
+      "label": "Pure MEC v1 (322-D, stopped Ep1600)",
+      "history_path": "runs/v83_spatial_stage2/stage2k_pure_mec_state/training_history.json",
+      "result_path": "runs/v83_spatial_stage2/stage2k_pure_mec_state/training_result.json",
+      "episodes": 1600,
+      "total_steps": 244150,
+      "epsilon_decay_steps": 200000,
+      "epsilon_first": 0.99981,
+      "epsilon_last": 0.050000000000000044,
+      "epsilon_min": 0.050000000000000044,
+      "epsilon_reached_floor_at_step": 200267,
+      "return_mean": 0.1539291492942962,
+      "return_std": 0.42362324887133074,
+      "return_min": -0.6987399698152913,
+      "return_max": 0.8474040009765507,
+      "ma100_peak": 0.3023217292658077,
+      "ma100_peak_episode": 627,
+      "ma100_last": 0.06517294955770063,
+      "loss_first": 0.0,
+      "loss_last": 0.03422345395439567,
+      "loss_mean": 0.019084446990665138,
+      "grad_mean": 0.1883875394559494,
+      "q": {
+        "first_episode": 1,
+        "anchor_episode": 200,
+        "last_episode": 1600,
+        "q_mean_first": 0.023127306159585713,
+        "q_mean_anchor": 0.4664094240693321,
+        "q_mean_last": 5.62193502963168,
+        "q_mean_max": 13.697787530960575,
+        "q_max_first": 0.13511091470718384,
+        "q_max_anchor": 0.6670804619789124,
+        "q_max_last": 6.397754192352295,
+        "q_max_max": 17.351051330566406,
+        "q_mean_ratio": 12.05364801718924,
+        "q_max_ratio": 9.590678421870104
+      },
+      "validations": [
+        {
+          "episode": 200,
+          "joint_reward": 0.07887608245082739,
+          "SR": 0.36666666666666664,
+          "nDTW": 0.43071419740091665,
+          "E2E_ms": 140.7352459800357
+        },
+        {
+          "episode": 400,
+          "joint_reward": 0.0910408154137452,
+          "SR": 0.35,
+          "nDTW": 0.4361734367188733,
+          "E2E_ms": 138.05304852205126
+        },
+        {
+          "episode": 600,
+          "joint_reward": 0.15587034112851683,
+          "SR": 0.4166666666666667,
+          "nDTW": 0.511800054332744,
+          "E2E_ms": 142.37188528169088
+        },
+        {
+          "episode": 800,
+          "joint_reward": 0.1384404538379358,
+          "SR": 0.4,
+          "nDTW": 0.5229684202379674,
+          "E2E_ms": 153.81118656001266
+        },
+        {
+          "episode": 1000,
+          "joint_reward": 0.11068985340131171,
+          "SR": 0.4166666666666667,
+          "nDTW": 0.4970452645515209,
+          "E2E_ms": 154.54216446008368
+        },
+        {
+          "episode": 1200,
+          "joint_reward": 0.14154230549922425,
+          "SR": 0.4666666666666667,
+          "nDTW": 0.51437701640085,
+          "E2E_ms": 149.13388436065028
+        },
+        {
+          "episode": 1400,
+          "joint_reward": 0.09614999158883547,
+          "SR": 0.45,
+          "nDTW": 0.4641912167120255,
+          "E2E_ms": 147.21649004927602
+        },
+        {
+          "episode": 1600,
+          "joint_reward": 0.06393887722561081,
+          "SR": 0.36666666666666664,
+          "nDTW": 0.45447929410924887,
+          "E2E_ms": 156.2161667534552
+        }
+      ],
+      "best_validation": {
+        "episode": 600,
+        "joint_reward": 0.15587034112851683,
+        "SR": 0.4166666666666667,
+        "nDTW": 0.511800054332744,
+        "E2E_ms": 142.37188528169088
+      },
+      "last_validation": {
+        "episode": 1600,
+        "joint_reward": 0.06393887722561081,
+        "SR": 0.36666666666666664,
+        "nDTW": 0.45447929410924887,
+        "E2E_ms": 156.2161667534552
+      },
+      "stop_reason": "no JointR improvement over 5 validations and last-3 trend is flat/declining",
+      "status": "early_stopped_no_improvement",
+      "converged": false,
+      "early_stop_triggered": true
+    }
+  },
+  "figures": {
+    "epsilon": "v83_spatial_stage2/figures/stage2k_v2_preexperiment/epsilon_vs_steps.png",
+    "q": "v83_spatial_stage2/figures/stage2k_v2_preexperiment/q_mean_qmax.png",
+    "returns": "v83_spatial_stage2/figures/stage2k_v2_preexperiment/return_raw_ma100.png",
+    "validation": "v83_spatial_stage2/figures/stage2k_v2_preexperiment/validation_jointr.png"
+  }
+}

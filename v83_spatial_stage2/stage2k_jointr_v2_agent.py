@@ -38,13 +38,29 @@ ACTION_DIM = 20
 GAMMA_V2 = 1.0
 
 
+def epsilon_at(total_steps, decay_steps=EPSILON_DECAY_STEPS):
+    """Linear epsilon schedule shared by training and tests."""
+    decay_steps = int(decay_steps)
+    if decay_steps <= 0:
+        raise ValueError("decay_steps must be positive")
+    fraction = min(1.0, float(total_steps) / float(decay_steps))
+    return float(EPSILON_START + (EPSILON_END - EPSILON_START) * fraction)
+
+
 class DQNAgentV2:
     def __init__(self, device, seed=SEED, gamma=GAMMA_V2,
-                 state_dim=STATE_DIM, state_mode="full"):
+                 state_dim=STATE_DIM, state_mode="full",
+                 epsilon_decay_steps=None):
         self.device = torch.device(device)
         self.gamma = float(gamma)
         self.state_dim = int(state_dim)
         self.state_mode = str(state_mode)
+        self.epsilon_decay_steps = int(
+            EPSILON_DECAY_STEPS if epsilon_decay_steps is None
+            else epsilon_decay_steps
+        )
+        if self.epsilon_decay_steps <= 0:
+            raise ValueError("epsilon_decay_steps must be positive")
         torch.manual_seed(int(seed))
         self.online = QNetwork(state_dim=self.state_dim).to(self.device)
         self.target = QNetwork(state_dim=self.state_dim).to(self.device)
@@ -64,12 +80,7 @@ class DQNAgentV2:
         self.update_steps = 0
 
     def epsilon(self):
-        fraction = min(
-            1.0, float(self.total_steps) / float(EPSILON_DECAY_STEPS)
-        )
-        return float(
-            EPSILON_START + (EPSILON_END - EPSILON_START) * fraction
-        )
+        return epsilon_at(self.total_steps, self.epsilon_decay_steps)
 
     @torch.inference_mode()
     def q_values(self, state):
@@ -140,7 +151,7 @@ class DQNAgentV2:
             "gradient_clip": GRAD_CLIP,
             "epsilon_start": EPSILON_START,
             "epsilon_end": EPSILON_END,
-            "epsilon_decay_steps": EPSILON_DECAY_STEPS,
+            "epsilon_decay_steps": int(self.epsilon_decay_steps),
             "seed": SEED,
             "reward_mode": "jointr_aligned_v2",
             "final_test_read": False,
@@ -225,6 +236,14 @@ class DQNAgentV2:
             raise RuntimeError(
                 f"Checkpoint state_dim {config.get('state_dim')} != "
                 f"{self.state_dim}"
+            )
+        if int(config.get(
+            "epsilon_decay_steps", EPSILON_DECAY_STEPS
+        )) != self.epsilon_decay_steps:
+            raise RuntimeError(
+                "Checkpoint epsilon_decay_steps "
+                f"{config.get('epsilon_decay_steps')} != "
+                f"{self.epsilon_decay_steps}"
             )
         self._load_networks(payload)
         self.buffer.load_state_dict(payload["buffer_state"])

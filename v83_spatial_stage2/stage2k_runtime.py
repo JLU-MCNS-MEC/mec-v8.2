@@ -60,6 +60,12 @@ from v83_spatial_stage2.stage2k_pure_mec_state import (
     build_pure_mec_state,
     pure_mec_candidate_features,
 )
+from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
+    build_pure_mec_v2_state,
+    build_visual_ablation_v2_state,
+    pure_mec_v2_candidate_features,
+    visual_context_from_projector,
+)
 from v83_spatial_stage2.stage2k_state import (
     build_state,
     candidate_features,
@@ -202,16 +208,28 @@ class EpisodeRunner:
         jointr_aligned=False,
         no_visual_state=False,
         pure_mec_state=False,
+        pure_mec_v2_state=False,
+        visual_ablation_v2_state=False,
     ):
         self.jointr_aligned = bool(jointr_aligned)
         self.no_visual_state = bool(no_visual_state)
         self.pure_mec_state = bool(pure_mec_state)
+        self.pure_mec_v2_state = bool(pure_mec_v2_state)
+        self.visual_ablation_v2_state = bool(visual_ablation_v2_state)
+        if self.pure_mec_v2_state and self.visual_ablation_v2_state:
+            raise ValueError(
+                "pure_mec_v2_state and visual_ablation_v2_state are exclusive"
+            )
         self.spec = spec
         self.topology = topology
         self.nodes = topology["nodes"]
         self.encoder = encoder
         self.backends = backends
         self.projector = projector
+        if self.visual_ablation_v2_state and self.projector is None:
+            raise ValueError(
+                "visual_ablation_v2_state requires the frozen VisualProjector"
+            )
         self.quality_prior = quality_prior
         self.gab_config = gab_config
         self.latency_model = latency_model or Stage2KLatency()
@@ -296,7 +314,37 @@ class EpisodeRunner:
         )
         current_goal_similarity = float(similarity.max().item())
         visual = visual_descriptor(current_tokens)[0].cpu().float().numpy()
-        if self.pure_mec_state:
+        if self.pure_mec_v2_state or self.visual_ablation_v2_state:
+            candidate, mask, metrics, fallback = (
+                pure_mec_v2_candidate_features(
+                    self.nodes,
+                    pose,
+                    self.latency_model,
+                    capability_prior=self.quality_prior,
+                )
+            )
+            state = build_pure_mec_v2_state(
+                pose,
+                self.step_index,
+                self.running_mean_e2e_ms,
+                candidate,
+            )
+            if self.visual_ablation_v2_state:
+                visual_summary_values = visual_summary(
+                    current_tokens[0].detach().cpu().float().numpy(),
+                    self.goal_tokens[0].detach().cpu().float().numpy(),
+                    history[0],
+                    history[3],
+                    np.zeros(20, dtype=np.float32),
+                    np.zeros(22, dtype=np.float32),
+                )
+                visual128 = visual_context_from_projector(
+                    self.projector, visual_summary_values
+                )
+                state = build_visual_ablation_v2_state(
+                    visual128, state
+                )
+        elif self.pure_mec_state:
             candidate, mask, metrics, fallback = (
                 pure_mec_candidate_features(
                     self.nodes,
@@ -643,6 +691,8 @@ def make_runner_factory(
     latency_model=None,
     scene_cache=None,
     device=None,
+    pure_mec_v2_state=False,
+    visual_ablation_v2_state=False,
 ):
     def factory(spec, topology, scene=None):
         return EpisodeRunner(
@@ -657,6 +707,8 @@ def make_runner_factory(
             scene=scene,
             scene_cache=scene_cache,
             device=device,
+            pure_mec_v2_state=pure_mec_v2_state,
+            visual_ablation_v2_state=visual_ablation_v2_state,
         )
     return factory
 
