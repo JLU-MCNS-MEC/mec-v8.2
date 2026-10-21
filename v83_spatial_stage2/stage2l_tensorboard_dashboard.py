@@ -249,6 +249,8 @@ def _write_run_events(run, writer, history, train, validation):
     )
 
     jointr = []
+    nav_rewards = []
+    penalties = []
     sr = []
     ndtw = []
     e2e = []
@@ -265,8 +267,10 @@ def _write_run_events(run, writer, history, train, validation):
         nav = row.get("navigation_reward")
         pen = row.get("latency_penalty")
         if nav is not None:
+            nav_rewards.append(float(nav))
             writer.add_scalar("train/navigation_reward", float(nav), episode)
         if pen is not None:
+            penalties.append(float(pen))
             writer.add_scalar("train/latency_penalty", float(pen), episode)
         writer.add_scalar("train/sr", float(bool(row.get("success", False))), episode)
         writer.add_scalar("train/ndtw", float(row.get("final_nDTW", 0.0)), episode)
@@ -291,6 +295,8 @@ def _write_run_events(run, writer, history, train, validation):
 
     for offset, (values, tag) in enumerate((
         (jointr, "train/jointr_ma100"),
+        (nav_rewards, "train/navigation_reward_ma100"),
+        (penalties, "train/latency_penalty_ma100"),
         (sr, "train/sr_ma100"),
         (ndtw, "train/ndtw_ma100"),
         (e2e, "train/e2e_ms_ma100"),
@@ -389,7 +395,8 @@ def _write_readme(run_reports, port, session, log_path):
         "",
         "- `train/jointr`：逐 Episode JointR（真实记录）",
         "- `train/jointr_ma100`：从 Episode 100 起的 100-Episode 移动平均",
-        "- `train/navigation_reward`、`train/latency_penalty`",
+        "- `train/navigation_reward`、`train/latency_penalty`（逐 Episode）",
+        "- `train/navigation_reward_ma100`、`train/latency_penalty_ma100`",
         "- `train/sr`、`train/ndtw`、`train/e2e_ms`（逐 Episode）",
         "- `train/sr_ma100`、`train/ndtw_ma100`、`train/e2e_ms_ma100`",
         "",
@@ -418,6 +425,19 @@ def _write_readme(run_reports, port, session, log_path):
         "- 原 Event、Checkpoint、training_history 均未修改。",
         "- 缺失指标见 `LOAD_REPORT.json` 的 `missing_metrics`。",
         "",
+        "## TensorBoard 采样设置",
+        "",
+        "- 启动参数为 `--samples_per_plugin scalars=5000`：最长序列 3500 点，"
+        "因此所有真实点都会返回，没有降采样。",
+        "- **不能使用 `scalars=0`**：TensorBoard 会把它解释为 0 个样本，"
+        "Tag 列表仍在但所有曲线为空。",
+        "- 数据级检查（不只是 HTTP 200）：",
+        "",
+        "```bash",
+        "python v83_spatial_stage2/verify_tensorboard_dashboard.py \\",
+        "  --url http://127.0.0.1:%d" % port,
+        "```",
+        "",
         "## 启动与访问",
         "",
         "服务已由 tmux 在服务器 `127.0.0.1:%d` 启动；VS Code Remote SSH 中"
@@ -428,6 +448,8 @@ def _write_readme(run_reports, port, session, log_path):
         "",
         "```bash",
         f"curl -I http://127.0.0.1:{port}/",
+        f"python v83_spatial_stage2/verify_tensorboard_dashboard.py --url "
+        f"http://127.0.0.1:{port}",
         "```",
         "",
     ]
@@ -454,7 +476,12 @@ def main():
         writer.flush()
         writer.close()
 
-        expected = ["train/jointr", "train/jointr_ma100"]
+        expected = [
+            "train/jointr",
+            "train/jointr_ma100",
+            "train/navigation_reward_ma100",
+            "train/latency_penalty_ma100",
+        ]
         if run["algorithm"] == "dqn":
             expected += [
                 "dqn/td_loss", "dqn/q_mean", "dqn/q_max",

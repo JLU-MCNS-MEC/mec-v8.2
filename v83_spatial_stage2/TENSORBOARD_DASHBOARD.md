@@ -7,7 +7,8 @@ Conda 环境：`DRL`
 
 本看板汇总六组已完成实验的原始记录，统一使用真实训练 Episode 作为横轴；
 **没有停止或修改任何训练任务、原始 Event、Checkpoint 或 `training_history.json`**。
-B/DQN、B/PPO 仍处于暂停状态，不在本看板的六组已完成实验中。
+B/DQN、B/PPO 仍处于暂停状态（分别约 1,030 / 1,120 Episode），不在本看板的六组
+已完成实验中。
 
 ## 1. 六组实验
 
@@ -24,10 +25,12 @@ B/DQN、B/PPO 仍处于暂停状态，不在本看板的六组已完成实验中
 
 - 监听：`127.0.0.1:6006`
 - tmux session：`tb_stage2l_dashboard`
-- 进程 PID：`583267`
+- 进程 PID：`588396`（本次启动；以 `tensorboard_service.json` 为准）
+- 采样参数：`--samples_per_plugin scalars=5000`
 - 日志：`runs/tensorboard/rl_stage2k_stage2l_dashboard/tensorboard.log`
 - 汇总事件：`runs/tensorboard/rl_stage2k_stage2l_dashboard/events/`
 - 加载报告：`runs/tensorboard/rl_stage2k_stage2l_dashboard/LOAD_REPORT.json`
+- 数据级验证：`runs/tensorboard/rl_stage2k_stage2l_dashboard/SERVICE_VERIFICATION.json`
 - 服务状态文件：`runs/tensorboard/rl_stage2k_stage2l_dashboard/tensorboard_service.json`
 
 服务器端实测：
@@ -39,7 +42,17 @@ curl -I http://127.0.0.1:6006/
 curl -s http://127.0.0.1:6006/data/runs
 # ["01_Stage2k_V2_PureMEC_DQN_384D", "02_Stage2k_V2_PureMEC_Visual_DQN_512D",
 #  "03_Stage2l_A_DQN", "04_Stage2l_A_PPO", "05_Stage2l_C_DQN", "06_Stage2l_C_PPO"]
+
+python v83_spatial_stage2/verify_tensorboard_dashboard.py \
+  --url http://127.0.0.1:6006
+# SERVICE_VERIFICATION: PASS
+# 每个 Run 的 train/jointr 实测 3500 点、validation/jointr 18 点
 ```
+
+**采样参数必须用 5000，不能用 0。** 实测发现 TensorBoard 2.21 会把
+`--samples_per_plugin scalars=0` 解释为“保留 0 个样本”：HTTP 200、Run 列表和
+Tag 列表都正常，但所有标量曲线为空。改用 5000 后六个 Run 的 3500 个真实训练点
+全部返回，没有降采样。
 
 ## 3. VS Code Remote SSH 端口转发
 
@@ -59,7 +72,8 @@ TensorBoard 只监听服务器 `127.0.0.1`，所以必须经过 VS Code 的端�
 
 - `train/jointr`：逐 Episode JointR
 - `train/jointr_ma100`：从 Episode 100 起的 100-Episode 移动平均
-- `train/navigation_reward`、`train/latency_penalty`
+- `train/navigation_reward`、`train/latency_penalty`（逐 Episode）
+- `train/navigation_reward_ma100`、`train/latency_penalty_ma100`
 - `train/sr`、`train/ndtw`、`train/e2e_ms`（逐 Episode）
 - `train/sr_ma100`、`train/ndtw_ma100`、`train/e2e_ms_ma100`
 
@@ -97,6 +111,24 @@ TensorBoard 只监听服务器 `127.0.0.1`，所以必须经过 VS Code 的端�
 - Stage-2k V2 的环境是每 Episode 重新生成城市；Stage-2l 是固定城市。两者在同一
   TensorBoard 中仅用于结构对比，不能把绝对值直接当作同一环境下的改进。
 
+### 已发现的 Q 值异常（真实记录，未修图）
+
+`02_Stage2k_V2_PureMEC_Visual_DQN_512D` 存在明显的 Q 值高估/发散：
+
+- `dqn/q_mean`：前 500 Episode 中位数约 3.6，最后 500 Episode 中位数约 944.7，
+  末尾单点 1,726.5，全程最大 2,134.2。
+- `dqn/q_max` 全程最大 2,446.3。
+- `dqn/td_loss` 中位数从约 0.008 升到约 15.6，最大 22.0；`dqn/grad_norm`
+  最大 192.4（记录的是裁剪前范数，实际裁剪阈值 10）。
+- 同期训练 SR 仍约 0.49–0.55，末尾验证 SR 为 0.50，说明行为指标没有同步
+  崩溃，但 Q 值已经不能作为可靠的价值尺度。
+
+其余三个 DQN 的 Q 值也随训练上升，但终点 `q_mean` 分别为 27.1、9.7、11.1；
+视觉臂是数量级异常。DQN 使用 `gamma=1.0`，Q 是未折扣的未来奖励和，增长本身可预期；
+但视觉臂的幅度、TD Loss 与梯度同时抬升表明存在数值高估/发散。根因尚未定位，
+优先排查视觉特征尺度、目标网络稳定性与 replay 分布；这是训练侧问题，不是
+TensorBoard 缺数据或绘图错误。
+
 ## 6. 重新生成与启动
 
 ```bash
@@ -108,10 +140,18 @@ bash v83_spatial_stage2/start_tensorboard_dashboard.sh
 ```
 
 启动脚本会优先使用 6006；被占用时依次尝试 6007–6012，并写入
-`tensorboard_service.json`。TensorBoard 在 tmux 中运行，关闭 SSH 终端后仍保留。
+`tensorboard_service.json`。它还会调用
+`verify_tensorboard_dashboard.py` 检查**实际标量点**（不是只看 HTTP 200）；
+如果发现旧服务返回空曲线，会自动重启。TensorBoard 使用
+`--samples_per_plugin scalars=5000`，在 tmux 中运行，关闭 SSH 终端后仍保留。
+
+重新生成只替换 `runs/tensorboard/rl_stage2k_stage2l_dashboard/events/`，
+不会改写原始 Event、Checkpoint 或 `training_history.json`。`runs/` 不进入
+Git，Event 文件保留在服务器。
 
 ## 7. 配置文件
 
 - `v83_spatial_stage2/tensorboard_dashboard_config.json`：六组实验、标签、采样节奏
 - `v83_spatial_stage2/stage2l_tensorboard_dashboard.py`：汇总/重放脚本
 - `v83_spatial_stage2/start_tensorboard_dashboard.sh`：持久化启动脚本
+- `v83_spatial_stage2/verify_tensorboard_dashboard.py`：数据级服务检查（HTTP 外的标量点校验）
