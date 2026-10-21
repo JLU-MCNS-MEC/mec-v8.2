@@ -39,6 +39,7 @@ from v83_spatial_stage2.stage2k_v2_common import load_capability_prior
 from v83_spatial_stage2.stage2l_fixed_city import (
     CONFIG_DESCRIPTIONS,
     MAP_SEED_PHASE1,
+    build_city,
     TRAIN_EPISODES,
     canonical_sha256,
     config_specs,
@@ -159,6 +160,7 @@ def protocol_payload(
         "task_pool_sha256": manifest["task_pool_sha256"],
         "dev_pool_sha256": manifest["dev_pool_sha256"],
         "map_seed": int(MAP_SEED_PHASE1),
+        "city_fingerprint": build_city(int(MAP_SEED_PHASE1)).fingerprint,
         "dev_task_uids": [item["episode_uid"] for item in dev_specs],
         "dev_task_seeds": [int(item["task_seed"]) for item in dev_specs],
         "train_topology_roles": manifest["topology_roles"]["train"],

@@ -287,3 +287,27 @@ direction is stopped (`V83_STAGE2G2_RECOVERY_SMOKE_REPORT.md` §7).
 - Final Test 300 is sealed and never used for selection/tuning.
 
 See `STAGE2_PREP_REPORT.md` for diagnostics, data statistics, and time/disk estimates.
+
+## Stage-2l Fixed-City navigation RL (2026-10-21)
+
+Stage-2l replaces the per-episode city regeneration with a fixed-city /
+task-seed split and trains standard DQN and PPO on three deployment
+configurations (A/B/C). The five Stage-2j T5 MECs stay frozen; the state is
+Pure MEC v2 (384-D + 20-D mask) and the reward is JointR-aligned with no
+shaping.
+
+- Protocol: `STAGE2L_FIXED_CITY_PROTOCOL.md`
+- Setup report (environment fixedness, task distribution, smoke): 
+  `STAGE2L_FIXED_CITY_SETUP.md`
+- Progress report: `STAGE2L_FIXED_CITY_REPORT.md`
+- Build: `python v83_spatial_stage2/stage2l_build.py`
+- Tests: `python v83_spatial_stage2/test_stage2l_fixed_city.py`
+- Smoke: `python v83_spatial_stage2/stage2l_smoke.py`
+- Supervised training: `python v83_spatial_stage2/stage2l_supervisor.py`
+- Status: `python v83_spatial_stage2/stage2l_status.py`
+- Report/figures: `python v83_spatial_stage2/stage2l_report.py`
+- Dev evaluation: `python v83_spatial_stage2/stage2l_eval.py --config A --split dev`
+
+All run artifacts live under `runs/v83_spatial_stage2/stage2l_fixed_city/`
+(git-ignored). Final Test stays sealed until the fixed-environment baseline is
+established and the protocol is frozen.

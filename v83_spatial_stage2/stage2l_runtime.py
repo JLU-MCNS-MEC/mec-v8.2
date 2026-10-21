@@ -23,25 +23,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from env import STOP, ToyUAVEnv
-from gbs_model_v3 import goal_current_similarity
+from env import STOP
 from navigation_reward import NavigationRewardTracker
-from token_data import (
-    encode_multiscale_goal_tokens,
-    goal_conditioned_spatial_heatmap,
-)
-from utils import image_to_tensor
+from token_data import encode_multiscale_goal_tokens
 from v83_spatial_stage2.stage2h_gab import GABState
 from v83_spatial_stage2.stage2i_data import (
     encode_landmark_canvases,
-    online_history_arrays,
     render_landmark_canvas,
 )
-from v83_spatial_stage2.stage2k_runtime import EpisodeRunner, load_runtime
-from v83_spatial_stage2.stage2l_fixed_city import (
-    FixedCityEnv,
-    MAP_SEED_PHASE1,
-)
+from v83_spatial_stage2.stage2k_runtime import EpisodeRunner
+from v83_spatial_stage2.stage2l_fixed_city import FixedCityEnv
 
 
 def _shuffled_city_nodes(env: FixedCityEnv):
@@ -106,6 +97,7 @@ class FixedCitySceneCache:
             goal_index=goal_index,
             start_xy=spec["start"],
             start_yaw=float(spec["start_yaw"]),
+            band=spec.get("band"),
             goal_distance_range_m=tuple(spec["distance_range"]),
             render_observation=False,
         )
@@ -153,6 +145,7 @@ def build_fixed_oracle_reference(spec) -> dict:
         goal_index=int(spec["goal_index"]),
         start_xy=spec["start"],
         start_yaw=float(spec["start_yaw"]),
+        band=spec.get("band"),
         goal_distance_range_m=tuple(spec["distance_range"]),
         render_observation=False,
     )
@@ -241,6 +234,7 @@ class FixedCityEpisodeRunner(EpisodeRunner):
             goal_index=int(self.spec["goal_index"]),
             start_xy=self.spec["start"],
             start_yaw=float(self.spec["start_yaw"]),
+            band=self.spec.get("band"),
             goal_distance_range_m=tuple(self.spec["distance_range"]),
             render_observation=True,
         )

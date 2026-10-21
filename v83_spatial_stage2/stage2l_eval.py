@@ -16,11 +16,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
-import torch
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -28,7 +26,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from v83_spatial_stage2.stage2k_common import (
     atomic_write_json,
-    summarize_episodes,
     utc_now,
     write_csv,
 )
@@ -45,7 +42,6 @@ from v83_spatial_stage2.stage2l_fixed_city import (
     load_topology,
 )
 from v83_spatial_stage2.stage2l_protocol import (
-    ACTION_DIM,
     CAPABILITY_PRIOR_PATH,
     DevEvaluator,
     STATE_DIM,
@@ -72,12 +68,12 @@ ALGORITHM_TITLES = {
 BASELINES = ("random", "min_latency", "max_quality", "heuristic", "oracle")
 
 
-def _row(result, algorithm, split):
+def _row(result, algorithm, split, config):
     return {
         "algorithm": algorithm,
         "episode_uid": result["episode_uid"],
         "split": split,
-        "config": result.get("config", ""),
+        "config": str(config),
         "scenario": result["scenario"],
         "band": result["band"],
         "task_seed": int(result["seed"]),
@@ -281,7 +277,7 @@ def main():
             agent.load_model(checkpoint)
             rows = evaluator.evaluate_dqn(agent)
             algorithm_rows[algorithm] = [
-                _row(item, algorithm, args.split) for item in rows
+                _row(item, algorithm, args.split, args.config) for item in rows
             ]
         elif algorithm == "ppo":
             checkpoint = args.ppo_checkpoint or (
@@ -296,12 +292,12 @@ def main():
             agent.load_model(checkpoint)
             rows = evaluator.evaluate_ppo(agent)
             algorithm_rows[algorithm] = [
-                _row(item, algorithm, args.split) for item in rows
+                _row(item, algorithm, args.split, args.config) for item in rows
             ]
         else:
             rows = evaluator.evaluate_strategy(algorithm)
             algorithm_rows[algorithm] = [
-                _row(item, algorithm, args.split) for item in rows
+                _row(item, algorithm, args.split, args.config) for item in rows
             ]
         all_rows.extend(algorithm_rows[algorithm])
         summary = _summary(algorithm_rows[algorithm])

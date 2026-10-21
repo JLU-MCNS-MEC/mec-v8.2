@@ -47,7 +47,7 @@ def existing_training_pids():
     """PIDs of the pre-existing Stage-2k trainers (never touched)."""
     try:
         output = subprocess.check_output(
-            ["ps", "-eo", "pid=,args="], text=True
+            ["ps", "-eo", "pid=,stat=,args="], text=True
         )
     except Exception:
         return []
@@ -56,10 +56,12 @@ def existing_training_pids():
         line = line.strip()
         if not line:
             continue
-        parts = line.split(None, 1)
-        if len(parts) != 2:
+        parts = line.split(None, 2)
+        if len(parts) != 3:
             continue
-        pid, args = parts
+        pid, stat, args = parts
+        if stat.startswith("Z"):
+            continue
         if any(marker in args for marker in EXISTING_MARKERS):
             try:
                 pids.append(int(pid))

@@ -34,22 +34,13 @@ import math
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 from config import ENV, NETWORK
-from env import (
-    ACTION_NAMES,
-    FORWARD,
-    LEFT,
-    RIGHT,
-    STOP,
-    Landmark,
-    ToyUAVEnv,
-    wrap_angle,
-)
+from env import Landmark, ToyUAVEnv, wrap_angle
 from gbs_network import build_random_gbs_layout
 from v83_spatial_stage2.stage2k_common import (
     BAND_ACTION_RANGES,
@@ -58,12 +49,10 @@ from v83_spatial_stage2.stage2k_common import (
     BANDS,
     MODEL_INDEX,
     MODEL_NAMES,
-    POSITION_SCALE_M,
     SCENARIOS,
     atomic_write_json,
     read_json,
     utc_now,
-    write_csv,
 )
 from v83_spatial_stage2.stage2k_v2_common import load_capability_prior
 
@@ -1343,8 +1332,8 @@ def build_all(verbose: bool = True) -> dict:
             "test": distribution["test"]["bands"],
             "map_seed": MAP_SEED_PHASE1,
             "city_fingerprint": build_city(MAP_SEED_PHASE1).fingerprint,
-            "train_order_sha256": sha256_text(
-                json.dumps(order_payload["order"])
+            "train_order_sha256": canonical_sha256(
+                order_payload["order"]
             ),
         }, indent=2, ensure_ascii=False), flush=True)
     return {

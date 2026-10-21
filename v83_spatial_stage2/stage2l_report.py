@@ -12,7 +12,6 @@ and no dual axis; every panel with two series carries a legend.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -69,16 +68,36 @@ def _latest_status(config):
         joints = [float(row["joint_reward"]) for row in validation]
         if result:
             status = result.get("status", {})
+        elif len(history.get("train", [])) < 3500:
+            # Do not call a mid-training plateau "convergence"; the protocol
+            # only classifies the run after the 3500-episode cap.
+            status = {
+                "status": "training",
+                "converged": False,
+                "stable_platform": False,
+                "improving": None,
+                "reached_cap": False,
+            }
         else:
-            status = classify_status(joints, False)
+            status = classify_status(joints, True)
+        train_rows = history.get("train", [])
+        returns = [float(row["episode_return"]) for row in train_rows]
+        first_ma100 = float(np.mean(returns[:100])) if returns else None
+        last_ma100 = float(np.mean(returns[-100:])) if returns else None
         rows[algorithm] = {
             "result": result,
             "validation": validation,
             "joints": joints,
             "status": status,
-            "train_rows": len(history.get("train", [])),
+            "train_rows": len(train_rows),
             "best": float(max(joints)) if joints else None,
             "last": float(joints[-1]) if joints else None,
+            "first_return_ma100": first_ma100,
+            "last_return_ma100": last_ma100,
+            "return_improved": (
+                None if first_ma100 is None or last_ma100 is None
+                else bool(last_ma100 > first_ma100 + 0.01)
+            ),
         }
     return rows
 
@@ -254,11 +273,17 @@ def _convergence_text(config, info):
     for algorithm in ALGOS:
         item = info[algorithm]
         status = item["status"]
+        first = item["first_return_ma100"]
+        last = item["last_return_ma100"]
         lines.append(
             f"- {algorithm.upper()}：训练 {item['train_rows']} Episodes，"
             f"验证 {len(item['validation'])} 次；"
             f"best JointR={item['best'] if item['best'] is not None else '-'}，"
             f"last={item['last'] if item['last'] is not None else '-'}；"
+            f"训练奖励 100-Episode 移动平均 "
+            f"{'-' if first is None else f'{first:.4f}'} → "
+            f"{'-' if last is None else f'{last:.4f}'}"
+            f"（持续改善={item['return_improved']}）；"
             f"状态 `{status.get('status')}`，"
             f"稳定平台={status.get('stable_platform')}，"
             f"converged={status.get('converged')}。"

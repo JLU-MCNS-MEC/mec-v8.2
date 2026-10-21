@@ -42,6 +42,11 @@ def main():
         return
     print("# Stage-2l 训练状态")
     print()
+    def number(value, digits=4, scale=1.0, suffix=""):
+        if value is None:
+            return "-"
+        return f"{scale*float(value):.{digits}f}{suffix}"
+
     print("| 运行 | 状态 | Episode | 最新验证 JointR | SR | nDTW | E2E (ms) | Best JointR |")
     print("|---|---|---:|---:|---:|---:|---:|---:|")
     for key, item in payload.items():
@@ -51,11 +56,11 @@ def main():
         best = item.get("best_dev_joint")
         print(
             f"| {key} | {status} | {episode if episode is not None else '-'} | "
-            f"{last.get('joint_reward', float('nan')):.4f} | "
-            f"{100*last.get('SR', float('nan')):.2f}% | "
-            f"{last.get('nDTW', float('nan')):.4f} | "
-            f"{last.get('E2E_ms', float('nan')):.1f} | "
-            f"{best if best is not None else '-'} |"
+            f"{number(last.get('joint_reward'))} | "
+            f"{number(last.get('SR'), 2, 100.0, '%')} | "
+            f"{number(last.get('nDTW'))} | "
+            f"{number(last.get('E2E_ms'), 1)} | "
+            f"{number(best)} |"
         )
     print()
     print(f"更新时间：{payload and max((item.get('updated_utc') or '') for item in payload.values())}")

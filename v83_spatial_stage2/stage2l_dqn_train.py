@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
 from collections import deque
@@ -43,7 +42,6 @@ from v83_spatial_stage2.stage2k_common import (
 from v83_spatial_stage2.stage2k_dqn import SEED
 from v83_spatial_stage2.stage2k_jointr_v2_agent import DQNAgentV2
 from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
-    STATE_DIM_PURE_MEC_V2,
     state_layout_pure_mec_v2,
 )
 from v83_spatial_stage2.stage2k_runtime import load_gab_config, load_runtime
@@ -65,7 +63,6 @@ from v83_spatial_stage2.stage2l_protocol import (
     protocol_payload,
     resolve_device,
     set_threads,
-    status_summary,
     topology_for,
     validation_record,
     write_protocol_files,
