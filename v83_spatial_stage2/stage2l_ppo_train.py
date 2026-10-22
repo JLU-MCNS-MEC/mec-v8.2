@@ -34,8 +34,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from v83_spatial_stage2.stage2k_common import (
+    VISUAL_PCA_PATH,
     atomic_write_json,
     read_json,
+    sha256_file,
     utc_now,
     write_csv,
 )
@@ -57,9 +59,12 @@ from v83_spatial_stage2.stage2k_ppo_agent import (
     RolloutBuffer,
 )
 from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
+    STATE_DIM_VISUAL_ABLATION_V2,
     state_layout_pure_mec_v2,
+    state_layout_visual_ablation_v2,
 )
 from v83_spatial_stage2.stage2k_runtime import load_gab_config, load_runtime
+from v83_spatial_stage2.stage2k_state import VisualProjector
 from v83_spatial_stage2.stage2k_v2_common import load_capability_prior
 from v83_spatial_stage2.stage2l_fixed_city import (
     STAGE2L_ROOT,
@@ -119,13 +124,23 @@ def main():
     parser.add_argument("--minibatch-size", type=int, default=MINIBATCH_SIZE)
     parser.add_argument("--update-epochs", type=int, default=UPDATE_EPOCHS)
     parser.add_argument("--checkpoint-every", type=int, default=100)
+    parser.add_argument("--seed", type=int, default=PPO_SEED)
+    parser.add_argument(
+        "--state-mode",
+        choices=("pure_mec_v2", "visual_ablation_v2"),
+        default="pure_mec_v2",
+        help="384-D Pure-MEC v2 or 512-D +128-D frozen visual context.",
+    )
+    parser.add_argument("--visual-pca", type=Path, default=VISUAL_PCA_PATH)
     args = parser.parse_args()
 
     if not args.smoke:
-        if int(args.max_episodes) != MAX_EPISODES:
+        if int(args.max_episodes) > MAX_EPISODES:
             raise SystemExit(
-                f"Formal Stage-2l PPO requires --max-episodes {MAX_EPISODES}"
+                f"Stage-2l PPO allows at most {MAX_EPISODES} episodes"
             )
+        if int(args.max_episodes) < 1:
+            raise SystemExit("--max-episodes must be positive")
         if int(args.validation_every) != VALIDATION_EVERY:
             raise SystemExit(
                 "Formal Stage-2l PPO requires --validation-every 200"
@@ -172,8 +187,38 @@ def main():
     threads = set_threads(args.threads)
     device = resolve_device(args.device)
     bundle = load_bundle(args.config)
+    visual = args.state_mode == "visual_ablation_v2"
+    projector = None
+    projector_payload = None
+    if visual:
+        projector = VisualProjector.load(args.visual_pca)
+        meta = dict(projector.meta)
+        if meta.get("final_test_read") is not False:
+            raise SystemExit("Visual projector claims a Final Test read")
+        projector_payload = {
+            "path": str(args.visual_pca),
+            "sha256": sha256_file(args.visual_pca),
+            "meta": meta,
+            "frozen": True,
+            "backbone_training": False,
+        }
+        state_dim = int(STATE_DIM_VISUAL_ABLATION_V2)
+        state_mode = "visual_ablation_v2"
+        state_layout = state_layout_visual_ablation_v2()
+    else:
+        state_dim = int(STATE_DIM)
+        state_mode = "pure_mec_v2"
+        state_layout = state_layout_pure_mec_v2()
     protocol = protocol_payload(
-        bundle, "ppo", device, threads, sys.argv, run_dir, tensorboard_dir
+        bundle, "ppo", device, threads, sys.argv, run_dir, tensorboard_dir,
+        state_mode=state_mode,
+        state_dim=state_dim,
+        max_episodes=int(args.max_episodes),
+        validation_every=int(args.validation_every),
+        extra={
+            "seed": int(args.seed),
+            "visual_projector": projector_payload,
+        },
     )
     write_protocol_files(run_dir, protocol, sys.argv)
     prior_payload, quality = load_capability_prior(CAPABILITY_PRIOR_PATH)
@@ -184,13 +229,15 @@ def main():
     evaluator = DevEvaluator(
         bundle, encoder, backends, quality, gab_config, device,
         scene_cache=scene_cache,
+        state_mode=state_mode,
+        projector=projector,
     )
 
     agent = PPOAgent(
         device,
-        seed=PPO_SEED,
-        state_dim=STATE_DIM,
-        state_mode=STATE_MODE,
+        seed=int(args.seed),
+        state_dim=state_dim,
+        state_mode=state_mode,
         gamma=GAMMA,
         gae_lambda=GAE_LAMBDA,
         clip_eps=CLIP_EPS,
@@ -219,9 +266,11 @@ def main():
             "validation_tasks": [item["episode_uid"]
                                  for item in bundle["dev_specs"]],
             "training_order_sha256": protocol["training_order_sha256"],
-            "state_layout": state_layout_pure_mec_v2(),
-            "state_dim": STATE_DIM,
-            "state_mode": STATE_MODE,
+            "state_layout": state_layout,
+            "state_dim": state_dim,
+            "state_mode": state_mode,
+            "visual_projector": projector_payload,
+            "seed": int(args.seed),
             "reward": REWARD_DESCRIPTION,
             "map_seed": protocol["map_seed"],
             "train_topology_roles": protocol["train_topology_roles"],
@@ -360,13 +409,14 @@ def main():
             topology=topology,
             encoder=encoder,
             backends=backends,
-            projector=None,
+            projector=projector,
             quality_prior=quality,
             gab_config=gab_config,
             scene=scene_cache.get(spec),
             device=device,
             jointr_aligned=True,
-            pure_mec_v2_state=True,
+            pure_mec_v2_state=not visual,
+            visual_ablation_v2_state=visual,
         )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]

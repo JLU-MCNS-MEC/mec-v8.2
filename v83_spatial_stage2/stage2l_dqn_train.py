@@ -34,17 +34,22 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from v83_spatial_stage2.stage2k_common import (
+    VISUAL_PCA_PATH,
     atomic_write_json,
     read_json,
+    sha256_file,
     utc_now,
     write_csv,
 )
 from v83_spatial_stage2.stage2k_dqn import SEED
 from v83_spatial_stage2.stage2k_jointr_v2_agent import DQNAgentV2
 from v83_spatial_stage2.stage2k_pure_mec_v2_state import (
+    STATE_DIM_VISUAL_ABLATION_V2,
     state_layout_pure_mec_v2,
+    state_layout_visual_ablation_v2,
 )
 from v83_spatial_stage2.stage2k_runtime import load_gab_config, load_runtime
+from v83_spatial_stage2.stage2k_state import VisualProjector
 from v83_spatial_stage2.stage2k_v2_common import load_capability_prior
 from v83_spatial_stage2.stage2l_fixed_city import (
     STAGE2L_ROOT,
@@ -100,6 +105,22 @@ def main():
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--tensorboard-dir", type=Path, default=None)
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument(
+        "--state-mode",
+        choices=("pure_mec_v2", "visual_ablation_v2"),
+        default="pure_mec_v2",
+        help="384-D Pure-MEC v2 or 512-D +128-D frozen visual context.",
+    )
+    parser.add_argument("--visual-pca", type=Path, default=VISUAL_PCA_PATH)
+    parser.add_argument(
+        "--double-dqn", action="store_true",
+        help="Use Double DQN targets (online argmax, target evaluation).",
+    )
+    parser.add_argument(
+        "--legacy-target", action="store_true",
+        help="Pre-audit zero-fill masked target; before/after control only.",
+    )
     parser.add_argument(
         "--checkpoint-every", type=int, default=100,
         help="Save the full replay-buffer checkpoint every N episodes.",
@@ -110,13 +131,19 @@ def main():
     args = parser.parse_args()
 
     if not args.smoke:
-        if int(args.max_episodes) != MAX_EPISODES:
+        if int(args.max_episodes) > MAX_EPISODES:
             raise SystemExit(
-                f"Formal Stage-2l DQN requires --max-episodes {MAX_EPISODES}"
+                f"Stage-2l DQN allows at most {MAX_EPISODES} episodes"
             )
+        if int(args.max_episodes) < 1:
+            raise SystemExit("--max-episodes must be positive")
         if int(args.validation_every) != VALIDATION_EVERY:
             raise SystemExit(
                 "Formal Stage-2l DQN requires --validation-every 200"
+            )
+        if args.double_dqn and args.legacy_target:
+            raise SystemExit(
+                "--double-dqn and --legacy-target are mutually exclusive"
             )
     else:
         args.max_episodes = min(int(args.max_episodes), 20)
@@ -146,8 +173,40 @@ def main():
     threads = set_threads(args.threads)
     device = resolve_device(args.device)
     bundle = load_bundle(args.config)
+    visual = args.state_mode == "visual_ablation_v2"
+    projector = None
+    projector_payload = None
+    if visual:
+        projector = VisualProjector.load(args.visual_pca)
+        meta = dict(projector.meta)
+        if meta.get("final_test_read") is not False:
+            raise SystemExit("Visual projector claims a Final Test read")
+        projector_payload = {
+            "path": str(args.visual_pca),
+            "sha256": sha256_file(args.visual_pca),
+            "meta": meta,
+            "frozen": True,
+            "backbone_training": False,
+        }
+        state_dim = int(STATE_DIM_VISUAL_ABLATION_V2)
+        state_mode = "visual_ablation_v2"
+        state_layout = state_layout_visual_ablation_v2()
+    else:
+        state_dim = int(STATE_DIM)
+        state_mode = "pure_mec_v2"
+        state_layout = state_layout_pure_mec_v2()
     protocol = protocol_payload(
-        bundle, "dqn", device, threads, sys.argv, run_dir, tensorboard_dir
+        bundle, "dqn", device, threads, sys.argv, run_dir, tensorboard_dir,
+        state_mode=state_mode,
+        state_dim=state_dim,
+        max_episodes=int(args.max_episodes),
+        validation_every=int(args.validation_every),
+        extra={
+            "seed": int(args.seed),
+            "double_dqn": bool(args.double_dqn),
+            "legacy_target": bool(args.legacy_target),
+            "visual_projector": projector_payload,
+        },
     )
     write_protocol_files(run_dir, protocol, sys.argv)
     prior_payload, quality = load_capability_prior(CAPABILITY_PRIOR_PATH)
@@ -158,14 +217,18 @@ def main():
     evaluator = DevEvaluator(
         bundle, encoder, backends, quality, gab_config, device,
         scene_cache=scene_cache,
+        state_mode=state_mode,
+        projector=projector,
     )
 
     agent = DQNAgentV2(
         device,
-        seed=SEED,
-        state_dim=STATE_DIM,
-        state_mode=STATE_MODE,
+        seed=int(args.seed),
+        state_dim=state_dim,
+        state_mode=state_mode,
         epsilon_decay_steps=500_000,
+        double_dqn=bool(args.double_dqn),
+        legacy_target=bool(args.legacy_target),
     )
 
     history = {
@@ -183,9 +246,13 @@ def main():
             "validation_tasks": [item["episode_uid"]
                                  for item in bundle["dev_specs"]],
             "training_order_sha256": protocol["training_order_sha256"],
-            "state_layout": state_layout_pure_mec_v2(),
-            "state_dim": STATE_DIM,
-            "state_mode": STATE_MODE,
+            "state_layout": state_layout,
+            "state_dim": state_dim,
+            "state_mode": state_mode,
+            "visual_projector": projector_payload,
+            "double_dqn": bool(args.double_dqn),
+            "legacy_target": bool(args.legacy_target),
+            "seed": int(args.seed),
             "reward": REWARD_DESCRIPTION,
             "map_seed": protocol["map_seed"],
             "train_topology_roles": protocol["train_topology_roles"],
@@ -278,13 +345,14 @@ def main():
             topology=topology,
             encoder=encoder,
             backends=backends,
-            projector=None,
+            projector=projector,
             quality_prior=quality,
             gab_config=gab_config,
             scene=scene_cache.get(spec),
             device=device,
             jointr_aligned=True,
-            pure_mec_v2_state=True,
+            pure_mec_v2_state=not visual,
+            visual_ablation_v2_state=visual,
         )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]
@@ -293,6 +361,8 @@ def main():
         grad_norms = []
         q_means = []
         q_maxs = []
+        target_means = []
+        td_errors = []
         while not done:
             q_values = agent.q_values(state)
             available_q = q_values[mask]
@@ -314,6 +384,8 @@ def main():
                 if stats is not None:
                     losses.append(stats["loss"])
                     grad_norms.append(stats["grad_norm"])
+                    target_means.append(stats["target_mean"])
+                    td_errors.append(stats["td_error_abs_mean"])
             agent.total_steps += 1
             state = transition["next_state"]
             mask = transition["next_mask"]
@@ -380,6 +452,10 @@ def main():
             "epsilon": float(agent.epsilon()),
             "q_mean": float(np.mean(q_means)) if q_means else 0.0,
             "q_max": float(np.max(q_maxs)) if q_maxs else 0.0,
+            "target_mean": float(np.mean(target_means))
+            if target_means else 0.0,
+            "td_error_abs_mean": float(np.mean(td_errors))
+            if td_errors else 0.0,
             "grad_norm": float(np.mean(grad_norms)) if grad_norms else 0.0,
             "buffer": int(len(agent.buffer)),
             "total_steps": int(agent.total_steps),
@@ -405,6 +481,10 @@ def main():
         writer.add_scalar("train/epsilon", row["epsilon"], episode_number)
         writer.add_scalar("train/q_mean", row["q_mean"], episode_number)
         writer.add_scalar("train/q_max", row["q_max"], episode_number)
+        writer.add_scalar("train/target_mean", row["target_mean"],
+                          episode_number)
+        writer.add_scalar("train/td_error_abs_mean",
+                          row["td_error_abs_mean"], episode_number)
         writer.add_scalar("train/jointr_abs_error", row["jointr_abs_error"],
                           episode_number)
         writer.add_scalar("train/total_steps", row["total_steps"],
@@ -486,6 +566,16 @@ def main():
                         item["q_max"] for item in
                         history["train"][-int(args.validation_every):]
                     ])),
+                    "train_target_mean": float(np.mean([
+                        item["target_mean"] for item in
+                        history["train"][-int(args.validation_every):]
+                    ])),
+                    "train_td_error_abs_mean": float(np.mean([
+                        item["td_error_abs_mean"] for item in
+                        history["train"][-int(args.validation_every):]
+                    ])),
+                    "train_double_dqn": bool(args.double_dqn),
+                    "train_legacy_target": bool(args.legacy_target),
                 },
             )
             history["validation"].append(record)

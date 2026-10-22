@@ -50,11 +50,22 @@ def epsilon_at(total_steps, decay_steps=EPSILON_DECAY_STEPS):
 class DQNAgentV2:
     def __init__(self, device, seed=SEED, gamma=GAMMA_V2,
                  state_dim=STATE_DIM, state_mode="full",
-                 epsilon_decay_steps=None):
+                 epsilon_decay_steps=None, double_dqn=False,
+                 legacy_target=False):
         self.device = torch.device(device)
+        self.seed = int(seed)
         self.gamma = float(gamma)
         self.state_dim = int(state_dim)
         self.state_mode = str(state_mode)
+        self.double_dqn = bool(double_dqn)
+        # ``legacy_target`` reproduces the pre-audit target that filled
+        # masked next actions with 0.0 instead of -inf.  It is kept only to
+        # run the before/after control; new runs must use the fixed target.
+        self.legacy_target = bool(legacy_target)
+        if self.double_dqn and self.legacy_target:
+            raise ValueError(
+                "double_dqn and legacy_target are mutually exclusive"
+            )
         self.epsilon_decay_steps = int(
             EPSILON_DECAY_STEPS if epsilon_decay_steps is None
             else epsilon_decay_steps
@@ -106,9 +117,36 @@ class DQNAgentV2:
             return None
         batch = self.buffer.sample(BATCH_SIZE, self.device)
         with torch.no_grad():
-            next_q = self.target(batch["next_state"])
-            next_q = next_q.masked_fill(~batch["next_mask"], 0.0)
-            next_max = next_q.max(dim=1).values
+            next_mask = batch["next_mask"]
+            available_next = next_mask.any(dim=1)
+            target_q = self.target(batch["next_state"])
+            if self.legacy_target:
+                # Pre-audit behaviour: unavailable actions contribute 0.0 to
+                # the max, so an all-negative next state bootstraps from a
+                # fictitious zero-valued action.
+                next_max = target_q.masked_fill(
+                    ~next_mask, 0.0
+                ).max(dim=1).values
+            elif self.double_dqn:
+                # Double DQN: the online network selects among available
+                # actions, the target network evaluates the selected action.
+                online_next = self.online(batch["next_state"])
+                next_action = online_next.masked_fill(
+                    ~next_mask, -1e9
+                ).argmax(dim=1, keepdim=True)
+                next_max = target_q.gather(1, next_action).squeeze(1)
+                next_max = torch.where(
+                    available_next, next_max, torch.zeros_like(next_max)
+                )
+            else:
+                # Fixed DQN target: -inf fill so an unavailable action can
+                # never win the max; only an empty mask bootstraps from 0.
+                next_max = target_q.masked_fill(
+                    ~next_mask, -1e9
+                ).max(dim=1).values
+                next_max = torch.where(
+                    available_next, next_max, torch.zeros_like(next_max)
+                )
             target = batch["reward"] + self.gamma * next_max * (
                 1.0 - batch["done"]
             )
@@ -135,6 +173,10 @@ class DQNAgentV2:
             "q_mean": float(q_np.mean().cpu().item()),
             "q_max": float(q_np.max().cpu().item()),
             "q_selected_mean": float(q.detach().mean().cpu().item()),
+            "target_mean": float(target.detach().mean().cpu().item()),
+            "td_error_abs_mean": float(
+                (q.detach() - target).abs().mean().cpu().item()
+            ),
         }
 
     def config(self):
@@ -152,7 +194,12 @@ class DQNAgentV2:
             "epsilon_start": EPSILON_START,
             "epsilon_end": EPSILON_END,
             "epsilon_decay_steps": int(self.epsilon_decay_steps),
-            "seed": SEED,
+            "seed": int(self.seed),
+            "double_dqn": bool(self.double_dqn),
+            "legacy_target": bool(self.legacy_target),
+            "target_masking": (
+                "legacy_zero_fill" if self.legacy_target else "negative_inf"
+            ),
             "reward_mode": "jointr_aligned_v2",
             "final_test_read": False,
         }

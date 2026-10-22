@@ -134,6 +134,11 @@ def protocol_payload(
     argv,
     run_dir: Path,
     tensorboard_dir: Path,
+    state_mode: str = STATE_MODE,
+    state_dim: int = STATE_DIM,
+    max_episodes: int = TRAIN_EPISODES,
+    validation_every: int = VALIDATION_EVERY,
+    extra: Mapping | None = None,
 ) -> dict:
     manifest = bundle["manifest"]
     order = bundle["order"]
@@ -142,12 +147,12 @@ def protocol_payload(
     checks = {
         "config": bundle["config"],
         "config_description": CONFIG_DESCRIPTIONS[bundle["config"]],
-        "state_mode": STATE_MODE,
-        "state_dim": STATE_DIM,
+        "state_mode": str(state_mode),
+        "state_dim": int(state_dim),
         "action_dim": ACTION_DIM,
         "reward": REWARD_DESCRIPTION,
-        "max_episodes": TRAIN_EPISODES,
-        "validation_every": VALIDATION_EVERY,
+        "max_episodes": int(max_episodes),
+        "validation_every": int(validation_every),
         "validation_tasks": len(dev_specs),
         "train_tasks": len(bundle["train_specs"]),
         "training_order_length": len(order["order"]),
@@ -208,6 +213,8 @@ def protocol_payload(
             "created_utc": utc_now(),
         },
     }
+    if extra:
+        checks.update(dict(extra))
     if not checks["order_matches_manifest"]:
         raise SystemExit(
             "Training order does not match the frozen config manifest"
@@ -242,9 +249,16 @@ class DevEvaluator:
         device,
         scene_cache=None,
         split="dev",
+        state_mode=STATE_MODE,
+        projector=None,
     ):
         self.bundle = bundle
         self.split = str(split)
+        self.state_mode = str(state_mode)
+        if self.state_mode not in ("pure_mec_v2", "visual_ablation_v2"):
+            raise ValueError(f"unsupported state_mode {self.state_mode}")
+        self.projector = projector
+        self.visual = self.state_mode == "visual_ablation_v2"
         self.specs = bundle.get("eval_specs", bundle["dev_specs"])
         self.encoder = encoder
         self.backends = backends
@@ -262,13 +276,14 @@ class DevEvaluator:
             topology=topology,
             encoder=self.encoder,
             backends=self.backends,
-            projector=None,
+            projector=self.projector,
             quality_prior=self.quality_prior,
             gab_config=self.gab_config,
             scene_cache=self.scene_cache,
             device=self.device,
             jointr_aligned=True,
-            pure_mec_v2_state=True,
+            pure_mec_v2_state=not self.visual,
+            visual_ablation_v2_state=self.visual,
         ), role
 
     def evaluate_dqn(self, agent):

@@ -197,15 +197,24 @@ class FixedCityEpisodeRunner(EpisodeRunner):
         pure_mec_v2_state=False,
         visual_ablation_v2_state=False,
     ):
-        if visual_ablation_v2_state:
-            raise ValueError("Stage-2l only uses the Pure-MEC v2 state")
-        if not pure_mec_v2_state:
-            raise ValueError("Stage-2l requires pure_mec_v2_state=True")
+        if pure_mec_v2_state and visual_ablation_v2_state:
+            raise ValueError(
+                "pure_mec_v2_state and visual_ablation_v2_state are exclusive"
+            )
+        if not pure_mec_v2_state and not visual_ablation_v2_state:
+            raise ValueError(
+                "Stage-2l requires pure_mec_v2_state or "
+                "visual_ablation_v2_state"
+            )
+        if visual_ablation_v2_state and projector is None:
+            raise ValueError(
+                "visual_ablation_v2_state requires the frozen projector"
+            )
         self.jointr_aligned = bool(jointr_aligned)
         self.no_visual_state = False
         self.pure_mec_state = False
-        self.pure_mec_v2_state = True
-        self.visual_ablation_v2_state = False
+        self.pure_mec_v2_state = bool(pure_mec_v2_state)
+        self.visual_ablation_v2_state = bool(visual_ablation_v2_state)
         self.spec = spec
         self.topology = topology
         self.nodes = topology["nodes"]
@@ -285,14 +294,18 @@ def make_fixed_runner_factory(
     latency_model=None,
     scene_cache=None,
     device=None,
+    projector=None,
+    state_mode="pure_mec_v2",
 ):
+    visual = str(state_mode) == "visual_ablation_v2"
+
     def factory(spec, topology, scene=None):
         return FixedCityEpisodeRunner(
             spec=spec,
             topology=topology,
             encoder=encoder,
             backends=backends,
-            projector=None,
+            projector=projector,
             quality_prior=quality_prior,
             gab_config=gab_config,
             latency_model=latency_model,
@@ -300,7 +313,8 @@ def make_fixed_runner_factory(
             scene_cache=scene_cache,
             device=device,
             jointr_aligned=True,
-            pure_mec_v2_state=True,
+            pure_mec_v2_state=not visual,
+            visual_ablation_v2_state=visual,
         )
 
     return factory
