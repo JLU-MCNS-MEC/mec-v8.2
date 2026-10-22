@@ -289,22 +289,25 @@ def _plot_dev_with_test_refs(series, test_summary):
         )
     if test_summary:
         references = (
-            ("greedy_min_e2e", "Greedy-Min-E2E (Test)"),
-            ("max_uplink_rate", "Max-Uplink-Rate (Test)"),
-            ("nearest", "Nearest (Test)"),
-            ("random", "Random (Test)"),
+            ("greedy_min_e2e", "Greedy-Min-E2E"),
+            ("max_uplink_rate", "Max-Uplink-Rate"),
+            ("nearest", "Nearest"),
+            ("random", "Random"),
         )
+        grouped = {}
         for policy, label in references:
             item = test_summary["overall"].get(policy)
             if item is None:
                 continue
+            value = round(float(item["E2E_ms"]), 6)
+            grouped.setdefault(value, []).append(label)
+        for value, labels in grouped.items():
             axis.axhline(
-                item["E2E_ms"], color=MUTED, lw=1.0, ls="--", alpha=0.85,
+                value, color=MUTED, lw=1.0, ls="--", alpha=0.85,
             )
             axis.annotate(
-                f"{label}: {item['E2E_ms']:.1f} ms",
-                xy=(episodes[-1] if len(episodes) else 4000,
-                    item["E2E_ms"]),
+                f"{' / '.join(labels)} (Test): {value:.1f} ms",
+                xy=(episodes[-1] if len(episodes) else 4000, value),
                 xytext=(4, 2), textcoords="offset points",
                 fontsize=7.5, color=SECONDARY, va="bottom",
             )
@@ -576,6 +579,46 @@ def _markdown(training_rows, convergence_rows, test_summary,
         f"- 收敛判据：{CONVERGENCE_CRITERION}",
         f"- 检查点选择：{CHECKPOINT_SELECTION}",
         "",
+    ]
+    if test_summary:
+        greedy = test_summary["overall"]["greedy_min_e2e"]
+        dqn_items = [
+            test_summary["overall"][f"dqn_s{seed}"]
+            for seed in AGENT_SEEDS
+            if f"dqn_s{seed}" in test_summary["overall"]
+        ]
+        ppo_items = [
+            test_summary["overall"][f"ppo_s{seed}"]
+            for seed in AGENT_SEEDS
+            if f"ppo_s{seed}" in test_summary["overall"]
+        ]
+        dqn_mean = float(np.mean([item["E2E_ms"] for item in dqn_items]))
+        ppo_mean = float(np.mean([item["E2E_ms"] for item in ppo_items]))
+        dqn_best = float(min(item["E2E_ms"] for item in dqn_items))
+        ppo_best = float(min(item["E2E_ms"] for item in ppo_items))
+        greedy_e2e = float(greedy["E2E_ms"])
+        lines += [
+            "## 0. 核心结论",
+            "",
+            f"- Test-400 上 Greedy-Min-E2E / Nearest / Max-Uplink-Rate 三者均为 "
+            f"**{greedy_e2e:.2f} ms**（同质部署下排序相同），Random 为 "
+            f"**{test_summary['overall']['random']['E2E_ms']:.2f} ms**。",
+            f"- PPO 3-seed 均值 **{ppo_mean:.2f} ms**（最佳 seed {ppo_best:.2f} ms），"
+            f"比 Greedy 高 **{ppo_mean - greedy_e2e:.2f} ms "
+            f"({100*(ppo_mean/greedy_e2e-1):.1f}%)**。",
+            f"- DQN 3-seed 均值 **{dqn_mean:.2f} ms**（最佳 seed {dqn_best:.2f} ms），"
+            f"比 Greedy 高 **{dqn_mean - greedy_e2e:.2f} ms "
+            f"({100*(dqn_mean/greedy_e2e-1):.1f}%)**。",
+            "- 六次训练全部 `not_converged`：DQN 最佳 Dev 检查点均出现在 "
+            "Ep200，之后 Q 值正偏移扩大且 Dev E2E 退化；PPO 最佳出现在 "
+            "Ep2600–4000。",
+            "- 所有策略（Random/Nearest/Max-Uplink/Greedy/DQN/PPO）在 Test-400 "
+            "上的动作序列、SR、SPL、nDTW 逐任务完全一致；只有 E2E 时延不同。",
+            "- 在本同质部署 + 纯时延奖励设定下，**简单 Greedy-Min-E2E 优于"
+            "所训练的 DQN/PPO**；RL 关联没有带来时延收益。",
+            "",
+        ]
+    lines += [
         "## 1. 训练与收敛",
         "",
         "| 算法 | Seed | Episodes | Best Dev E2E (ms) | @Ep | Final Dev E2E (ms) | 最近三次波动 | 最终差距 | 收敛 | 状态 |",
@@ -692,7 +735,25 @@ def _markdown(training_rows, convergence_rows, test_summary,
         "  算法差异只能来自 E2E 时延。",
         "- 单城市、单部署、单 MEC 检查点；结论不外推到异质算力/带宽或新城市。",
         "",
-        "## 8. 产物",
+        "## 8. 讨论：为什么 RL 没有超过 Greedy-Min-E2E",
+        "",
+        "1. **同质节点让问题退化为逐时隙 argmin。** 20 个节点同权重、同算力、",
+        "   同带宽、同覆盖，只有位置不同；E2E 时延由距离/信道单调决定。",
+        "   Greedy-Min-E2E 直接对可观测 E2E 特征取 argmin，因此就是该设定下",
+        "   的近乎最优策略。",
+        "2. **奖励是 telescoping 的运行均值增量。** r_t 的总和精确等于",
+        "   −0.25×mean(E2E)/100，但早期步的增量大、后期步的增量小；同质部署",
+        "   又去掉了质量差异，使可学习信号主要来自距离。MLP 要在 384-D 输入中",
+        "   实现 20 路比较，比直接 argmin 困难。",
+        "3. **DQN 出现系统性 Q 正偏移。** Q mean 从 Ep200 的约 0.15 增至 Ep4000",
+        "   的约 6.3–6.9，Q max 达 21–34；target 同步上升、TD/loss 仍有限，",
+        "   没有 NaN/Inf 或数值发散，但最佳 Dev 检查点停留在 Ep200，之后",
+        "   Dev E2E 退化。这与此前 Stage-2m 的 Q 过估计审计方向一致。",
+        "4. **PPO 学到部分策略但未逼近 argmin。** entropy 从约 1.6 降到 0.9–1.1，",
+        "   最佳 Dev E2E 58.39 ms，明显优于 Random（96.76 ms），但仍比 Greedy",
+        "   高约 19%。4000 Episodes 内没有达到 Greedy 的时延水平。",
+        "",
+        "## 9. 产物",
         "",
         "- `training_curves.csv`、`validation_curves.csv`：逐 Episode / 逐验证数据",
         "- `convergence.csv`：每次运行的 Dev E2E 收敛判定",

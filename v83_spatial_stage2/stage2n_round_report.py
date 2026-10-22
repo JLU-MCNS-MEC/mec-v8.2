@@ -21,7 +21,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from v83_spatial_stage2.stage2k_common import read_json, utc_now
-from v83_spatial_stage2.stage2n_common import AGENT_SEEDS, RUNS_DIR
+from v83_spatial_stage2.stage2n_common import (
+    AGENT_SEEDS,
+    RUNS_DIR,
+    convergence_status,
+)
 
 
 def _latest_validation(history, episode):
@@ -63,12 +67,18 @@ def collect(episode):
             progress = read_json(run_dir / "progress.json") or {}
             record = _latest_validation(history, episode)
             train = _train_at(history, episode)
+            validation_so_far = [
+                item for item in history.get("validation", [])
+                if int(item["episode"]) <= int(episode)
+            ]
+            conv = convergence_status(validation_so_far, reached_cap=False)
             rows.append({
                 "algorithm": algorithm,
                 "seed": int(seed),
                 "record": record,
                 "train": train,
                 "progress": progress,
+                "convergence": conv,
             })
     return rows
 
@@ -162,20 +172,47 @@ def _markdown(rows, episode):
                 f"{_fmt(rec.get('update_value_loss'), 4)} | "
                 f"{_fmt(rec.get('explained_variance'), 3)} |"
             )
+    records = [row["record"] for row in rows if row["record"] is not None]
+    if records:
+        spreads = {
+            key: max(float(item[key]) for item in records)
+            - min(float(item[key]) for item in records)
+            for key in ("SR", "SPL", "nDTW")
+        }
+        lines += [
+            "",
+            "## 同质一致性",
+            "",
+            f"- 最大跨 run 差异：SR {spreads['SR']:.6f}，"
+            f"SPL {spreads['SPL']:.6f}，nDTW {spreads['nDTW']:.6f}",
+            f"- 导航一致性：`{'PASS' if all(value == 0.0 for value in spreads.values()) else 'FAIL'}`",
+        ]
     lines += [
         "",
         "## 进度",
         "",
-        "| Run | 当前 Episode | 最佳 Dev E2E (ms) | @Ep | 状态 |",
-        "|---|---:|---:|---:|---|",
+        "| Run | 当前 Episode | 最佳 Dev E2E (ms) | @Ep | 最近3次波动 | 最终差距 | 收敛 | 状态 |",
+        "|---|---:|---:|---:|---:|---:|---|---|",
     ]
     for row in rows:
         progress = row["progress"]
         name = f"{row['algorithm'].upper()} s{row['seed']}"
+        conv = row["convergence"]
+        enough = int(conv.get("validations", 0)) >= 3
+        spread = (
+            _fmt(100 * conv["last3_spread_fraction"], 2, "%")
+            if enough else "-"
+        )
+        gap = (
+            _fmt(100 * conv["final_gap_fraction"], 2, "%")
+            if enough else "-"
+        )
         lines.append(
             f"| {name} | {progress.get('current_episode', '-')} | "
             f"{_fmt(progress.get('best_dev_e2e_ms'))} | "
             f"{progress.get('best_dev_episode', '-')} | "
+            f"{spread} | {gap} | "
+            f"{'是' if conv.get('converged') else '否'} | "
             f"{progress.get('status', '-')} |"
         )
     return "\n".join(lines) + "\n"

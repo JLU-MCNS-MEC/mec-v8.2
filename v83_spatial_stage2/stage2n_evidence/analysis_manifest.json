@@ -1,0 +1,190 @@
+{
+  "created_utc": "2026-10-22T16:57:52.372172+00:00",
+  "stage": "stage2n_latency_only",
+  "training_runs": [
+    {
+      "algorithm": "dqn",
+      "seed": 0,
+      "episodes": 4000
+    },
+    {
+      "algorithm": "dqn",
+      "seed": 1,
+      "episodes": 4000
+    },
+    {
+      "algorithm": "dqn",
+      "seed": 2,
+      "episodes": 4000
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 0,
+      "episodes": 4000
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 1,
+      "episodes": 4000
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 2,
+      "episodes": 4000
+    }
+  ],
+  "convergence": [
+    {
+      "algorithm": "dqn",
+      "seed": 0,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 75.75830556918389,
+      "best_dev_episode": 200,
+      "final_dev_e2e_ms": 86.5194587522526,
+      "last3_spread_fraction": 0.020145984034682735,
+      "final_gap_fraction": 0.14204585361589733,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/dqn_s0/checkpoints/best.pt",
+      "best_checkpoint_episode": 200,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    },
+    {
+      "algorithm": "dqn",
+      "seed": 1,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 80.11302898616172,
+      "best_dev_episode": 200,
+      "final_dev_e2e_ms": 90.50258867355784,
+      "last3_spread_fraction": 0.027938631112551172,
+      "final_gap_fraction": 0.12968626725112029,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/dqn_s1/checkpoints/best.pt",
+      "best_checkpoint_episode": 200,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    },
+    {
+      "algorithm": "dqn",
+      "seed": 2,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 78.5271333725886,
+      "best_dev_episode": 200,
+      "final_dev_e2e_ms": 84.71070474221213,
+      "last3_spread_fraction": 0.048427530442655894,
+      "final_gap_fraction": 0.07874439195792712,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/dqn_s2/checkpoints/best.pt",
+      "best_checkpoint_episode": 200,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 0,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 62.63017020446702,
+      "best_dev_episode": 4000,
+      "final_dev_e2e_ms": 62.63017020446702,
+      "last3_spread_fraction": 0.028754825561426858,
+      "final_gap_fraction": 0.0,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/ppo_s0/checkpoints/best.pt",
+      "best_checkpoint_episode": 4000,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 1,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 58.69882702359666,
+      "best_dev_episode": 4000,
+      "final_dev_e2e_ms": 58.69882702359666,
+      "last3_spread_fraction": 0.07206178000780414,
+      "final_gap_fraction": 0.0,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/ppo_s1/checkpoints/best.pt",
+      "best_checkpoint_episode": 4000,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    },
+    {
+      "algorithm": "ppo",
+      "seed": 2,
+      "episodes": 4000,
+      "validations": 20,
+      "best_dev_e2e_ms": 58.393358426267326,
+      "best_dev_episode": 2600,
+      "final_dev_e2e_ms": 62.15923079463398,
+      "last3_spread_fraction": 0.04094310155813571,
+      "final_gap_fraction": 0.06449145022411715,
+      "converged": false,
+      "status": "not_converged",
+      "reached_cap": true,
+      "best_checkpoint": "runs/v83_spatial_stage2/stage2n_latency_only/runs/ppo_s2/checkpoints/best.pt",
+      "best_checkpoint_episode": 2600,
+      "best_dev_sr": 0.6,
+      "best_dev_spl": 0.5992974411125587,
+      "best_dev_ndtw": 0.5568821000996479,
+      "criterion": "最近三次 Dev 验证的平均 E2E 时延波动 <= 最佳值的 1%，且最终值不比最佳值差超过 1%；训练预算 4000 Episodes 结束时仍不满足则标记未收敛"
+    }
+  ],
+  "test_read": true,
+  "figures": [
+    "v83_spatial_stage2/stage2n_evidence/figures/training_latency_return.png",
+    "v83_spatial_stage2/stage2n_evidence/figures/training_mean_e2e.png",
+    "v83_spatial_stage2/stage2n_evidence/figures/dev_e2e_with_test_baselines.png",
+    "v83_spatial_stage2/stage2n_evidence/figures/test_e2e_by_policy.png",
+    "v83_spatial_stage2/stage2n_evidence/figures/test_e2e_by_band.png",
+    "v83_spatial_stage2/stage2n_evidence/figures/test_navigation_invariance.png"
+  ],
+  "figure_sources": {
+    "figures/training_latency_return.png": [
+      "training_curves.csv"
+    ],
+    "figures/training_mean_e2e.png": [
+      "training_curves.csv"
+    ],
+    "figures/dev_e2e_with_test_baselines.png": [
+      "validation_curves.csv",
+      "test_policy_summary.csv"
+    ],
+    "figures/test_e2e_by_policy.png": [
+      "figure_test_e2e_by_policy.csv",
+      "test_policy_summary.csv"
+    ],
+    "figures/test_e2e_by_band.png": [
+      "test_by_band.csv"
+    ],
+    "figures/test_navigation_invariance.png": [
+      "navigation_invariance.csv"
+    ]
+  },
+  "evidence_dir": "v83_spatial_stage2/stage2n_evidence"
+}

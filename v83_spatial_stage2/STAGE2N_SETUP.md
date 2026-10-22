@@ -135,14 +135,14 @@ python v83_spatial_stage2/stage2n_consistency.py --tasks 6
 - [x] 任务池生成与封存；
 - [x] 同质部署构建与哈希；
 - [x] Transformer-M 哈希与记录核实；
-- [x] 22 项测试通过；
+- [x] 24 项测试通过；
 - [x] 一致性探针通过；
 - [x] 协议冻结（`protocol_freeze.json`）；
 - [x] GPU 空闲显存 ≥ 10 GB（未动旧进程）；
 - [x] DQN/PPO 15-Episode 与 20-Episode smoke 正常（20-Episode 触发训练更新：
       DQN loss 4.9e-4 / TD 0.015；PPO KL 0.006 / value loss 0.035 /
       explained variance 0.834）；
-- [ ] 6 个正式 run 启动。
+- [x] 6 个正式 run 启动（2026-10-22 20:45 CST，6 并行 × 2 线程）。
 
 ---
 
@@ -156,3 +156,16 @@ python v83_spatial_stage2/stage2n_launch.py \
 
 日志：`runs/v83_spatial_stage2/stage2n_latency_only/logs/`  
 每个 run：`runs/v83_spatial_stage2/stage2n_latency_only/runs/{alg}_s{seed}/`
+
+---
+
+## 8. 运行期事件
+
+- 2026-10-22 20:45：6 个 run 并行启动（DQN/PPO × seeds 0/1/2）。
+- 2026-10-22 20:52：DQN s2 在构建第 31 条 Dev lane 时异常退出，
+  returncode `-11`（SIGSEGV），日志无 Python traceback，未产生 checkpoint；
+  其余 5 个 run 不受影响。DQN s2 已单独重启（PID 978030），使用同一
+  run 目录、同一协议、同一 seed，并在 Ep200 验证前追上进度。
+- 该异常与 Stage-2n 奖励/状态无关（发生在 Dev lane 构建阶段）；最终报告
+  会把它列为运行期故障与恢复记录，不计入算法性能差异。
+- DQN s2 重启后只保留重启后的历史；它仍训练满 4000 Episodes。

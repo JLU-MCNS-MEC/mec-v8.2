@@ -1,0 +1,11 @@
+policy,task_set_equal,action_mismatches,success_mismatches,step_mismatches,max_spl_abs_diff,max_ndtw_abs_diff,identical
+random,True,0,0,0,0.0,0.0,True
+nearest,True,0,0,0,0.0,0.0,True
+max_uplink_rate,True,0,0,0,0.0,0.0,True
+greedy_min_e2e,True,0,0,0,0.0,0.0,True
+dqn_s0,True,0,0,0,0.0,0.0,True
+dqn_s1,True,0,0,0,0.0,0.0,True
+dqn_s2,True,0,0,0,0.0,0.0,True
+ppo_s0,True,0,0,0,0.0,0.0,True
+ppo_s1,True,0,0,0,0.0,0.0,True
+ppo_s2,True,0,0,0,0.0,0.0,True
