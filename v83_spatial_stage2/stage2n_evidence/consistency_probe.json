@@ -1,0 +1,63 @@
+{
+  "created_utc": "2026-10-22T12:34:48.283268+00:00",
+  "stage": "stage2n",
+  "mec_model": "Transformer-M",
+  "mec_checkpoint_sha256": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+  "deployment_sha256": "4c0950cf6e438cff41454eee6daefb831fa984f425ec1a41cf3974257c6d1148",
+  "deployment_nodes": 20,
+  "all_nodes_one_model": true,
+  "same_observation_repeated": {
+    "identical": true,
+    "action": 0,
+    "arrival_probability": 0.03865799680352211,
+    "move_action": 0
+  },
+  "per_strategy": {
+    "random": {
+      "tasks": 6,
+      "action_mismatches": 0,
+      "navigation_metric_mismatches": 0,
+      "max_spl_abs_diff": 0.0,
+      "max_ndtw_abs_diff": 0.0,
+      "e2e_ms_mean": 94.0953976834311,
+      "passed": true
+    },
+    "nearest": {
+      "tasks": 6,
+      "action_mismatches": 0,
+      "navigation_metric_mismatches": 0,
+      "max_spl_abs_diff": 0.0,
+      "max_ndtw_abs_diff": 0.0,
+      "e2e_ms_mean": 43.9809175047039,
+      "passed": true
+    },
+    "max_uplink_rate": {
+      "tasks": 6,
+      "action_mismatches": 0,
+      "navigation_metric_mismatches": 0,
+      "max_spl_abs_diff": 0.0,
+      "max_ndtw_abs_diff": 0.0,
+      "e2e_ms_mean": 43.9809175047039,
+      "passed": true
+    },
+    "greedy_min_e2e": {
+      "tasks": 6,
+      "action_mismatches": 0,
+      "navigation_metric_mismatches": 0,
+      "max_spl_abs_diff": 0.0,
+      "max_ndtw_abs_diff": 0.0,
+      "e2e_ms_mean": 43.9809175047039,
+      "passed": true
+    }
+  },
+  "task_uids": [
+    "stage2n-dev-00000",
+    "stage2n-dev-00001",
+    "stage2n-dev-00002",
+    "stage2n-dev-00003",
+    "stage2n-dev-00004",
+    "stage2n-dev-00005"
+  ],
+  "passed": true,
+  "interpretation": "All nodes use the same frozen Transformer-M; node identity is not a MEC input.  Therefore action sequence, SR, SPL and nDTW must be identical across association strategies.  Only E2E latency may differ."
+}

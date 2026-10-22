@@ -80,3 +80,33 @@ Open http://localhost:6006 on Windows. Keep the tunnel and TensorBoard process o
 ## Experiment files and Git
 
 Git ignores logs/ and *_results/, including event files, CSV, PNG and model checkpoints. They are NOT automatically backed up to GitHub. Copy critical training results from /tmp after the old jobs finish and back them up separately.
+
+## Stage-2n: fixed-city latency-only MEC association
+
+Stage-2n is an independent experiment under `v83_spatial_stage2/`:
+
+- protocol: `STAGE2N_PROTOCOL.md`
+- setup / pre-training audit: `STAGE2N_SETUP.md`
+- task builder: `stage2n_build.py`
+- trainer (DQN/PPO): `stage2n_train.py`
+- launcher (6 runs, never stops old jobs): `stage2n_launch.py`
+- final evaluator: `stage2n_eval.py`
+- analysis/figures: `stage2n_analyze.py`
+- status: `stage2n_status.py`
+- tests: `test_stage2n.py`
+
+Quick start:
+
+```bash
+python v83_spatial_stage2/stage2n_build.py
+python v83_spatial_stage2/test_stage2n.py
+python v83_spatial_stage2/stage2n_consistency.py --tasks 6
+python v83_spatial_stage2/stage2n_launch.py --max-parallel 6 --threads 2
+python v83_spatial_stage2/stage2n_eval.py --split dev
+python v83_spatial_stage2/stage2n_eval.py --split test --allow-final-test
+python v83_spatial_stage2/stage2n_analyze.py
+```
+
+Raw checkpoints, TensorBoard events and per-episode logs stay in the ignored
+`runs/v83_spatial_stage2/stage2n_latency_only/` directory.  Tracked results,
+figures and the report are under `v83_spatial_stage2/stage2n_evidence/`.
