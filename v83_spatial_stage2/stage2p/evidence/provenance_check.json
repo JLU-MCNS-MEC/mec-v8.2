@@ -1,0 +1,69 @@
+{
+  "stage": "stage2p",
+  "checked_utc": "2026-10-23T11:38:47.457555+00:00",
+  "freeze_created_utc": "2026-10-23T08:01:40.068491+00:00",
+  "training_relevant": [
+    {
+      "path": "v83_spatial_stage2/stage2p/train.py",
+      "frozen_sha256": "f81e62f895b9fbd310399be74a92e92e40b02be342c83d1faba04c74c12377a5",
+      "current_sha256": "f81e62f895b9fbd310399be74a92e92e40b02be342c83d1faba04c74c12377a5",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2p/rewards.py",
+      "frozen_sha256": "60cd21a3a32b09d1857a98e62553a972bd121df1844d2b8f801eb12a45b4bc7b",
+      "current_sha256": "60cd21a3a32b09d1857a98e62553a972bd121df1844d2b8f801eb12a45b4bc7b",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2p/progress.py",
+      "frozen_sha256": "d46cf700e5a99934c6ee707feebde73df892620e8479545972ac78cc596311b7",
+      "current_sha256": "d46cf700e5a99934c6ee707feebde73df892620e8479545972ac78cc596311b7",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2p/launch.py",
+      "frozen_sha256": "2910f7f4db6d8e270ed1b2ef186a3377897447af599997751de18f7e9654c463",
+      "current_sha256": "2910f7f4db6d8e270ed1b2ef186a3377897447af599997751de18f7e9654c463",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2o/rewards.py",
+      "frozen_sha256": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4",
+      "current_sha256": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2k_ppo_agent.py",
+      "frozen_sha256": "76b431592bd8f53aac25283cadf98b6ae506b3d6e4190716a738ea4fbf75803b",
+      "current_sha256": "76b431592bd8f53aac25283cadf98b6ae506b3d6e4190716a738ea4fbf75803b",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2n_train.py",
+      "frozen_sha256": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+      "current_sha256": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2n_lanes.py",
+      "frozen_sha256": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+      "current_sha256": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2n_runtime.py",
+      "frozen_sha256": "6b81e9b7c9a145b9ab52dc967564b5d62cd887ce536f36a54d3300543ad8bdc9",
+      "current_sha256": "6b81e9b7c9a145b9ab52dc967564b5d62cd887ce536f36a54d3300543ad8bdc9",
+      "match": true
+    },
+    {
+      "path": "v83_spatial_stage2/stage2n_common.py",
+      "frozen_sha256": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0",
+      "current_sha256": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0",
+      "match": true
+    }
+  ],
+  "training_ok": true,
+  "note": "Training-relevant sources must match the freeze; analysis-only scripts may be improved after launch."
+}

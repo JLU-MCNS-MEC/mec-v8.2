@@ -1,0 +1,151 @@
+{
+  "stage": "stage2p",
+  "created_utc": "2026-10-23T07:52:14.871393+00:00",
+  "parent_protocols": {
+    "stage2n_path": "runs/v83_spatial_stage2/stage2n_latency_only/protocol_freeze.json",
+    "stage2n_sha256": "e5b8faa4ddb8ade68bbcc5101c401ded845e9404e3f050409f6ce59d2184c1df",
+    "stage2o_freeze_path": "/home/ubuntu5/Workspace/MEC-V8.2/v83_spatial_stage2/stage2o/evidence/protocol_freeze.json",
+    "stage2o_freeze_sha256": "e4b82ed322269708ca2d76d958c25cc08b5c440abab9921556d0aabc964e2732"
+  },
+  "runs_audited": [
+    {
+      "stage": "stage2n",
+      "scheme": "baseline",
+      "seed": 0,
+      "protocol_reward": "r_t = -0.25 / 100 * (mean_E2E_t - mean_E2E_{t-1})",
+      "task_hashes": {
+        "train_tasks": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+        "dev_tasks": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+        "test_tasks": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+        "training_order": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+        "deployment": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+        "mec_checkpoint": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+        "capability_prior": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108"
+      },
+      "config": {
+        "gamma": 1.0,
+        "gae_lambda": 0.95,
+        "clip_eps": 0.2,
+        "learning_rate": 0.0003,
+        "rollout_steps": 2048,
+        "minibatch_size": 256,
+        "update_epochs": 10,
+        "value_coef": 0.5,
+        "entropy_coef": 0.01,
+        "max_grad_norm": 0.5,
+        "target_kl": 0.05,
+        "state_dim": 384,
+        "state_mode": "pure_mec_v2",
+        "action_dim": 20
+      },
+      "trainer": "stage2n_train.py"
+    },
+    {
+      "stage": "stage2n",
+      "scheme": "baseline",
+      "seed": 1,
+      "protocol_reward": "r_t = -0.25 / 100 * (mean_E2E_t - mean_E2E_{t-1})",
+      "task_hashes": {
+        "train_tasks": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+        "dev_tasks": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+        "test_tasks": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+        "training_order": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+        "deployment": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+        "mec_checkpoint": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+        "capability_prior": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108"
+      },
+      "config": {
+        "gamma": 1.0,
+        "gae_lambda": 0.95,
+        "clip_eps": 0.2,
+        "learning_rate": 0.0003,
+        "rollout_steps": 2048,
+        "minibatch_size": 256,
+        "update_epochs": 10,
+        "value_coef": 0.5,
+        "entropy_coef": 0.01,
+        "max_grad_norm": 0.5,
+        "target_kl": 0.05,
+        "state_dim": 384,
+        "state_mode": "pure_mec_v2",
+        "action_dim": 20
+      },
+      "trainer": "stage2n_train.py"
+    },
+    {
+      "stage": "stage2n",
+      "scheme": "baseline",
+      "seed": 2,
+      "protocol_reward": "r_t = -0.25 / 100 * (mean_E2E_t - mean_E2E_{t-1})",
+      "task_hashes": {
+        "train_tasks": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+        "dev_tasks": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+        "test_tasks": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+        "training_order": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+        "deployment": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+        "mec_checkpoint": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+        "capability_prior": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108"
+      },
+      "config": {
+        "gamma": 1.0,
+        "gae_lambda": 0.95,
+        "clip_eps": 0.2,
+        "learning_rate": 0.0003,
+        "rollout_steps": 2048,
+        "minibatch_size": 256,
+        "update_epochs": 10,
+        "value_coef": 0.5,
+        "entropy_coef": 0.01,
+        "max_grad_norm": 0.5,
+        "target_kl": 0.05,
+        "state_dim": 384,
+        "state_mode": "pure_mec_v2",
+        "action_dim": 20
+      },
+      "trainer": "stage2n_train.py"
+    },
+    {
+      "stage": "stage2o",
+      "scheme": "D",
+      "seed": 0,
+      "protocol_reward": "u_t = 1 - e2e_t/tau; r_t = u_t/H; r_T += (1 - T/H)*(1 - mean_E2E/tau); R = 1 - mean_E2E/tau",
+      "task_hashes": {
+        "train_tasks": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+        "dev_tasks": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+        "test_tasks": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+        "training_order": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+        "deployment": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+        "mec_checkpoint": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d"
+      },
+      "config": {
+        "gamma": 1.0,
+        "gae_lambda": 0.95,
+        "clip_eps": 0.2,
+        "learning_rate": 0.0003,
+        "rollout_steps": 2048,
+        "minibatch_size": 256,
+        "update_epochs": 10,
+        "value_coef": 0.5,
+        "entropy_coef": 0.01,
+        "max_grad_norm": 0.5,
+        "target_kl": 0.05,
+        "state_dim": 384,
+        "state_mode": "pure_mec_v2",
+        "action_dim": 20
+      },
+      "trainer": "stage2o/train.py"
+    }
+  ],
+  "task_hashes_match": true,
+  "ppo_configs_match": true,
+  "trainer_paths": [
+    "stage2n_train.py",
+    "stage2o/train.py"
+  ],
+  "differences_beyond_reward": [
+    "Stage-2n PPO and Stage-2o D/PPO used different trainer files and different reward-application code paths.",
+    "Logging/provenance labels differ (Stage-2n vs Stage-2o)."
+  ],
+  "decision": "Do not mix Stage-2n/Stage-2o results into the Stage-2p paired comparison.  Rerun baseline seed 0/1/2 and D seed 0/1/2 with the single Stage-2p PPO loop; use the old seed-0 runs only as reproduction checks after training.",
+  "final_test_read": false
+}

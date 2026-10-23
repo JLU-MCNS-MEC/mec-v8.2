@@ -1,0 +1,32 @@
+{
+  "stage": "stage2p",
+  "checked_utc": "2026-10-23T11:36:26.836780+00:00",
+  "checks": [
+    {
+      "label": "baseline seed0 vs Stage-2n PPO seed0",
+      "new_run": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/baseline/ppo_s0",
+      "old_run": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2n_latency_only/runs/ppo_s0",
+      "episodes_compared": 4000,
+      "validations_compared": 20,
+      "max_train_abs_diff": 1.1102230246251565e-15,
+      "worst_train_field": "train[1252].episode_return",
+      "max_validation_e2e_abs_diff": 0.0,
+      "match": true,
+      "tolerance": 1e-09
+    },
+    {
+      "label": "D seed0 vs Stage-2o D/PPO seed0",
+      "new_run": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/D/ppo_s0",
+      "old_run": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/D/ppo_s0",
+      "episodes_compared": 4000,
+      "validations_compared": 20,
+      "max_train_abs_diff": 0.0,
+      "worst_train_field": null,
+      "max_validation_e2e_abs_diff": 0.0,
+      "match": true,
+      "tolerance": 1e-09
+    }
+  ],
+  "all_match": true,
+  "note": "A match confirms that the unified Stage-2p loop reproduces the old seed-0 result for the same reward.  The Stage-2p paired comparison still uses all three seeds and both arms."
+}

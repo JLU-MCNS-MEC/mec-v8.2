@@ -1,0 +1,175 @@
+{
+  "stage": "stage2p",
+  "created_utc": "2026-10-23T08:01:40.068491+00:00",
+  "git": {
+    "commit": "7bff9c3ebe6612636578df1a0dc2a7fc73988d6c",
+    "branch": "experiment/v83-spatial-foundation",
+    "dirty": true
+  },
+  "parent_stage2n": {
+    "protocol_path": "runs/v83_spatial_stage2/stage2n_latency_only/protocol_freeze.json",
+    "protocol_sha256": "e5b8faa4ddb8ade68bbcc5101c401ded845e9404e3f050409f6ce59d2184c1df",
+    "train_tasks_sha256": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+    "dev_tasks_sha256": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+    "test_tasks_sha256": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+    "training_order_sha256": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+    "deployment_sha256": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+    "mec_checkpoint_sha256": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d"
+  },
+  "parent_stage2o": {
+    "protocol_freeze_path": "/home/ubuntu5/Workspace/MEC-V8.2/v83_spatial_stage2/stage2o/evidence/protocol_freeze.json",
+    "protocol_freeze_sha256": "e4b82ed322269708ca2d76d958c25cc08b5c440abab9921556d0aabc964e2732"
+  },
+  "reuse_audit": {
+    "path": "/home/ubuntu5/Workspace/MEC-V8.2/v83_spatial_stage2/stage2p/evidence/reuse_audit.json",
+    "sha256": "f15c231332cbfd20a16fc947ae9da445faff12f96fd29c241e37b628914ec3eb",
+    "decision": "Do not mix Stage-2n/Stage-2o results into the Stage-2p paired comparison.  Rerun baseline seed 0/1/2 and D seed 0/1/2 with the single Stage-2p PPO loop; use the old seed-0 runs only as reproduction checks after training."
+  },
+  "reward": {
+    "tau_ms": 100.0,
+    "horizon": 400,
+    "gamma": 1.0,
+    "schemes": {
+      "baseline": "r_t = -0.25*(mean_t - mean_{t-1})/100; R = -0.25*mean_E2E/100",
+      "D": "u_t = 1 - e2e_t/tau; r_t = u_t/H; r_T += (1 - T/H)*(1 - mean_E2E/tau); R = 1 - mean_E2E/tau"
+    },
+    "alignment": "4 * R_baseline + 1 = R_D",
+    "navigation_reward": "removed",
+    "success_bonus": "none"
+  },
+  "training": {
+    "runs": 6,
+    "schemes": [
+      "baseline",
+      "D"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "episodes": 4000,
+    "validation_every": 200,
+    "validation_split": "dev",
+    "dev_tasks": 60,
+    "test_used": false,
+    "convergence_criterion": "max(last3 Dev E2E) - min(last3 Dev E2E) <= 0.01 * best and last <= 1.01 * best",
+    "checkpoint_selection": "lowest Dev mean E2E; ties: higher SR, then earlier episode"
+  },
+  "code_sha256": {
+    "v83_spatial_stage2/stage2p/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v83_spatial_stage2/stage2p/analyze.py": "5ac054adc5931ff00a9cb0264c836f4e9a8db2099fc9d724d966d4a53a8781b0",
+    "v83_spatial_stage2/stage2p/audit_reuse.py": "459ce4d727c16108864af0c99ffb6e0e5b1f805e8b56d40faf9ea168fad08cff",
+    "v83_spatial_stage2/stage2p/freeze_protocol.py": "68dfa28effbffcded2031bedbc5728b0d97fa3c79980caf348320f32b046bf12",
+    "v83_spatial_stage2/stage2p/launch.py": "2910f7f4db6d8e270ed1b2ef186a3377897447af599997751de18f7e9654c463",
+    "v83_spatial_stage2/stage2p/plot.py": "bd6000a33b8769214c2a414db10d767a6b7c5cf52398acea9c0981814ad6b066",
+    "v83_spatial_stage2/stage2p/progress.py": "d46cf700e5a99934c6ee707feebde73df892620e8479545972ac78cc596311b7",
+    "v83_spatial_stage2/stage2p/render_report.py": "a0ac6a23a4d1390ee69ffd34393a4f872ac41d25a4a85279720bc9d0a5cecbeb",
+    "v83_spatial_stage2/stage2p/reproduction_check.py": "fc88ddf64429e303d0a9350ffb6c441ea8bf983df62c7cadf47bee6cd98c5666",
+    "v83_spatial_stage2/stage2p/rewards.py": "60cd21a3a32b09d1857a98e62553a972bd121df1844d2b8f801eb12a45b4bc7b",
+    "v83_spatial_stage2/stage2p/round_table.py": "f5a371cce2856f37c445384fa3770f0c1c8fb13cb0cf80b23b23a5f7a1653554",
+    "v83_spatial_stage2/stage2p/status.py": "942be150be394b71ca79d13aa980a3cdad3f9dc1a4846b31fb8e0f2600fd973f",
+    "v83_spatial_stage2/stage2p/test_stage2p.py": "d337569b5ac112325e6521a33ab094bdce454aa6c459c0b6d4d11183522eb2dd",
+    "v83_spatial_stage2/stage2p/train.py": "f81e62f895b9fbd310399be74a92e92e40b02be342c83d1faba04c74c12377a5",
+    "v83_spatial_stage2/stage2p/verify_provenance.py": "f534464c5ab6162d0c0bb3ad6db7a149e21fedc20e78a7160f3c6ed1b721e58d",
+    "v83_spatial_stage2/stage2k_jointr_v2_agent.py": "12925c8b53286579e8611bef7d504a10cccf485678a98e59e7e59ee7dc418d63",
+    "v83_spatial_stage2/stage2k_ppo_agent.py": "76b431592bd8f53aac25283cadf98b6ae506b3d6e4190716a738ea4fbf75803b",
+    "v83_spatial_stage2/stage2n_train.py": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+    "v83_spatial_stage2/stage2n_lanes.py": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+    "v83_spatial_stage2/stage2n_runtime.py": "6b81e9b7c9a145b9ab52dc967564b5d62cd887ce536f36a54d3300543ad8bdc9",
+    "v83_spatial_stage2/stage2n_common.py": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0",
+    "v83_spatial_stage2/stage2o/rewards.py": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4"
+  },
+  "unit_tests": {
+    "command": [
+      "/home/ubuntu5/miniconda3/envs/DRL/bin/python",
+      "/home/ubuntu5/Workspace/MEC-V8.2/v83_spatial_stage2/stage2p/test_stage2p.py"
+    ],
+    "returncode": 0,
+    "passed": true,
+    "summary": [
+      "Ran 12 tests in 0.006s",
+      "OK"
+    ],
+    "output_tail": [
+      "test_invalid_inputs (__main__.RewardIdentityTests.test_invalid_inputs) ... ok",
+      "test_scheme_d_identity (__main__.RewardIdentityTests.test_scheme_d_identity) ... ok",
+      "test_threshold_100ms (__main__.RewardIdentityTests.test_threshold_100ms) ... ok",
+      "",
+      "----------------------------------------------------------------------",
+      "Ran 12 tests in 0.006s",
+      "",
+      "OK"
+    ]
+  },
+  "smoke": {
+    "runs": [
+      {
+        "scheme": "baseline",
+        "seed": 0,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 4.440892098500626e-16,
+        "max_offset_error": 3.3306690738754696e-16,
+        "max_latency_return_error": 3.885780586188048e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/baseline_ppo_s0"
+      },
+      {
+        "scheme": "baseline",
+        "seed": 1,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 3.885780586188048e-16,
+        "max_offset_error": 4.718447854656915e-16,
+        "max_latency_return_error": 4.440892098500626e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/baseline_ppo_s1"
+      },
+      {
+        "scheme": "baseline",
+        "seed": 2,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 8.881784197001252e-16,
+        "max_offset_error": 4.996003610813204e-16,
+        "max_latency_return_error": 6.661338147750939e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/baseline_ppo_s2"
+      },
+      {
+        "scheme": "D",
+        "seed": 0,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.8041124150158794e-16,
+        "max_offset_error": 1.9984014443252818e-15,
+        "max_latency_return_error": 5.551115123125783e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/D_ppo_s0"
+      },
+      {
+        "scheme": "D",
+        "seed": 1,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.700029006457271e-16,
+        "max_offset_error": 1.6653345369377348e-15,
+        "max_latency_return_error": 4.163336342344337e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/D_ppo_s1"
+      },
+      {
+        "scheme": "D",
+        "seed": 2,
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.1796119636642288e-16,
+        "max_offset_error": 3.3306690738754696e-15,
+        "max_latency_return_error": 8.326672684688674e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2p/smoke/D_ppo_s2"
+      }
+    ],
+    "max_reward_abs_error": 8.881784197001252e-16,
+    "errors": [],
+    "passed": true,
+    "tolerance": 1e-08
+  },
+  "test_sealed": true,
+  "final_test_read": false
+}
