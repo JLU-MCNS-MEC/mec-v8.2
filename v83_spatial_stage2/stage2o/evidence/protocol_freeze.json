@@ -1,0 +1,162 @@
+{
+  "stage": "stage2o",
+  "created_utc": "2026-10-23T02:26:06.899685+00:00",
+  "git": {
+    "commit": "15dea493053c759b73c3e5573d5849a799a9ba70",
+    "branch": "experiment/v83-spatial-foundation",
+    "dirty": true
+  },
+  "parent_stage2n": {
+    "protocol_path": "runs/v83_spatial_stage2/stage2n_latency_only/protocol_freeze.json",
+    "protocol_sha256": "e5b8faa4ddb8ade68bbcc5101c401ded845e9404e3f050409f6ce59d2184c1df",
+    "train_tasks_sha256": "ed3bbc4fe96d07f50257c7bebc1b4a7cc03837d013977b4130b379da0cfae013",
+    "dev_tasks_sha256": "1b0518b59f86c58c896d63a240629bedb78065fb059194d0fe123d658dc0653a",
+    "test_tasks_sha256": "2cfb1a680ce2b0fb4517bedc7febc761666f8726c36d743b8f433d9697310042",
+    "training_order_sha256": "c235e3fd71bdbaa06e2e58547ad13ea7e5fd2d49d86998aa4faf4321df6510c7",
+    "deployment_sha256": "11de01122d853d4e32a62965d92f4fadb8c9fc988d781907ad36823d3d19748c",
+    "mec_checkpoint_sha256": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d"
+  },
+  "reward": {
+    "tau_ms": 100.0,
+    "horizon": 400,
+    "gamma": 1.0,
+    "schemes": {
+      "B": "r_t = -(mean_E2E_t - mean_E2E_{t-1}) / tau; R = -mean_E2E/tau",
+      "D": "u_t = 1 - e2e_t/tau; r_t = u_t/H; r_T += (1 - T/H)*(1 - mean_E2E/tau); R = 1 - mean_E2E/tau",
+      "one": "r_t = 0 (t<T); r_T = J = 1 - mean_E2E/tau; R = 1 - mean_E2E/tau"
+    },
+    "identity": "R_D = R_one = 1 + R_B",
+    "navigation_reward": "removed",
+    "success_bonus": "none"
+  },
+  "training": {
+    "runs": 6,
+    "schemes": [
+      "B",
+      "D",
+      "one"
+    ],
+    "algorithms": [
+      "dqn",
+      "ppo"
+    ],
+    "seed": 0,
+    "episodes": 4000,
+    "validation_every": 200,
+    "validation_split": "dev",
+    "dev_tasks": 60,
+    "test_used": false,
+    "convergence_criterion": "max(last3 Dev E2E) - min(last3 Dev E2E) <= 0.01 * best and last <= 1.01 * best",
+    "checkpoint_selection": "lowest Dev mean E2E; ties: higher SR, then earlier episode"
+  },
+  "code_sha256": {
+    "v83_spatial_stage2/stage2o/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v83_spatial_stage2/stage2o/analyze.py": "7b542999b3eb461177c94001e30507e25965511590dc4462b8d457f17273bd4f",
+    "v83_spatial_stage2/stage2o/freeze_protocol.py": "22e756bcc223475d5bdac33c1137241e3f9393cba207cbaac2aafea05277e16c",
+    "v83_spatial_stage2/stage2o/launch.py": "ed4345fe757f255fc695b4a1598fed9916e0c72f901d15a0b9d86d45a300b0e6",
+    "v83_spatial_stage2/stage2o/plot.py": "99f987e4cb8eb564cd63bf6023ba5c57f34d3d67d4abaf4ebfdf6d69dc63a9df",
+    "v83_spatial_stage2/stage2o/progress.py": "00720204eccd8656e7ba84bc58af42f04328e72c8a87b9b52632025b042b0e35",
+    "v83_spatial_stage2/stage2o/rewards.py": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4",
+    "v83_spatial_stage2/stage2o/status.py": "aab6fcb3342972aba99550ed1817ca808c9882c11a572bdac6fe86a82e942fbf",
+    "v83_spatial_stage2/stage2o/test_stage2o.py": "b3e9856499bc3f5f7388ddbeb3cdd9244358088157e44bae35fbf658af871a1b",
+    "v83_spatial_stage2/stage2o/train.py": "0522da75b3e686ec161b704c9a7ba026104898b7b3ebcc054e2aca7707a16194",
+    "v83_spatial_stage2/stage2k_jointr_v2_agent.py": "12925c8b53286579e8611bef7d504a10cccf485678a98e59e7e59ee7dc418d63",
+    "v83_spatial_stage2/stage2k_ppo_agent.py": "76b431592bd8f53aac25283cadf98b6ae506b3d6e4190716a738ea4fbf75803b",
+    "v83_spatial_stage2/stage2n_train.py": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+    "v83_spatial_stage2/stage2n_lanes.py": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+    "v83_spatial_stage2/stage2n_runtime.py": "6b81e9b7c9a145b9ab52dc967564b5d62cd887ce536f36a54d3300543ad8bdc9",
+    "v83_spatial_stage2/stage2n_common.py": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0"
+  },
+  "unit_tests": {
+    "command": [
+      "/home/ubuntu5/miniconda3/envs/DRL/bin/python",
+      "/home/ubuntu5/Workspace/MEC-V8.2/v83_spatial_stage2/stage2o/test_stage2o.py"
+    ],
+    "returncode": 0,
+    "passed": true,
+    "summary": [
+      "Ran 16 tests in 0.363s",
+      "OK"
+    ],
+    "output_tail": [
+      "test_scheme_d_identity_and_correction (__main__.RewardIdentityTests.test_scheme_d_identity_and_correction) ... ok",
+      "test_scheme_one_identity_and_sparsity (__main__.RewardIdentityTests.test_scheme_one_identity_and_sparsity) ... ok",
+      "test_tau_threshold_behaviour (__main__.RewardIdentityTests.test_tau_threshold_behaviour) ... ok",
+      "",
+      "----------------------------------------------------------------------",
+      "Ran 16 tests in 0.363s",
+      "",
+      "OK"
+    ]
+  },
+  "smoke": {
+    "runs": [
+      {
+        "scheme": "B",
+        "algorithm": "dqn",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.5543122344752192e-15,
+        "max_offset_error": 1.3322676295501878e-15,
+        "max_latency_return_error": 4.440892098500626e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/B_dqn_s0"
+      },
+      {
+        "scheme": "B",
+        "algorithm": "ppo",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.5543122344752192e-15,
+        "max_offset_error": 1.7763568394002505e-15,
+        "max_latency_return_error": 3.885780586188048e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/B_ppo_s0"
+      },
+      {
+        "scheme": "D",
+        "algorithm": "dqn",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.1102230246251565e-16,
+        "max_offset_error": 1.7763568394002505e-15,
+        "max_latency_return_error": 4.440892098500626e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/D_dqn_s0"
+      },
+      {
+        "scheme": "D",
+        "algorithm": "ppo",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 1.8041124150158794e-16,
+        "max_offset_error": 1.9984014443252818e-15,
+        "max_latency_return_error": 5.551115123125783e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/D_ppo_s0"
+      },
+      {
+        "scheme": "one",
+        "algorithm": "dqn",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 0.0,
+        "max_offset_error": 1.7763568394002505e-15,
+        "max_latency_return_error": 4.440892098500626e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/one_dqn_s0"
+      },
+      {
+        "scheme": "one",
+        "algorithm": "ppo",
+        "episodes": 30,
+        "validations": 1,
+        "max_reward_abs_error": 0.0,
+        "max_offset_error": 2.886579864025407e-15,
+        "max_latency_return_error": 7.216449660063518e-16,
+        "run_dir": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2o/smoke/one_ppo_s0"
+      }
+    ],
+    "max_reward_abs_error": 1.5543122344752192e-15,
+    "errors": [],
+    "passed": true,
+    "tolerance": 1e-08
+  },
+  "test_sealed": true,
+  "final_test_read": false
+}
