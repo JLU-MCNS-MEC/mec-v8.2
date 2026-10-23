@@ -1,0 +1,48 @@
+{
+  "description": "Two independent full invocations of stage2n_latency_calibrate.py; each invocation has 3 rounds x 1000 forwards.",
+  "run1_created_utc": "2026-10-23T01:05:19Z",
+  "run2_created_utc": "2026-10-23T01:06:11Z",
+  "metrics": {
+    "Small": {
+      "forward_cuda_grouped": {
+        "run1_mean_ms": 0.5239342068036397,
+        "run2_mean_ms": 0.49428631560007735,
+        "delta_ms": -0.029647891203562315,
+        "delta_pct": -5.65870500886646
+      },
+      "forward_cuda_percall": {
+        "run1_mean_ms": 0.5429682133297126,
+        "run2_mean_ms": 0.514810548355182,
+        "delta_ms": -0.02815766497453054,
+        "delta_pct": -5.185877236137956
+      },
+      "request_to_result": {
+        "run1_mean_ms": 0.5689502139187729,
+        "run2_mean_ms": 0.5421762409581182,
+        "delta_ms": -0.026773972960654646,
+        "delta_pct": -4.705855153167598
+      }
+    },
+    "Transformer-M": {
+      "forward_cuda_grouped": {
+        "run1_mean_ms": 0.9263468173344931,
+        "run2_mean_ms": 0.9158549537658689,
+        "delta_ms": -0.010491863568624193,
+        "delta_pct": -1.132606424752869
+      },
+      "forward_cuda_percall": {
+        "run1_mean_ms": 0.9444564373493195,
+        "run2_mean_ms": 0.9303371949394544,
+        "delta_ms": -0.014119242409865063,
+        "delta_pct": -1.4949596245531096
+      },
+      "request_to_result": {
+        "run1_mean_ms": 1.0207632074404198,
+        "run2_mean_ms": 1.004945160006173,
+        "delta_ms": -0.015818047434246862,
+        "delta_pct": -1.5496294653792304
+      }
+    }
+  },
+  "interpretation": "Small is launch-bound and shows larger run-to-run drift (~6%); Transformer-M is stable within ~1.6%. Both are far below the 49.11 ms historical E2E reference."
+}

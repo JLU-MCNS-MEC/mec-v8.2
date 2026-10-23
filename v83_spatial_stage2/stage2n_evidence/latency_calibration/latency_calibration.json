@@ -1,0 +1,1558 @@
+{
+  "stage": "stage2n_inference_latency_calibration",
+  "created_utc": "2026-10-23T01:06:11Z",
+  "purpose": "Measure real Stage-2j Small and Transformer-M inference latency; compare with the unchanged 2 TFLOPS analytical model.",
+  "hardware_before": {
+    "utc": "2026-10-23T01:06:11Z",
+    "gpu_query": [
+      "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2542 MHz, 3105 MHz, 56.28 W, 500.00 W, 32, 0 %"
+    ],
+    "compute_apps": [
+      "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+      "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+      "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 500 MiB"
+    ],
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "cudnn": 91900,
+    "device_name": "NVIDIA GeForce RTX 5090",
+    "compute_capability": "12.0",
+    "sm_count": 170,
+    "total_memory_gb": 33.659879424,
+    "allocated_mb": 0.941568,
+    "reserved_mb": 2.097152,
+    "allow_tf32_matmul": false,
+    "allow_tf32_cudnn": true,
+    "float32_matmul_precision": "highest"
+  },
+  "input": {
+    "token_sample": "runs/v83_spatial_stage2/datasets/train_600/shard_0000.pt",
+    "token_sample_sha256": "efa3a9f671e68370cbba969dff09ff51091e497eb4a86963963a63a24843d50f",
+    "aux_sample": "runs/v83_spatial_stage2/stage2i/aux/train/aux_shard_0000.npz",
+    "aux_sample_sha256": "1b3287b07facd59705db0f4c95bb7b29a5dd2d140c43c08636a8d0f7c50f01a5",
+    "sample_index": 0,
+    "source_dtypes": {
+      "current_tokens": "torch.float16",
+      "goal_tokens": "torch.float16",
+      "history_vis": "torch.float16",
+      "history_pose": "torch.float32",
+      "history_action": "torch.float16",
+      "history_mask": "torch.uint8",
+      "gab": "torch.float32",
+      "map_feat": "torch.float32"
+    },
+    "deployed_dtype": "float32",
+    "shapes": {
+      "current_tokens": [
+        1,
+        576,
+        384
+      ],
+      "goal_tokens": [
+        1,
+        3,
+        384
+      ],
+      "history_vis": [
+        1,
+        16,
+        768
+      ],
+      "history_pose": [
+        1,
+        16,
+        10
+      ],
+      "history_action": [
+        1,
+        16,
+        4
+      ],
+      "history_mask": [
+        1,
+        16
+      ],
+      "gab": [
+        1,
+        20
+      ],
+      "map_feat": [
+        1,
+        22
+      ]
+    },
+    "final_test_read": false
+  },
+  "measurement": {
+    "batch_size": 1,
+    "precision": "float32",
+    "torch_inference_mode": true,
+    "model_eval": true,
+    "warmup_per_round": 200,
+    "rounds": 3,
+    "forward_iterations_per_round": 1000,
+    "request_iterations_per_round": 1000,
+    "grouped_forward_groups": 100,
+    "grouped_calls_per_group": 10,
+    "module_groups": 100,
+    "module_calls_per_group": 10,
+    "module_large_group_calls": 100,
+    "historical_greedy_e2e_ms": 49.11,
+    "network_measured": false,
+    "test_read": false,
+    "training": false
+  },
+  "models": {
+    "Small": {
+      "checkpoint": {
+        "model": "Small",
+        "checkpoint": "runs/v83_spatial_stage2/stage2j/Small/best.pt",
+        "checkpoint_resolved": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2j/Small/best.pt",
+        "checkpoint_sha256": "7349ec9d0c809a09dc2672a05053f1f89e69480b8802d6ca3b05944cea44e1f6",
+        "config": "runs/v83_spatial_stage2/stage2j/Small/config.json",
+        "config_sha256": "7c4ab9e6c27d776be0e7a2ee2e53344023ab3e6ea6dd1b7088e02c5eca9fe93e",
+        "metadata": {
+          "model": "Small",
+          "architecture": "late_fusion_mlp",
+          "config": {
+            "architecture": "late_fusion_mlp",
+            "hidden_dim": 256,
+            "num_layers": 0,
+            "num_heads": 1
+          },
+          "parameters": 611716,
+          "trainable_parameters": 611716
+        },
+        "parameters": 611716,
+        "frozen": true,
+        "retrained": false,
+        "final_test_read": false,
+        "loaded_parameters": 611716,
+        "parameter_dtypes": [
+          "torch.float32"
+        ]
+      },
+      "rounds": {
+        "1": {
+          "round": 1,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.5032618556022644,
+              "std_ms": 0.07293589676062372,
+              "p50_ms": 0.4970719963312149,
+              "p90_ms": 0.5102784216403962,
+              "p95_ms": 0.5204768270254135,
+              "p99_ms": 0.5487139326333998,
+              "min_ms": 0.47679999470710754,
+              "max_ms": 1.7732800245285034
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.482022719860077,
+              "std_ms": 0.007135693502235606,
+              "p50_ms": 0.48055520057678225,
+              "p90_ms": 0.4868316650390625,
+              "p95_ms": 0.5021644854545594,
+              "p99_ms": 0.5102123646736145,
+              "min_ms": 0.4743680000305176,
+              "max_ms": 0.512227201461792
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 0.5288992912392132,
+              "std_ms": 0.09683354138076042,
+              "p50_ms": 0.5247324879746884,
+              "p90_ms": 0.5368541227653623,
+              "p95_ms": 0.5408301920397207,
+              "p99_ms": 0.561256823129952,
+              "min_ms": 0.5041930126026273,
+              "max_ms": 3.566287981811911
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.21670259261131286,
+              "std_ms": 0.0028003943603372976,
+              "p50_ms": 0.21742080450057982,
+              "p90_ms": 0.2184707260131836,
+              "p95_ms": 0.21862224102020264,
+              "p99_ms": 0.2197432365417481,
+              "min_ms": 0.2082144021987915,
+              "max_ms": 0.2263200044631958
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.018969929611682892,
+              "std_ms": 5.6690205514952584e-05,
+              "p50_ms": 0.018966400027275086,
+              "p90_ms": 0.01902918362617493,
+              "p95_ms": 0.019047391772270203,
+              "p99_ms": 0.019174227607250214,
+              "min_ms": 0.01886944055557251,
+              "max_ms": 0.019220479726791383
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.1724109437465668,
+              "std_ms": 0.0026312522506420992,
+              "p50_ms": 0.17190399765968323,
+              "p90_ms": 0.174060800075531,
+              "p95_ms": 0.1747334408760071,
+              "p99_ms": 0.18016934025287634,
+              "min_ms": 0.16976640224456788,
+              "max_ms": 0.19408320188522338
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.4764334100182168,
+            "throughput_per_s": 2098.9292080959735
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:11Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2542 MHz, 3105 MHz, 57.10 W, 500.00 W, 32, 0 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:14Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2557 MHz, 3105 MHz, 75.57 W, 500.00 W, 32, 45 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        },
+        "2": {
+          "round": 2,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.5217874865233898,
+              "std_ms": 0.08607013636054542,
+              "p50_ms": 0.5158079862594604,
+              "p90_ms": 0.5299679934978485,
+              "p95_ms": 0.5360063970088959,
+              "p99_ms": 0.6174601644277569,
+              "min_ms": 0.4792959988117218,
+              "max_ms": 2.59500789642334
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.5045940179824828,
+              "std_ms": 0.010241089499591061,
+              "p50_ms": 0.5032480001449585,
+              "p90_ms": 0.512983341217041,
+              "p95_ms": 0.5165956783294678,
+              "p99_ms": 0.5530467734336854,
+              "min_ms": 0.48238720893859866,
+              "max_ms": 0.5572031974792481
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 0.551048843190074,
+              "std_ms": 0.011027241495192214,
+              "p50_ms": 0.5502515123225749,
+              "p90_ms": 0.5636512767523527,
+              "p95_ms": 0.5688000761438161,
+              "p99_ms": 0.5857550527434796,
+              "min_ms": 0.5246299551799893,
+              "max_ms": 0.6256820051930845
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.22311551952362055,
+              "std_ms": 0.002169438030762924,
+              "p50_ms": 0.22270879745483396,
+              "p90_ms": 0.22481822967529297,
+              "p95_ms": 0.22568880796432494,
+              "p99_ms": 0.2313268463611603,
+              "min_ms": 0.22043519020080565,
+              "max_ms": 0.2362816095352173
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.019566198360919954,
+              "std_ms": 0.00035885964676552753,
+              "p50_ms": 0.01966416001319885,
+              "p90_ms": 0.019858144402503965,
+              "p95_ms": 0.019992480516433715,
+              "p99_ms": 0.020150120520591737,
+              "min_ms": 0.0188099205493927,
+              "max_ms": 0.02024928092956543
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.17569504022598267,
+              "std_ms": 0.003379696874190804,
+              "p50_ms": 0.17498880028724673,
+              "p90_ms": 0.17852384209632874,
+              "p95_ms": 0.18001455664634705,
+              "p99_ms": 0.18231661188602458,
+              "min_ms": 0.17205120325088502,
+              "max_ms": 0.20193920135498047
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.49998590600444004,
+            "throughput_per_s": 2000.0563775714104
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:14Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2557 MHz, 3105 MHz, 75.57 W, 500.00 W, 32, 45 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:17Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 77.61 W, 500.00 W, 32, 36 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        },
+        "3": {
+          "round": 3,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.5193823029398918,
+              "std_ms": 0.06352030047878192,
+              "p50_ms": 0.513264000415802,
+              "p90_ms": 0.5246719717979431,
+              "p95_ms": 0.5312079906463623,
+              "p99_ms": 0.5646979135274887,
+              "min_ms": 0.49539199471473694,
+              "max_ms": 1.6160320043563843
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.49624220895767207,
+              "std_ms": 0.0028408404311800885,
+              "p50_ms": 0.49655518531799314,
+              "p90_ms": 0.49928481578826905,
+              "p95_ms": 0.5005961728096008,
+              "p99_ms": 0.5020248775482178,
+              "min_ms": 0.49045758247375487,
+              "max_ms": 0.506390380859375
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 0.5465805884450674,
+              "std_ms": 0.011750744173815468,
+              "p50_ms": 0.5450359894894063,
+              "p90_ms": 0.555285217706114,
+              "p95_ms": 0.5598262476269156,
+              "p99_ms": 0.5862170294858515,
+              "min_ms": 0.5287129897624254,
+              "max_ms": 0.6879200227558613
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.21948057675361635,
+              "std_ms": 0.001874122149234804,
+              "p50_ms": 0.21904799938201902,
+              "p90_ms": 0.22148257017135622,
+              "p95_ms": 0.2228294312953949,
+              "p99_ms": 0.22707123160362244,
+              "min_ms": 0.21737918853759766,
+              "max_ms": 0.22984640598297118
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.01898335359096527,
+              "std_ms": 0.00011029698381256062,
+              "p50_ms": 0.01896223962306976,
+              "p90_ms": 0.019042336225509642,
+              "p95_ms": 0.019140287518501282,
+              "p99_ms": 0.01945443208217621,
+              "min_ms": 0.0188265597820282,
+              "max_ms": 0.019647680521011353
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.17362137639522554,
+              "std_ms": 0.003544037920913658,
+              "p50_ms": 0.17279359698295593,
+              "p90_ms": 0.17511552214622497,
+              "p95_ms": 0.1763187211751938,
+              "p99_ms": 0.18064224052429212,
+              "min_ms": 0.17143360376358033,
+              "max_ms": 0.20525760650634767
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.4935134020051919,
+            "throughput_per_s": 2026.2874238813067
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:17Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 77.61 W, 500.00 W, 32, 36 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:19Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 76.06 W, 500.00 W, 32, 48 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 618 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 12.964352,
+            "reserved_mb": 27.262976,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        }
+      },
+      "summary": {
+        "forward_cuda_percall": {
+          "count": 3000,
+          "mean_ms": 0.514810548355182,
+          "std_ms": 0.07517619705603315,
+          "p50_ms": 0.5099520087242126,
+          "p90_ms": 0.5259199738502502,
+          "p95_ms": 0.5315536171197891,
+          "p99_ms": 0.5822006696462625,
+          "min_ms": 0.47679999470710754,
+          "max_ms": 2.59500789642334,
+          "round_means_ms": [
+            0.5032618556022644,
+            0.5217874865233898,
+            0.5193823029398918
+          ],
+          "cv_across_round_means_pct": 1.9567397487345497
+        },
+        "forward_cuda_grouped": {
+          "count": 300,
+          "mean_ms": 0.49428631560007735,
+          "std_ms": 0.011889960266339993,
+          "p50_ms": 0.49655518531799314,
+          "p90_ms": 0.50666015625,
+          "p95_ms": 0.5106886315345764,
+          "p99_ms": 0.521280563354492,
+          "min_ms": 0.4743680000305176,
+          "max_ms": 0.5572031974792481,
+          "round_means_ms": [
+            0.482022719860077,
+            0.5045940179824828,
+            0.49624220895767207
+          ],
+          "cv_across_round_means_pct": 2.308794574400275
+        },
+        "request_to_result": {
+          "count": 3000,
+          "mean_ms": 0.5421762409581182,
+          "std_ms": 0.057458618729912043,
+          "p50_ms": 0.542156514711678,
+          "p90_ms": 0.5580315657425672,
+          "p95_ms": 0.5635364563204348,
+          "p99_ms": 0.5820058874087407,
+          "min_ms": 0.5041930126026273,
+          "max_ms": 3.566287981811911,
+          "round_means_ms": [
+            0.5288992912392132,
+            0.551048843190074,
+            0.5465805884450674
+          ],
+          "cv_across_round_means_pct": 2.1604070069995567
+        },
+        "module_history_encoder": {
+          "count": 300,
+          "mean_ms": 0.2197662296295166,
+          "std_ms": 0.0034979977968683106,
+          "p50_ms": 0.21912800073623656,
+          "p90_ms": 0.22350879192352294,
+          "p95_ms": 0.22441680431365965,
+          "p99_ms": 0.22952008843421934,
+          "min_ms": 0.2082144021987915,
+          "max_ms": 0.2362816095352173,
+          "round_means_ms": [
+            0.21670259261131286,
+            0.22311551952362055,
+            0.21948057675361635
+          ],
+          "cv_across_round_means_pct": 1.4633696189945193
+        },
+        "module_move_head": {
+          "count": 300,
+          "mean_ms": 0.01917316052118937,
+          "std_ms": 0.00035392026784523045,
+          "p50_ms": 0.018981759548187257,
+          "p90_ms": 0.019750912189483643,
+          "p95_ms": 0.019829807639122007,
+          "p99_ms": 0.020115368700027465,
+          "min_ms": 0.0188099205493927,
+          "max_ms": 0.02024928092956543,
+          "round_means_ms": [
+            0.018969929611682892,
+            0.019566198360919954,
+            0.01898335359096527
+          ],
+          "cv_across_round_means_pct": 1.7756432181410258
+        },
+        "module_arrival_head": {
+          "count": 300,
+          "mean_ms": 0.17390912012259166,
+          "std_ms": 0.0034753707356571626,
+          "p50_ms": 0.17314239740371704,
+          "p90_ms": 0.17670464038848877,
+          "p95_ms": 0.17852112233638762,
+          "p99_ms": 0.18223805189132677,
+          "min_ms": 0.16976640224456788,
+          "max_ms": 0.20525760650634767,
+          "round_means_ms": [
+            0.1724109437465668,
+            0.17569504022598267,
+            0.17362137639522554
+          ],
+          "cv_across_round_means_pct": 0.9550097817006461
+        }
+      },
+      "module_summary": {
+        "module_history_encoder": {
+          "count": 300,
+          "mean_ms": 0.2197662296295166,
+          "std_ms": 0.0034979977968683106,
+          "p50_ms": 0.21912800073623656,
+          "p90_ms": 0.22350879192352294,
+          "p95_ms": 0.22441680431365965,
+          "p99_ms": 0.22952008843421934,
+          "min_ms": 0.2082144021987915,
+          "max_ms": 0.2362816095352173,
+          "round_means_ms": [
+            0.21670259261131286,
+            0.22311551952362055,
+            0.21948057675361635
+          ],
+          "cv_across_round_means_pct": 1.4633696189945193
+        },
+        "module_move_head": {
+          "count": 300,
+          "mean_ms": 0.01917316052118937,
+          "std_ms": 0.00035392026784523045,
+          "p50_ms": 0.018981759548187257,
+          "p90_ms": 0.019750912189483643,
+          "p95_ms": 0.019829807639122007,
+          "p99_ms": 0.020115368700027465,
+          "min_ms": 0.0188099205493927,
+          "max_ms": 0.02024928092956543,
+          "round_means_ms": [
+            0.018969929611682892,
+            0.019566198360919954,
+            0.01898335359096527
+          ],
+          "cv_across_round_means_pct": 1.7756432181410258
+        },
+        "module_arrival_head": {
+          "count": 300,
+          "mean_ms": 0.17390912012259166,
+          "std_ms": 0.0034753707356571626,
+          "p50_ms": 0.17314239740371704,
+          "p90_ms": 0.17670464038848877,
+          "p95_ms": 0.17852112233638762,
+          "p99_ms": 0.18223805189132677,
+          "min_ms": 0.16976640224456788,
+          "max_ms": 0.20525760650634767,
+          "round_means_ms": [
+            0.1724109437465668,
+            0.17569504022598267,
+            0.17362137639522554
+          ],
+          "cv_across_round_means_pct": 0.9550097817006461
+        }
+      },
+      "reference_output": {
+        "move_logits": [
+          -1.588590383529663,
+          -0.27238085865974426,
+          -2.006328821182251
+        ],
+        "arrival_logit": -4.035500526428223,
+        "finite": true
+      }
+    },
+    "Transformer-M": {
+      "checkpoint": {
+        "model": "Transformer-M",
+        "checkpoint": "runs/v83_spatial_stage2/stage2j/Transformer-M/best.pt",
+        "checkpoint_resolved": "/home/ubuntu5/Workspace/MEC-V8.2/runs/v83_spatial_stage2/stage2i/T5_map_assisted/best.pt",
+        "checkpoint_sha256": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+        "config": "runs/v83_spatial_stage2/stage2j/Transformer-M/config.json",
+        "config_sha256": "39f6913c29fe73ddbbab639f8eaf31652311820c87487b7e75232e42662bd466",
+        "metadata": {
+          "model": "Transformer-M",
+          "architecture": "explicit_transformer",
+          "config": {
+            "architecture": "explicit_transformer",
+            "hidden_dim": 256,
+            "num_layers": 2,
+            "num_heads": 8,
+            "ff_mult": 4
+          },
+          "parameters": 3033732,
+          "trainable_parameters": 3033732
+        },
+        "parameters": 3033732,
+        "frozen": true,
+        "retrained": false,
+        "final_test_read": false,
+        "loaded_parameters": 3033732,
+        "parameter_dtypes": [
+          "torch.float32"
+        ]
+      },
+      "rounds": {
+        "1": {
+          "round": 1,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.935261983513832,
+              "std_ms": 0.09845711229663334,
+              "p50_ms": 0.9271039962768555,
+              "p90_ms": 0.9427552044391632,
+              "p95_ms": 0.9483231723308563,
+              "p99_ms": 0.9909702599048614,
+              "min_ms": 0.8925759792327881,
+              "max_ms": 2.4824318885803223
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.9126197433471681,
+              "std_ms": 0.009000764845044473,
+              "p50_ms": 0.9116816043853759,
+              "p90_ms": 0.922708158493042,
+              "p95_ms": 0.9263167667388916,
+              "p99_ms": 0.9351074743270874,
+              "min_ms": 0.8769887924194336,
+              "max_ms": 0.9440064430236816
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 0.9996538265841082,
+              "std_ms": 0.014535034420415144,
+              "p50_ms": 1.0000414913520217,
+              "p90_ms": 1.0175014671403915,
+              "p95_ms": 1.0213384201051667,
+              "p99_ms": 1.0315182502381504,
+              "min_ms": 0.9695920161902905,
+              "max_ms": 1.127116964198649
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.22419968056678777,
+              "std_ms": 0.00220434020895249,
+              "p50_ms": 0.22347838878631593,
+              "p90_ms": 0.2267356824874878,
+              "p95_ms": 0.2288555288314819,
+              "p99_ms": 0.22971587419509892,
+              "min_ms": 0.22146880626678467,
+              "max_ms": 0.23548479080200196
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.006832815992832184,
+              "std_ms": 6.70051761441205e-05,
+              "p50_ms": 0.006819200217723847,
+              "p90_ms": 0.006843903839588166,
+              "p95_ms": 0.0069407038688659665,
+              "p99_ms": 0.007099385780096054,
+              "min_ms": 0.0067740797996520994,
+              "max_ms": 0.0072444802522659306
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.18033865571022037,
+              "std_ms": 0.002392690269748261,
+              "p50_ms": 0.17985599637031557,
+              "p90_ms": 0.182084801197052,
+              "p95_ms": 0.18318416357040407,
+              "p99_ms": 0.1873373129367829,
+              "min_ms": 0.1778272032737732,
+              "max_ms": 0.19966399669647217
+            },
+            "module_fusion_encoder": {
+              "count": 100,
+              "mean_ms": 0.3481271030902862,
+              "std_ms": 0.0009008751962113567,
+              "p50_ms": 0.34809279441833496,
+              "p90_ms": 0.3489222502708435,
+              "p95_ms": 0.349539669752121,
+              "p99_ms": 0.35212306356430056,
+              "min_ms": 0.34662399291992185,
+              "max_ms": 0.35226879119873045
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.881499596987851,
+            "throughput_per_s": 1134.430467599842
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:20Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 76.06 W, 500.00 W, 32, 48 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 25.695232,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:24Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2557 MHz, 3105 MHz, 112.34 W, 500.00 W, 33, 72 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 23.246336,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        },
+        "2": {
+          "round": 2,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.9267155200242996,
+              "std_ms": 0.0956076420880499,
+              "p50_ms": 0.9187040030956268,
+              "p90_ms": 0.9391999840736389,
+              "p95_ms": 0.9550511777400971,
+              "p99_ms": 1.0103542804718018,
+              "min_ms": 0.8905280232429504,
+              "max_ms": 3.281951904296875
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.9110846385955811,
+              "std_ms": 0.008549710572182838,
+              "p50_ms": 0.9091919898986816,
+              "p90_ms": 0.9203977298736572,
+              "p95_ms": 0.9228401279449463,
+              "p99_ms": 0.935073266029358,
+              "min_ms": 0.9017696380615234,
+              "max_ms": 0.9725824356079101
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 0.997569884522818,
+              "std_ms": 0.018966966024277013,
+              "p50_ms": 0.9962970216292888,
+              "p90_ms": 1.0183901118580252,
+              "p95_ms": 1.0265402641380206,
+              "p99_ms": 1.0451706603635103,
+              "min_ms": 0.9575510048307478,
+              "max_ms": 1.1481139808893204
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.22129135942459105,
+              "std_ms": 0.0016795912315771603,
+              "p50_ms": 0.2209712028503418,
+              "p90_ms": 0.2234387278556824,
+              "p95_ms": 0.22394431114196775,
+              "p99_ms": 0.22529454970359805,
+              "min_ms": 0.21871039867401124,
+              "max_ms": 0.23053760528564454
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.00658700476884842,
+              "std_ms": 0.00011557012205710492,
+              "p50_ms": 0.006540159881114959,
+              "p90_ms": 0.006697631895542145,
+              "p95_ms": 0.006880144208669663,
+              "p99_ms": 0.006924793857336045,
+              "min_ms": 0.0064579200744628905,
+              "max_ms": 0.007177600264549255
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.17918716764450074,
+              "std_ms": 0.003909092766505934,
+              "p50_ms": 0.17820959687232973,
+              "p90_ms": 0.18315648436546325,
+              "p95_ms": 0.1840884792804718,
+              "p99_ms": 0.19933859217166902,
+              "min_ms": 0.17422720193862914,
+              "max_ms": 0.20007040500640869
+            },
+            "module_fusion_encoder": {
+              "count": 100,
+              "mean_ms": 0.34846355342865,
+              "std_ms": 0.0007041516137966062,
+              "p50_ms": 0.3485040068626404,
+              "p90_ms": 0.3491216015815735,
+              "p95_ms": 0.34932799339294435,
+              "p99_ms": 0.35057207179069516,
+              "min_ms": 0.3471904039382935,
+              "max_ms": 0.35239999294281005
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.8815836590365507,
+            "throughput_per_s": 1134.3222957340906
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:24Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2535 MHz, 3105 MHz, 127.64 W, 500.00 W, 35, 50 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 23.246336,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:29Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 111.79 W, 500.00 W, 36, 53 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 23.246336,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        },
+        "3": {
+          "round": 3,
+          "metrics": {
+            "forward_cuda_percall": {
+              "count": 1000,
+              "mean_ms": 0.9290340812802315,
+              "std_ms": 0.1293974383362577,
+              "p50_ms": 0.9202240109443665,
+              "p90_ms": 0.938393622636795,
+              "p95_ms": 0.9442896157503128,
+              "p99_ms": 1.0170707082748414,
+              "min_ms": 0.8895040154457092,
+              "max_ms": 4.3051838874816895
+            },
+            "forward_cuda_grouped": {
+              "count": 100,
+              "mean_ms": 0.9238604793548582,
+              "std_ms": 0.00716930215745462,
+              "p50_ms": 0.9226128101348877,
+              "p90_ms": 0.9293852615356446,
+              "p95_ms": 0.9367404890060425,
+              "p99_ms": 0.952483099937439,
+              "min_ms": 0.913759994506836,
+              "max_ms": 0.9603967666625977
+            },
+            "request_to_result": {
+              "count": 1000,
+              "mean_ms": 1.0176117689115927,
+              "std_ms": 0.010871713169823022,
+              "p50_ms": 1.0170385066885501,
+              "p90_ms": 1.0291359852999449,
+              "p95_ms": 1.0335475351894274,
+              "p99_ms": 1.0529233247507364,
+              "min_ms": 0.9910000371746719,
+              "max_ms": 1.0873599676415324
+            },
+            "module_history_encoder": {
+              "count": 100,
+              "mean_ms": 0.2250964796543121,
+              "std_ms": 0.001017613641790619,
+              "p50_ms": 0.22492800951004027,
+              "p90_ms": 0.2257526445388794,
+              "p95_ms": 0.22612993001937864,
+              "p99_ms": 0.22756319117546084,
+              "min_ms": 0.22408640384674072,
+              "max_ms": 0.23342399597167968
+            },
+            "module_move_head": {
+              "count": 100,
+              "mean_ms": 0.00684252158999443,
+              "std_ms": 7.050492694911889e-05,
+              "p50_ms": 0.006825600266456604,
+              "p90_ms": 0.006860831797122955,
+              "p95_ms": 0.007035920202732086,
+              "p99_ms": 0.00714342058300972,
+              "min_ms": 0.006757439970970154,
+              "max_ms": 0.007149440050125122
+            },
+            "module_arrival_head": {
+              "count": 100,
+              "mean_ms": 0.18030873596668248,
+              "std_ms": 0.0023652920176844058,
+              "p50_ms": 0.17989280223846435,
+              "p90_ms": 0.1818944013118744,
+              "p95_ms": 0.1821427232027054,
+              "p99_ms": 0.18327910494804392,
+              "min_ms": 0.1781440019607544,
+              "max_ms": 0.20124800205230714
+            },
+            "module_fusion_encoder": {
+              "count": 100,
+              "mean_ms": 0.3482055039405823,
+              "std_ms": 0.0006062465201630171,
+              "p50_ms": 0.3482640027999878,
+              "p90_ms": 0.3487593698501587,
+              "p95_ms": 0.34904127001762386,
+              "p99_ms": 0.35025605916976926,
+              "min_ms": 0.346940803527832,
+              "max_ms": 0.3505791902542114
+            }
+          },
+          "throughput": {
+            "iterations": 1000,
+            "elapsed_s": 0.9064299680176191,
+            "throughput_per_s": 1103.229190653328
+          },
+          "hardware_before": {
+            "utc": "2026-10-23T01:06:29Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2550 MHz, 3105 MHz, 111.79 W, 500.00 W, 36, 53 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 23.246336,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          },
+          "hardware_after": {
+            "utc": "2026-10-23T01:06:34Z",
+            "gpu_query": [
+              "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2535 MHz, 3105 MHz, 120.19 W, 500.00 W, 36, 44 %"
+            ],
+            "compute_apps": [
+              "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+              "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+              "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 640 MiB"
+            ],
+            "torch": "2.11.0+cu128",
+            "torch_cuda": "12.8",
+            "cudnn": 91900,
+            "device_name": "NVIDIA GeForce RTX 5090",
+            "compute_capability": "12.0",
+            "sm_count": 170,
+            "total_memory_gb": 33.659879424,
+            "allocated_mb": 23.246336,
+            "reserved_mb": 50.331648,
+            "allow_tf32_matmul": false,
+            "allow_tf32_cudnn": true,
+            "float32_matmul_precision": "highest"
+          }
+        }
+      },
+      "summary": {
+        "forward_cuda_percall": {
+          "count": 3000,
+          "mean_ms": 0.9303371949394544,
+          "std_ms": 0.10892455439374973,
+          "p50_ms": 0.9222720265388489,
+          "p90_ms": 0.9402239918708801,
+          "p95_ms": 0.9478943824768065,
+          "p99_ms": 1.0103462815284727,
+          "min_ms": 0.8895040154457092,
+          "max_ms": 4.3051838874816895,
+          "round_means_ms": [
+            0.935261983513832,
+            0.9267155200242996,
+            0.9290340812802315
+          ],
+          "cv_across_round_means_pct": 0.47506845140403803
+        },
+        "forward_cuda_grouped": {
+          "count": 300,
+          "mean_ms": 0.9158549537658689,
+          "std_ms": 0.010029489014899917,
+          "p50_ms": 0.9145055770874024,
+          "p90_ms": 0.9259626007080078,
+          "p95_ms": 0.9302038621902466,
+          "p99_ms": 0.9468655138015747,
+          "min_ms": 0.8769887924194336,
+          "max_ms": 0.9725824356079101,
+          "round_means_ms": [
+            0.9126197433471681,
+            0.9110846385955811,
+            0.9238604793548582
+          ],
+          "cv_across_round_means_pct": 0.7616213715906589
+        },
+        "request_to_result": {
+          "count": 3000,
+          "mean_ms": 1.004945160006173,
+          "std_ms": 0.017622565076667988,
+          "p50_ms": 1.0060085041914135,
+          "p90_ms": 1.0242852964438498,
+          "p95_ms": 1.0293695755535737,
+          "p99_ms": 1.0482792195398358,
+          "min_ms": 0.9575510048307478,
+          "max_ms": 1.1481139808893204,
+          "round_means_ms": [
+            0.9996538265841082,
+            0.997569884522818,
+            1.0176117689115927
+          ],
+          "cv_across_round_means_pct": 1.0964758389302707
+        },
+        "module_history_encoder": {
+          "count": 300,
+          "mean_ms": 0.22352917321523033,
+          "std_ms": 0.002352140086532277,
+          "p50_ms": 0.22393279075622557,
+          "p90_ms": 0.2257379150390625,
+          "p95_ms": 0.22635327696800234,
+          "p99_ms": 0.2296664023399353,
+          "min_ms": 0.21871039867401124,
+          "max_ms": 0.23548479080200196,
+          "round_means_ms": [
+            0.22419968056678777,
+            0.22129135942459105,
+            0.2250964796543121
+          ],
+          "cv_across_round_means_pct": 0.889906598790906
+        },
+        "module_move_head": {
+          "count": 300,
+          "mean_ms": 0.006754114117225011,
+          "std_ms": 0.00014690146554526438,
+          "p50_ms": 0.006811839938163758,
+          "p90_ms": 0.0068559998273849485,
+          "p95_ms": 0.006888943940401077,
+          "p99_ms": 0.00714342058300972,
+          "min_ms": 0.0064579200744628905,
+          "max_ms": 0.0072444802522659306,
+          "round_means_ms": [
+            0.006832815992832184,
+            0.00658700476884842,
+            0.00684252158999443
+          ],
+          "cv_across_round_means_pct": 2.1439122558749095
+        },
+        "module_arrival_head": {
+          "count": 300,
+          "mean_ms": 0.1799448531071345,
+          "std_ms": 0.0030159083228752603,
+          "p50_ms": 0.17969119548797607,
+          "p90_ms": 0.1821350419521332,
+          "p95_ms": 0.18320287883281708,
+          "p99_ms": 0.19933452808856963,
+          "min_ms": 0.17422720193862914,
+          "max_ms": 0.20124800205230714,
+          "round_means_ms": [
+            0.18033865571022037,
+            0.17918716764450074,
+            0.18030873596668248
+          ],
+          "cv_across_round_means_pct": 0.36474806438729535
+        },
+        "module_fusion_encoder": {
+          "count": 300,
+          "mean_ms": 0.3482653868198395,
+          "std_ms": 0.0007584902728160161,
+          "p50_ms": 0.3482608079910278,
+          "p90_ms": 0.3490592002868652,
+          "p95_ms": 0.3492915272712708,
+          "p99_ms": 0.3505946142673492,
+          "min_ms": 0.34662399291992185,
+          "max_ms": 0.35239999294281005,
+          "round_means_ms": [
+            0.3481271030902862,
+            0.34846355342865,
+            0.3482055039405823
+          ],
+          "cv_across_round_means_pct": 0.05054692118376187
+        }
+      },
+      "module_summary": {
+        "module_history_encoder": {
+          "count": 300,
+          "mean_ms": 0.22352917321523033,
+          "std_ms": 0.002352140086532277,
+          "p50_ms": 0.22393279075622557,
+          "p90_ms": 0.2257379150390625,
+          "p95_ms": 0.22635327696800234,
+          "p99_ms": 0.2296664023399353,
+          "min_ms": 0.21871039867401124,
+          "max_ms": 0.23548479080200196,
+          "round_means_ms": [
+            0.22419968056678777,
+            0.22129135942459105,
+            0.2250964796543121
+          ],
+          "cv_across_round_means_pct": 0.889906598790906
+        },
+        "module_move_head": {
+          "count": 300,
+          "mean_ms": 0.006754114117225011,
+          "std_ms": 0.00014690146554526438,
+          "p50_ms": 0.006811839938163758,
+          "p90_ms": 0.0068559998273849485,
+          "p95_ms": 0.006888943940401077,
+          "p99_ms": 0.00714342058300972,
+          "min_ms": 0.0064579200744628905,
+          "max_ms": 0.0072444802522659306,
+          "round_means_ms": [
+            0.006832815992832184,
+            0.00658700476884842,
+            0.00684252158999443
+          ],
+          "cv_across_round_means_pct": 2.1439122558749095
+        },
+        "module_arrival_head": {
+          "count": 300,
+          "mean_ms": 0.1799448531071345,
+          "std_ms": 0.0030159083228752603,
+          "p50_ms": 0.17969119548797607,
+          "p90_ms": 0.1821350419521332,
+          "p95_ms": 0.18320287883281708,
+          "p99_ms": 0.19933452808856963,
+          "min_ms": 0.17422720193862914,
+          "max_ms": 0.20124800205230714,
+          "round_means_ms": [
+            0.18033865571022037,
+            0.17918716764450074,
+            0.18030873596668248
+          ],
+          "cv_across_round_means_pct": 0.36474806438729535
+        },
+        "module_fusion_encoder": {
+          "count": 300,
+          "mean_ms": 0.3482653868198395,
+          "std_ms": 0.0007584902728160161,
+          "p50_ms": 0.3482608079910278,
+          "p90_ms": 0.3490592002868652,
+          "p95_ms": 0.3492915272712708,
+          "p99_ms": 0.3505946142673492,
+          "min_ms": 0.34662399291992185,
+          "max_ms": 0.35239999294281005,
+          "round_means_ms": [
+            0.3481271030902862,
+            0.34846355342865,
+            0.3482055039405823
+          ],
+          "cv_across_round_means_pct": 0.05054692118376187
+        }
+      },
+      "reference_output": {
+        "move_logits": [
+          6.084342002868652,
+          -4.1493306159973145,
+          -2.0530779361724854
+        ],
+        "arrival_logit": -3.822230577468872,
+        "finite": true
+      }
+    }
+  },
+  "analytical": {
+    "Small": {
+      "model": "Small",
+      "flops": 14225984.0,
+      "gflops": 0.014225984,
+      "analytical_tflops": 2.0,
+      "analytical_inference_ms": 0.007112992,
+      "extraction_ms": 22.714977709923666,
+      "payload_bytes": 470200,
+      "payload_breakdown": {
+        "current_tokens": 442368,
+        "goal_tokens": 2304,
+        "history_vis": 24576,
+        "history_pose": 640,
+        "history_action": 128,
+        "history_mask": 16,
+        "gab": 80,
+        "map_feat": 88
+      },
+      "reference_distance_m": 150.0,
+      "communication_ms_at_reference": 21.07327926858066,
+      "analytical_total_ms_at_reference": 43.795369970504325,
+      "per_distance": {
+        "50": {
+          "communication_ms": 11.82036216433091,
+          "inference_ms": 0.007112992,
+          "total_ms": 34.54245286625458,
+          "uplink_rate_mbps": 318.23052015707214,
+          "snr_db": 31.929526552218988
+        },
+        "100": {
+          "communication_ms": 14.330200302437483,
+          "inference_ms": 0.007112992,
+          "total_ms": 37.05229100436115,
+          "uplink_rate_mbps": 262.49458630108427,
+          "snr_db": 26.32948116615159
+        },
+        "150": {
+          "communication_ms": 21.07327926858066,
+          "inference_ms": 0.007112992,
+          "total_ms": 43.795369970504325,
+          "uplink_rate_mbps": 178.5009324869709,
+          "snr_db": 17.840553913533732
+        },
+        "200": {
+          "communication_ms": 32.03709384136358,
+          "inference_ms": 0.007112992,
+          "total_ms": 54.75918454328725,
+          "uplink_rate_mbps": 117.41389586165711,
+          "snr_db": 11.483550409553018
+        },
+        "500": {
+          "communication_ms": 145.97724673995822,
+          "inference_ms": 0.007112992,
+          "total_ms": 168.69933744188188,
+          "uplink_rate_mbps": 25.76839941844403,
+          "snr_db": -0.8952843434952118
+        }
+      },
+      "latency_model": {
+        "module": "v83_spatial_stage2.stage2k_latency.Stage2KLatency",
+        "underlying_channel": "latency_model.LatencyModel",
+        "modified": false
+      },
+      "measured_forward_mean_ms": 0.49428631560007735,
+      "measured_forward_percall_mean_ms": 0.514810548355182,
+      "measured_forward_p95_ms": 0.5315536171197891,
+      "measured_request_mean_ms": 0.5421762409581182,
+      "measured_request_p95_ms": 0.5635364563204348,
+      "analytical_minus_forward_ms": -0.48717332360007737,
+      "analytical_vs_forward_pct": -98.56095712636419,
+      "analytical_vs_request_pct": -98.68806645096986,
+      "effective_tflops_forward": 0.028780857472716515,
+      "effective_tflops_percall": 0.027633435339372847,
+      "historical_reference_ms": 49.11,
+      "pct_of_historical_analytical_inference": 0.014483795560985543,
+      "pct_of_historical_measured_forward": 1.0064881197313733,
+      "pct_of_historical_measured_request": 1.1040037486420653,
+      "pct_of_historical_extraction": 46.25326351033122,
+      "pct_of_historical_communication": 42.91036299853525,
+      "simulated_full_mec_measured_ms": 44.2825432941044,
+      "simulated_full_mec_analytical_ms": 43.795369970504325,
+      "pct_of_historical_simulated_full_measured": 90.17011462859784
+    },
+    "Transformer-M": {
+      "model": "Transformer-M",
+      "flops": 2814595648.0,
+      "gflops": 2.814595648,
+      "analytical_tflops": 2.0,
+      "analytical_inference_ms": 1.407297824,
+      "extraction_ms": 22.714977709923666,
+      "payload_bytes": 470200,
+      "payload_breakdown": {
+        "current_tokens": 442368,
+        "goal_tokens": 2304,
+        "history_vis": 24576,
+        "history_pose": 640,
+        "history_action": 128,
+        "history_mask": 16,
+        "gab": 80,
+        "map_feat": 88
+      },
+      "reference_distance_m": 150.0,
+      "communication_ms_at_reference": 21.07327926858066,
+      "analytical_total_ms_at_reference": 45.19555480250432,
+      "per_distance": {
+        "50": {
+          "communication_ms": 11.82036216433091,
+          "inference_ms": 1.407297824,
+          "total_ms": 35.94263769825457,
+          "uplink_rate_mbps": 318.23052015707214,
+          "snr_db": 31.929526552218988
+        },
+        "100": {
+          "communication_ms": 14.330200302437483,
+          "inference_ms": 1.407297824,
+          "total_ms": 38.452475836361145,
+          "uplink_rate_mbps": 262.49458630108427,
+          "snr_db": 26.32948116615159
+        },
+        "150": {
+          "communication_ms": 21.07327926858066,
+          "inference_ms": 1.407297824,
+          "total_ms": 45.19555480250432,
+          "uplink_rate_mbps": 178.5009324869709,
+          "snr_db": 17.840553913533732
+        },
+        "200": {
+          "communication_ms": 32.03709384136358,
+          "inference_ms": 1.407297824,
+          "total_ms": 56.15936937528724,
+          "uplink_rate_mbps": 117.41389586165711,
+          "snr_db": 11.483550409553018
+        },
+        "500": {
+          "communication_ms": 145.97724673995822,
+          "inference_ms": 1.407297824,
+          "total_ms": 170.0995222738819,
+          "uplink_rate_mbps": 25.76839941844403,
+          "snr_db": -0.8952843434952118
+        }
+      },
+      "latency_model": {
+        "module": "v83_spatial_stage2.stage2k_latency.Stage2KLatency",
+        "underlying_channel": "latency_model.LatencyModel",
+        "modified": false
+      },
+      "measured_forward_mean_ms": 0.9158549537658689,
+      "measured_forward_percall_mean_ms": 0.9303371949394544,
+      "measured_forward_p95_ms": 0.9478943824768065,
+      "measured_request_mean_ms": 1.004945160006173,
+      "measured_request_p95_ms": 1.0293695755535737,
+      "analytical_minus_forward_ms": 0.49144287023413114,
+      "analytical_vs_forward_pct": 53.65946520389348,
+      "analytical_vs_request_pct": 40.03727566500799,
+      "effective_tflops_forward": 3.0731893040778697,
+      "effective_tflops_percall": 3.0253500164348175,
+      "historical_reference_ms": 49.11,
+      "pct_of_historical_analytical_inference": 2.865603388311953,
+      "pct_of_historical_measured_forward": 1.864905220455852,
+      "pct_of_historical_measured_request": 2.046314722065105,
+      "pct_of_historical_extraction": 46.25326351033122,
+      "pct_of_historical_communication": 42.91036299853525,
+      "simulated_full_mec_measured_ms": 44.70411193227019,
+      "simulated_full_mec_analytical_ms": 45.19555480250432,
+      "pct_of_historical_simulated_full_measured": 91.02853172932231
+    }
+  },
+  "hardware_after": {
+    "utc": "2026-10-23T01:06:34Z",
+    "gpu_query": [
+      "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB, 2535 MHz, 3105 MHz, 120.19 W, 500.00 W, 36, 44 %"
+    ],
+    "compute_apps": [
+      "446207, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2954 MiB",
+      "446206, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 2952 MiB",
+      "1153074, /home/ubuntu5/miniconda3/envs/DRL/bin/python, 630 MiB"
+    ],
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "cudnn": 91900,
+    "device_name": "NVIDIA GeForce RTX 5090",
+    "compute_capability": "12.0",
+    "sm_count": 170,
+    "total_memory_gb": 33.659879424,
+    "allocated_mb": 23.246336,
+    "reserved_mb": 39.845888,
+    "allow_tf32_matmul": false,
+    "allow_tf32_cudnn": true,
+    "float32_matmul_precision": "highest"
+  },
+  "figure_data": {
+    "latency_comparison": [
+      {
+        "model": "Small",
+        "analytical_inference_ms": 0.007112992,
+        "measured_forward_ms": 0.49428631560007735,
+        "measured_request_ms": 0.5421762409581182,
+        "measured_forward_p95_ms": 0.5315536171197891,
+        "measured_request_p95_ms": 0.5635364563204348
+      },
+      {
+        "model": "Transformer-M",
+        "analytical_inference_ms": 1.407297824,
+        "measured_forward_ms": 0.9158549537658689,
+        "measured_request_ms": 1.004945160006173,
+        "measured_forward_p95_ms": 0.9478943824768065,
+        "measured_request_p95_ms": 1.0293695755535737
+      }
+    ],
+    "module_breakdown": [
+      {
+        "model": "Small",
+        "module": "module_history_encoder",
+        "mean_ms": 0.2197662296295166,
+        "p95_ms": 0.22441680431365965
+      },
+      {
+        "model": "Small",
+        "module": "module_move_head",
+        "mean_ms": 0.01917316052118937,
+        "p95_ms": 0.019829807639122007
+      },
+      {
+        "model": "Small",
+        "module": "module_arrival_head",
+        "mean_ms": 0.17390912012259166,
+        "p95_ms": 0.17852112233638762
+      },
+      {
+        "model": "Transformer-M",
+        "module": "module_history_encoder",
+        "mean_ms": 0.22352917321523033,
+        "p95_ms": 0.22635327696800234
+      },
+      {
+        "model": "Transformer-M",
+        "module": "module_move_head",
+        "mean_ms": 0.006754114117225011,
+        "p95_ms": 0.006888943940401077
+      },
+      {
+        "model": "Transformer-M",
+        "module": "module_arrival_head",
+        "mean_ms": 0.1799448531071345,
+        "p95_ms": 0.18320287883281708
+      },
+      {
+        "model": "Transformer-M",
+        "module": "module_fusion_encoder",
+        "mean_ms": 0.3482653868198395,
+        "p95_ms": 0.3492915272712708
+      }
+    ]
+  }
+}

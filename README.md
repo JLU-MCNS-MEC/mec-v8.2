@@ -110,3 +110,21 @@ python v83_spatial_stage2/stage2n_analyze.py
 Raw checkpoints, TensorBoard events and per-episode logs stay in the ignored
 `runs/v83_spatial_stage2/stage2n_latency_only/` directory.  Tracked results,
 figures and the report are under `v83_spatial_stage2/stage2n_evidence/`.
+
+### Stage-2n inference-latency calibration
+
+The calibration measures the frozen Stage-2j `Small` and `Transformer-M`
+checkpoints on real training inputs (batch 1, FP32), compares them with the
+unchanged 2 TFLOPS analytical model, and saves results under
+`v83_spatial_stage2/stage2n_evidence/latency_calibration/`.
+
+```bash
+python v83_spatial_stage2/stage2n_latency_calibrate.py
+python v83_spatial_stage2/test_stage2n_latency_calibrate.py
+```
+
+Key outputs: `latency_calibration_report.md`, `latency_measurements.csv`,
+`latency_summary.csv`, `latency_calibration.json`, and the 300 dpi figure
+`figures/latency_comparison.png`.  This is a server RTX 5090 proxy
+measurement, not UAV/MEC target-hardware data.  It does not train or read the
+sealed Test set.
