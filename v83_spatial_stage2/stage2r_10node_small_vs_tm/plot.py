@@ -337,69 +337,88 @@ def plot_validation_metrics(eval_summary, out_dir):
 def plot_baseline_comparison(eval_summary, out_dir):
     if not eval_summary:
         return
-    comparison = eval_summary.get("baseline_comparison", [])
-    if not comparison:
-        return
+    aggregate = {
+        (row["model"], row["algorithm"]): row
+        for row in _eval_seed_aggregate(eval_summary)
+    }
     metrics = ("E2E_ms", "RewardD")
-    fig, axes = plt.subplots(1, 2, figsize=(13.6, 4.9))
-    labels = []
-    groups = []
-    for model in MEC_MODELS:
+    baselines = (
+        ("random", "Random"),
+        ("nearest", "Nearest"),
+        ("max_uplink_rate", "Max-Uplink-Rate"),
+        ("greedy_min_e2e", "Greedy-Min-E2E"),
+    )
+    fig, axes = plt.subplots(2, 2, figsize=(13.6, 8.4), sharex=True)
+    for row_index, model in enumerate(MEC_MODELS):
+        groups = []
         for algorithm in ALGORITHMS:
-            subset = [row for row in comparison
-                      if row["model"] == model
-                      and row["algorithm"] == algorithm
-                      and row["baseline"] == "greedy_min_e2e"]
-            if subset:
-                groups.append((f"{MODEL_LABELS[model]}\n"
-                               f"{ALGORITHM_LABELS[algorithm]}",
-                               subset[0], model, algorithm))
-        for baseline, title in (("greedy_min_e2e", "Greedy-Min-E2E"),
-                                ("random", "Random")):
+            row = aggregate.get((model, algorithm))
+            if row is not None:
+                groups.append((
+                    ALGORITHM_LABELS[algorithm], row, model,
+                    f"learned_{algorithm}",
+                ))
+        for baseline, title in baselines:
             base = _baseline_row(eval_summary, model, baseline)
             if base is not None:
-                groups.append((f"{MODEL_LABELS[model]}\n{title}", base,
-                               model, baseline))
-    x = np.arange(len(groups))
-    for ax, metric in zip(axes, metrics):
-        values = [
-            float(item[1][f"{metric}_mean"]) if f"{metric}_mean" in item[1]
-            else float(item[1][metric])
-            for item in groups
-        ]
-        colors = [
-            MODEL_COLORS[item[2]] if item[2] in MODEL_COLORS
-            else INK_MUTED for item in groups
-        ]
-        bars = ax.bar(x, values, color=colors, edgecolor=SURFACE,
-                      linewidth=1.0, width=0.7, zorder=3)
-        for bar, item in zip(bars, groups):
-            if "baseline" in item[3]:
-                bar.set_hatch("..")
-        ax.set_xticks(x)
-        ax.set_xticklabels([item[0] for item in groups], fontsize=7.5)
-        ax.set_title(METRIC_TITLES[metric])
-        _finish(ax)
+                groups.append((title, base, model, baseline))
+        x = np.arange(len(groups))
+        for col_index, metric in enumerate(metrics):
+            ax = axes[row_index, col_index]
+            values = [
+                float(item[1][f"{metric}_mean"])
+                if f"{metric}_mean" in item[1]
+                else float(item[1][metric])
+                for item in groups
+            ]
+            colors = [
+                MODEL_COLORS[model] if item[3].startswith("learned")
+                else INK_MUTED for item in groups
+            ]
+            bars = ax.bar(
+                x, values, color=colors, edgecolor=SURFACE, linewidth=1.0,
+                width=0.7, zorder=3,
+            )
+            for bar, item in zip(bars, groups):
+                if not item[3].startswith("learned"):
+                    bar.set_hatch("..")
+            ax.set_xticks(x)
+            ax.set_xticklabels([item[0] for item in groups], fontsize=7.5)
+            ax.set_title(
+                f"{MODEL_LABELS[model]}：{METRIC_TITLES[metric]}",
+                fontsize=10,
+            )
+            _finish(ax)
     fig.text(
-        0.5, -0.03,
+        0.5, -0.02,
         "学习方法的 SR/OSR/nDTW 与同部署 baseline 相同（导航由冻结 MEC "
-        "决定）；差异只应出现在 E2E/RewardD。点状斜线为启发式 baseline。",
+        "决定）；差异只应出现在 E2E/RewardD。点状填充为启发式 baseline。",
         ha="center", va="top", fontsize=8, color=INK_SECONDARY,
     )
-    data = pd.DataFrame([
-        {
-            "label": item[0].replace("\n", " "),
-            "model": item[2],
-            "algorithm": item[3],
-            "E2E_ms": float(
-                item[1].get("E2E_ms_mean", item[1].get("E2E_ms"))
-            ),
-            "RewardD": float(
-                item[1].get("RewardD_mean", item[1].get("RewardD"))
-            ),
-        }
-        for item in groups
-    ])
+    fig.tight_layout(rect=(0, 0.02, 1, 1))
+    data_rows = []
+    for model in MEC_MODELS:
+        for algorithm in ALGORITHMS:
+            row = aggregate.get((model, algorithm))
+            if row is not None:
+                data_rows.append({
+                    "model": model,
+                    "label": ALGORITHM_LABELS[algorithm],
+                    "kind": f"learned_{algorithm}",
+                    "E2E_ms": float(row["E2E_ms_mean"]),
+                    "RewardD": float(row["RewardD_mean"]),
+                })
+        for baseline, title in baselines:
+            base = _baseline_row(eval_summary, model, baseline)
+            if base is not None:
+                data_rows.append({
+                    "model": model,
+                    "label": title,
+                    "kind": baseline,
+                    "E2E_ms": float(base["E2E_ms"]),
+                    "RewardD": float(base["RewardD"]),
+                })
+    data = pd.DataFrame(data_rows)
     _save(fig, out_dir / "fig06_baseline_comparison.png", data,
           FIGURE_DATA_DIR)
 

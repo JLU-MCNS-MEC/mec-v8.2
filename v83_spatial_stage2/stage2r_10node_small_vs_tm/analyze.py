@@ -42,6 +42,9 @@ from v83_spatial_stage2.stage2r_10node_small_vs_tm.common import (  # noqa: E402
     MODEL_LABELS,
     REWARD_SCHEME,
     STAGE,
+    RUNS_ROOT,
+    load_deployment,
+    model_slug,
     run_dir,
 )
 from v83_spatial_stage2.stage2r_10node_small_vs_tm.progress import (  # noqa: E402
@@ -146,8 +149,17 @@ def _run_training_summary(run):
     last = train.iloc[-1]
     stats = cumulative_stats(train.to_dict("records"))
     best_dev_e2e = _finite(result.get("best_dev_e2e_ms"))
-    if best_dev_e2e is None and not run["validation"].empty:
-        best_dev_e2e = float(run["validation"]["E2E_ms"].min())
+    first_dev_e2e = None
+    final_dev_e2e = None
+    if not run["validation"].empty:
+        first_dev_e2e = float(run["validation"].iloc[0]["E2E_ms"])
+        final_dev_e2e = float(run["validation"].iloc[-1]["E2E_ms"])
+        if best_dev_e2e is None:
+            best_dev_e2e = float(run["validation"]["E2E_ms"].min())
+    improvement = (
+        100.0 * (first_dev_e2e - best_dev_e2e) / first_dev_e2e
+        if first_dev_e2e and best_dev_e2e is not None else None
+    )
     return {
         "model": run["model"],
         "deployment": MODEL_LABELS[run["model"]],
@@ -172,6 +184,9 @@ def _run_training_summary(run):
         "cum_failure_medium": stats["cum_failure_medium"],
         "cum_failure_long": stats["cum_failure_long"],
         "best_dev_e2e_ms": best_dev_e2e,
+        "first_dev_e2e_ms": first_dev_e2e,
+        "final_dev_e2e_ms": final_dev_e2e,
+        "dev_improvement_pct": improvement,
         "best_dev_episode": int(result.get("best_dev_episode", -1) or -1),
         "converged": bool(
             (result.get("convergence") or {}).get("converged", False)
@@ -354,6 +369,62 @@ def main():
     write_csv(EVIDENCE_DIR / "success_failure_summary.csv", run_rows)
     write_csv(EVIDENCE_DIR / "condition_training_summary.csv",
               condition_rows)
+    lane_manifests = {}
+    for model in MEC_MODELS:
+        deployment = load_deployment(model)
+        atomic_write_json(
+            EVIDENCE_DIR / f"deployment_{model_slug(model)}.json",
+            deployment,
+        )
+        manifest_path = (
+            RUNS_ROOT / "lane_cache" / model_slug(model) / "manifest.json"
+        )
+        manifest = read_json(manifest_path)
+        if manifest is not None:
+            lane_manifests[model] = manifest
+            atomic_write_json(
+                EVIDENCE_DIR / f"lane_cache_{model_slug(model)}.json",
+                manifest,
+            )
+    per_seed = None
+    per_seed_path = EVIDENCE_DIR / "per_seed_metrics.csv"
+    if per_seed_path.is_file():
+        per_seed = pd.read_csv(per_seed_path)
+        pairs = []
+        for model in MEC_MODELS:
+            for seed in FORMAL_SEEDS:
+                subset = per_seed[
+                    (per_seed["model"] == model)
+                    & (per_seed["seed"] == seed)
+                ]
+                dqn = subset[subset["algorithm"] == "dqn"]
+                ppo = subset[subset["algorithm"] == "ppo"]
+                if dqn.empty or ppo.empty:
+                    continue
+                dqn = dqn.iloc[0]
+                ppo = ppo.iloc[0]
+                pairs.append({
+                    "model": model,
+                    "deployment": MODEL_LABELS[model],
+                    "seed": int(seed),
+                    "E2E_dqn": float(dqn["E2E_ms"]),
+                    "E2E_ppo": float(ppo["E2E_ms"]),
+                    "delta_E2E_dqn_minus_ppo": float(
+                        dqn["E2E_ms"] - ppo["E2E_ms"]
+                    ),
+                    "RewardD_dqn": float(dqn["RewardD"]),
+                    "RewardD_ppo": float(ppo["RewardD"]),
+                    "delta_RewardD_ppo_minus_dqn": float(
+                        ppo["RewardD"] - dqn["RewardD"]
+                    ),
+                    "SR_dqn": float(dqn["SR"]),
+                    "SR_ppo": float(ppo["SR"]),
+                    "SR_difference": float(ppo["SR"] - dqn["SR"]),
+                })
+        if pairs:
+            write_csv(
+                EVIDENCE_DIR / "paired_algorithm_differences.csv", pairs
+            )
     eval_summary = read_json(EVIDENCE_DIR / "validation_summary.json")
     summary = {
         "stage": STAGE,
@@ -362,6 +433,15 @@ def main():
         "seeds": list(FORMAL_SEEDS),
         "runs": run_rows,
         "conditions": condition_rows,
+        "lane_cache_manifests": {
+            model: {
+                "tasks": manifest.get("tasks"),
+                "elapsed_seconds": manifest.get("elapsed_seconds"),
+                "shards": len(manifest.get("shards", [])),
+                "artifact_hashes": manifest.get("artifact_hashes"),
+            }
+            for model, manifest in lane_manifests.items()
+        },
         "eval_summary_present": eval_summary is not None,
         "final_test_read": False,
     }

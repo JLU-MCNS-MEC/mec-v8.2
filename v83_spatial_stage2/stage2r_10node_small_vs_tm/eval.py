@@ -263,6 +263,41 @@ def _consistency(rows_by_policy, model):
     return audit
 
 
+def _baseline_equivalence(rows_by_policy):
+    """Check the homogeneity-implied heuristic ordering.
+
+    Nearest / Max-Uplink-Rate / Greedy-Min-E2E all rank the same nodes when
+    every node has identical compute and bandwidth; Random is the only
+    genuinely different heuristic.  The check is empirical, not assumed.
+    """
+    reference = "greedy_min_e2e"
+    ref = {row["episode_uid"]: row for row in rows_by_policy[reference]}
+    output = {"reference": reference, "per_policy": {}}
+    for policy in ("nearest", "max_uplink_rate", "random"):
+        rows = {row["episode_uid"]: row for row in rows_by_policy[policy]}
+        node_mismatch = sum(
+            1 for uid in ref
+            if rows[uid].get("node_choices") != ref[uid].get("node_choices")
+        )
+        action_mismatch = sum(
+            1 for uid in ref
+            if rows[uid]["action_sha256"] != ref[uid]["action_sha256"]
+        )
+        output["per_policy"][policy] = {
+            "node_choice_mismatches": int(node_mismatch),
+            "action_mismatches": int(action_mismatch),
+            "same_as_reference": bool(
+                node_mismatch == 0 and action_mismatch == 0
+            ),
+        }
+    output["interpretation"] = (
+        "In a homogeneous 10-node deployment, Nearest, Max-Uplink-Rate and "
+        "Greedy-Min-E2E choose the same node; Random is the only different "
+        "heuristic.  Navigation metrics remain identical for all of them."
+    )
+    return output
+
+
 def evaluate(args):
     if args.split != "dev":
         raise SystemExit("Stage-2r only evaluates Dev-60; Test is sealed")
@@ -271,6 +306,7 @@ def evaluate(args):
     all_meta = {}
     lane_outcomes = []
     consistency = {}
+    baseline_equivalence = {}
     summaries = []
     for model in MEC_MODELS:
         print(f"[eval] {model}: loading bundle and building Dev-60 lanes",
@@ -351,6 +387,7 @@ def evaluate(args):
                 BASELINE_TITLES.get(policy, policy), overall,
             ))
         consistency[model] = _consistency(model_rows, model)
+        baseline_equivalence[model] = _baseline_equivalence(model_rows)
 
     learned_rows = [row for row in summaries if row["kind"] == "learned"]
     baseline_rows = [row for row in summaries if row["kind"] == "heuristic"]
@@ -396,6 +433,18 @@ def evaluate(args):
     write_csv(EVIDENCE_DIR / "seed_aggregate.csv", seed_aggregate)
     write_csv(EVIDENCE_DIR / "baseline_comparison.csv", baseline_comparison)
     write_csv(EVIDENCE_DIR / "dev_lane_outcomes.csv", lane_outcomes)
+    equivalence_rows = []
+    for model, payload in baseline_equivalence.items():
+        for policy, item in payload["per_policy"].items():
+            equivalence_rows.append({
+                "model": model,
+                "reference": payload["reference"],
+                "policy": policy,
+                **item,
+            })
+    write_csv(
+        EVIDENCE_DIR / "baseline_equivalence.csv", equivalence_rows
+    )
     per_episode = []
     for key, rows in all_rows.items():
         model, policy = key.split("|", 1)
@@ -423,6 +472,7 @@ def evaluate(args):
         "seed_aggregate": seed_aggregate,
         "baseline_comparison": baseline_comparison,
         "consistency_audit": consistency,
+        "baseline_equivalence": baseline_equivalence,
         "final_test_read": False,
         "test_sealed": True,
     }

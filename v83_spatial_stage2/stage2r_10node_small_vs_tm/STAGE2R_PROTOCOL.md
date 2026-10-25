@@ -100,6 +100,26 @@ Stage-2o 的 `EpisodeRewardController`，训练时逐步校验
 
 ## 4. 训练与验证
 
+### 4.0 精确冻结 lane 回放训练
+
+导航动作由冻结 MEC 模型产生，关联策略只选择服务节点，因此同一任务的
+真实轨迹、成功、步数、SPL、nDTW 与关联策略无关。Stage-2n 已用
+`test_stage2n.py` 的 lane 等价性测试证明这一点。Stage-2r 在正式训练前
+先用**完整环境**为每个模型生成 Train-4000 的冻结 lane 缓存：
+
+- 每个 step 保存真实 pose、10×19 候选特征、10-D mask、各节点 E2E；
+- 训练时用缓存重建 194-D 状态（running mean 由策略自己的选择更新），
+  不重新跑视觉编码器/MEC 前向；
+- 关联动作仍在线选择，E2E/Reward/状态完全由策略决定；
+- 新增 `test_lane_equivalence.py`，在真实 Dev 任务上逐 step 比较
+  全环境 runner 与 lane adapter 的 194-D 状态、E2E、成功、SPL、nDTW、
+  步数和方案 D 奖励，要求一致（状态允许 float32 舍入误差 ≤1e-7）。
+
+该加速只去掉重复的视觉/MEC 前向，不改变任务、环境动力学、动作、奖励
+或评估协议。正式 run 必须使用 `--lane-cache`；全环境 smoke/对照仍保留。
+
+### 4.1 超参数
+
 - DQN/PPO 网络、优化器、epsilon/GAE/clip 等超参数与 Stage-2n/2o 完全一致：
   - DQN：MLP 194→256→256→10，replay 200k，batch 256，lr 3e-4，gamma 1.0；
   - PPO：actor-critic 194→256→256→{10,1}，rollout 2048，minibatch 256，
@@ -135,6 +155,11 @@ Stage-2o 的 `EpisodeRewardController`，训练时逐步校验
   成功/失败、成功 band 分布、Dev-60 指标、DQN/PPO 诊断；
 - 最终 4000 Episode 后在 `training_result.json` 和
   `success_failure_summary.csv` 中给出最终统计。
+
+**注意（设计事实）**：训练任务顺序固定，且每个任务的成功/失败由冻结 MEC
+导航模型决定，因此同一部署下的所有 DQN/PPO/seed run 会看到完全相同的
+任务结果序列，累计成功/失败和 band 计数相同。差异只来自关联节点选择
+造成的 E2E/Reward。这不是统计脚本错误，报告会明确说明。
 
 ---
 

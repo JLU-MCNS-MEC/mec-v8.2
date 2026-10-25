@@ -1,0 +1,13 @@
+model,deployment,role,requested_outcome,band,episode_uid,lane_success,lane_steps,lane_ndtw,selection_status,selection_reason
+Small,10×Small,success_short,success,short,stage2n-dev-00013,1,40,0.9817424218196971,exact,
+Small,10×Small,failure_short,failure,short,stage2n-dev-00008,0,232,1.9899888107307217e-48,exact,
+Small,10×Small,success_medium,success,medium,stage2n-dev-00021,1,57,0.9788111472237832,exact,
+Small,10×Small,failure_medium,failure,medium,stage2n-dev-00037,0,128,0.0006143913288266173,exact,
+Small,10×Small,success_long,success,long,stage2n-dev-00042,1,83,0.9899238648883399,exact,
+Small,10×Small,failure_long,failure,long,stage2n-dev-00049,0,108,0.017025579305281053,exact,
+Transformer-M,10×Transformer-M,success_short,success,short,stage2n-dev-00009,1,41,0.9646327524081121,exact,
+Transformer-M,10×Transformer-M,failure_short,failure,short,stage2n-dev-00008,0,232,3.033654311110473e-31,exact,
+Transformer-M,10×Transformer-M,success_medium,success,medium,stage2n-dev-00024,1,76,0.9872052556976861,exact,
+Transformer-M,10×Transformer-M,failure_medium,failure,medium,stage2n-dev-00035,0,131,0.06876421890822913,exact,
+Transformer-M,10×Transformer-M,success_long,success,long,stage2n-dev-00045,1,104,0.617918454941673,exact,
+Transformer-M,10×Transformer-M,failure_long,failure,long,stage2n-dev-00057,0,137,0.1920713359027722,exact,

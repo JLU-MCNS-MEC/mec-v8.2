@@ -3,6 +3,8 @@
 The launcher never stops or modifies an existing process.  It starts each
 run in its own session, writes ``launch.json``, and with ``--wait`` monitors
 until all runs exit.  A crashed run is resumed from ``last_full.pt``.
+Formal runs are started with ``--lane-cache`` (exact frozen-lane replay);
+build the two caches with ``lane_cache.py`` before launching.
 
 Formal order interleaves conditions so the first parallel wave already
 covers both deployments and both algorithms:
@@ -114,6 +116,8 @@ def _build_jobs(args):
         ]
         if args.smoke:
             command.append("--smoke")
+        else:
+            command.append("--lane-cache")
         if (run_dir / "checkpoints" / "last_full.pt").is_file():
             command.append("--resume")
         jobs.append({

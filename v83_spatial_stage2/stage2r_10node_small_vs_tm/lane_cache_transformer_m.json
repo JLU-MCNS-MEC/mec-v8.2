@@ -1,0 +1,145 @@
+{
+  "stage": "stage2r_10node_small_vs_tm",
+  "created_utc": "2026-10-25T04:59:39.924542+00:00",
+  "model": "Transformer-M",
+  "split": "train",
+  "tasks": 4000,
+  "shard_size": 250,
+  "shards": [
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_000.pkl",
+      "sha256": "8fb373034c630e937667d23fdfe2ac7dffa32f236731495c6b7a1243d4ec3b1b",
+      "tasks": 250,
+      "bytes": 28974730
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_001.pkl",
+      "sha256": "7c30a9e26f53377442bb3470e3ac5daf51605f5d324bfb7eb1d4b999125e8c6a",
+      "tasks": 250,
+      "bytes": 27179140
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_002.pkl",
+      "sha256": "eb91480e9b834e1488af6827f1d0e707506644ff52556bfeb5a554b0db4a0c01",
+      "tasks": 250,
+      "bytes": 29993362
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_003.pkl",
+      "sha256": "6cdeead3deb39facb85237e86126d98764e15fc55255c71af21cbc1b8d871d4d",
+      "tasks": 250,
+      "bytes": 28901622
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_004.pkl",
+      "sha256": "6f209af4180011f887539b1e3f3dba22971022aa58371467c2f0d219b99826ee",
+      "tasks": 250,
+      "bytes": 28775649
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_005.pkl",
+      "sha256": "4e15c0f609c6033f27381e3d7ef118b1bb1246bfdb4d16c90fa79dfe467901ea",
+      "tasks": 250,
+      "bytes": 29501389
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_006.pkl",
+      "sha256": "3a97b7569e411bc68a888a9090bc74ccb03cf2eeceb3d3da7c7fd7266d4cfbd7",
+      "tasks": 250,
+      "bytes": 28569968
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_007.pkl",
+      "sha256": "b3de960c58bf6cf655ce188e6f67fdb78728ba0fe3c37acd826342c2b9ff0321",
+      "tasks": 250,
+      "bytes": 28896165
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_008.pkl",
+      "sha256": "36911938f29aad554a3ba58fc2b2a5e6d992a88b8187bf27d47fd19b8bc16693",
+      "tasks": 250,
+      "bytes": 28577192
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_009.pkl",
+      "sha256": "1b92683eaede60c2bd33a3b1d28bfb65e5603582e9b509364281a185fec68fea",
+      "tasks": 250,
+      "bytes": 30439990
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_010.pkl",
+      "sha256": "376878ea8caa8f4dd795e5b4e4a2e33315b6f5df346456428d2e3c197064b439",
+      "tasks": 250,
+      "bytes": 25478578
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_011.pkl",
+      "sha256": "e714e5c8744e87386f5d7cd4c27a449a20fe88ae577ccff369288a5e2ddcf879",
+      "tasks": 250,
+      "bytes": 27363172
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_012.pkl",
+      "sha256": "9f219f331ed2c512c594252fb0e28161d8fb427cc43b326989f405c21303f6c6",
+      "tasks": 250,
+      "bytes": 29309324
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_013.pkl",
+      "sha256": "848ec2a7a612e8e6ea7e4082e1b9ff4ecf996bbe322de59437ded476036f5eb8",
+      "tasks": 250,
+      "bytes": 29178842
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_014.pkl",
+      "sha256": "bdcf5269dfe3f5335a691208afde9f4b234d69daa452cd2272a9d74e6a12d7f9",
+      "tasks": 250,
+      "bytes": 29220568
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/transformer_m/shard_015.pkl",
+      "sha256": "1a038a80cdd6c02b33844bfed725f030ae05d80d89f31e1c06fc2fdcbbef4651",
+      "tasks": 250,
+      "bytes": 30480836
+    }
+  ],
+  "artifact_hashes": {
+    "train_tasks": "5b6747f6e513afd48ee4b33ee3b5bd1df5854023a2bd43ebe75c2c708d5d0252",
+    "dev_tasks": "aefde2aadaf443d32c70faebd74624431d165f6ef1b27d0fe3f1480572ade41d",
+    "training_order": "dece010a34a99b5edff18dd9d3ad8dc9aa01e74e775a0336369b5cd2e0618e1c",
+    "deployment": "be116efe23adb1a650601542b1afae9ba3bc410ac41a36796063a960383c304b",
+    "mec_checkpoint": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d",
+    "capability_prior": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108",
+    "deployment_source": "29a7d91d77d65b07787189ec95dcf893a5723ea64207927f8675276bb85a7e56"
+  },
+  "source_hashes": {
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/analyze.py": "c04cd1d06f6962927005ec611eabc381b0231788d135b69bb13e3c901629130b",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/common.py": "580fb462568f3ad288a1e14fb67b3d3212bdb1befce029e8d5aa1cc692a90010",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/eval.py": "5ab76470101ac39c0fd38d3657684bcc6f787a57f41966d692d2a12b757a47a4",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache.py": "bc7655004e1c3619bc4780747318fe3f342a05d9e93288d9ec772f9558f2afc8",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_runner.py": "d7ddbcd6801040faedbf98111aa65bc922c7c1f9627e21c931b9f70d53b7f228",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/launch.py": "19fa5ad90bdec4c3c7e3564efa7822f634233b1cc07cf83d19189a7113344fc1",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/plot.py": "ac2a4855704848a940ea23868c75e30ea6681c5982559aa283fca78de9e61d0b",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/plot_trajectories.py": "e0e4dd47d0f6e743f343331b1fc40ab0588fd54ec2173e9965777c12b1cf70a9",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/progress.py": "e0989e187dd7ba16632afdacef474369d12b2f8cfc5ea76240601f69da23be48",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/render_report.py": "b2331a0cc4e3cd2f44a77759ec04ec2649c744a28275663b18debeadb3743a16",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/runtime.py": "e91b84d2bc013a9a39b7f030a74d1af2dd70f5c56f860b5e29b607a9ffbfbcb5",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/status.py": "a9e72e0b5acccf8019752302d2a008eb7170ec8423d2000040057ddf24639128",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/test_lane_equivalence.py": "2a2160d9ac66c747836c4e68c266256479736c37d731b8bb1e7b4d82887b9eb7",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/test_stage2r.py": "a1ea52178cf2b90f97e21a2dd1bf54326032bd3fc1e79e33a41237aa41f7f045",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/train.py": "623d2adb93041e7636f57ec2e472a690a9aa31d85c25e5c062d61434c07bf338",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/trajectories.py": "01be8ee5e67068b6007bcb67731390624877b2bb43c74b1d551cabe6e9d47d91",
+    "v83_spatial_stage2/stage2k_jointr_v2_agent.py": "482a5e62ba977c4921bc16b2978cca8aa9d51c1394b8122d672b2a855f18738e",
+    "v83_spatial_stage2/stage2k_ppo_agent.py": "9d8aae5a7d2cb3ef663ecab349ef17978c6c3c4f41e0b6a8656e3cc0c7ea4730",
+    "v83_spatial_stage2/stage2k_pure_mec_v2_state.py": "864a7f730812d8edae64015a51ca581f876a82cd88355c23bd1f940601ca0362",
+    "v83_spatial_stage2/stage2k_runtime.py": "56e52ac4624a4bd4fef8bae3a6f8fe222ca40ba4f9c98230dc14088c414cd7ea",
+    "v83_spatial_stage2/stage2n_common.py": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0",
+    "v83_spatial_stage2/stage2n_lanes.py": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+    "v83_spatial_stage2/stage2n_runtime.py": "ce7c22eeab0b6f5743d7cd43429b3145908cbbb978c5f5aa8e0b19cc35d3734d",
+    "v83_spatial_stage2/stage2n_train.py": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+    "v83_spatial_stage2/stage2o/rewards.py": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4"
+  },
+  "elapsed_seconds": 2085.847397397971,
+  "final_test_read": false
+}

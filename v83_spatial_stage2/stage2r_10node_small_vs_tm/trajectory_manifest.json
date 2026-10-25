@@ -1,0 +1,27 @@
+{
+  "stage": "stage2r_10node_small_vs_tm",
+  "created_utc": "2026-10-25T12:56:34.727998+00:00",
+  "selection_rule": "Within each band and outcome, sort by (steps, episode_uid) and take the lower median rank (n-1)//2.  If the stratum is empty, substitute the highest-nDTW failure for a missing success or the lowest-nDTW success for a missing failure, and label it explicitly.",
+  "tasks": 36,
+  "conditions": [
+    "10×Small|DQN",
+    "10×Small|Greedy-Min-E2E",
+    "10×Small|PPO",
+    "10×Transformer-M|DQN",
+    "10×Transformer-M|Greedy-Min-E2E",
+    "10×Transformer-M|PPO"
+  ],
+  "audit": {
+    "stage": "stage2r_10node_small_vs_tm",
+    "created_utc": "2026-10-25T12:56:34.726499+00:00",
+    "reference": "Greedy-Min-E2E",
+    "rows": 36,
+    "all_paths_identical": true,
+    "all_actions_identical": true,
+    "all_success_identical": true,
+    "any_node_choices_differ": true,
+    "interpretation": "Within a deployment the frozen MEC model produces the same navigation action sequence for every association policy.  DQN/PPO can differ from the control only in node choices, E2E and RewardD; path, success and steps must be identical.  Across deployments the MEC model differs, so paths may differ.",
+    "final_test_read": false
+  },
+  "final_test_read": false
+}

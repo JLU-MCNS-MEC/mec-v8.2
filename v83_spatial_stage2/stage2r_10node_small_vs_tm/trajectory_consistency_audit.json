@@ -1,0 +1,12 @@
+{
+  "stage": "stage2r_10node_small_vs_tm",
+  "created_utc": "2026-10-25T12:56:34.726499+00:00",
+  "reference": "Greedy-Min-E2E",
+  "rows": 36,
+  "all_paths_identical": true,
+  "all_actions_identical": true,
+  "all_success_identical": true,
+  "any_node_choices_differ": true,
+  "interpretation": "Within a deployment the frozen MEC model produces the same navigation action sequence for every association policy.  DQN/PPO can differ from the control only in node choices, E2E and RewardD; path, success and steps must be identical.  Across deployments the MEC model differs, so paths may differ.",
+  "final_test_read": false
+}

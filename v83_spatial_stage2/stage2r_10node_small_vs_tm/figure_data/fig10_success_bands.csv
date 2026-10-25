@@ -1,0 +1,5 @@
+condition,cum_success_short_mean,cum_success_medium_mean,cum_success_long_mean,cum_failure_mean
+10×Small|DQN,255.0,230.0,175.0,3340.0
+10×Small|PPO,255.0,230.0,175.0,3340.0
+10×Transformer-M|DQN,795.0,734.0,635.0,1836.0
+10×Transformer-M|PPO,795.0,734.0,635.0,1836.0

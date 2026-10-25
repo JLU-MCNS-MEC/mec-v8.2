@@ -9,9 +9,12 @@ only.  The reward is scheme D from Stage-2o:
     r_T += (1 - T/H) * (1 - mean_E2E/tau)
     R_D = 1 - mean_E2E/tau
 
+Formal runs use ``--lane-cache`` (exact frozen-lane replay); smoke/debug runs
+may omit it to exercise the full visual environment.
+
 Usage:
     python v83_spatial_stage2/stage2r_10node_small_vs_tm/train.py \
-        --model Small --algorithm dqn --seed 11
+        --model Small --algorithm dqn --seed 11 --lane-cache
 """
 
 from __future__ import annotations
@@ -89,6 +92,12 @@ from v83_spatial_stage2.stage2r_10node_small_vs_tm.common import (  # noqa: E402
     run_dir as default_run_dir,
     source_hashes,
 )
+from v83_spatial_stage2.stage2r_10node_small_vs_tm.lane_cache import (  # noqa: E402
+    load_cache as load_lane_cache,
+)
+from v83_spatial_stage2.stage2r_10node_small_vs_tm.lane_runner import (  # noqa: E402
+    LaneRunnerAdapter,
+)
 from v83_spatial_stage2.stage2r_10node_small_vs_tm.progress import (  # noqa: E402
     cumulative_stats,
     format_round_zh,
@@ -126,13 +135,18 @@ def _git_state():
 
 def protocol_payload(bundle, algorithm, seed, device, threads, argv,
                      run_dir, tensorboard_dir, max_episodes,
-                     validation_every):
+                     validation_every, lane_manifest=None):
     deploy = bundle["deployment"]
     return {
         "stage": STAGE,
         "stage_name": STAGE_TITLE,
         "model": bundle["model"],
         "algorithm": algorithm,
+        "training_mode": (
+            "frozen_lane_replay" if lane_manifest is not None
+            else "full_environment"
+        ),
+        "lane_cache": lane_manifest,
         "reward_scheme": REWARD_SCHEME,
         "scheme_label": SCHEME_LABELS[REWARD_SCHEME],
         "seed": int(seed),
@@ -598,9 +612,21 @@ def _abort(run_dir, bundle, agent, algorithm, episode, exc, history,
         raise exc
 
 
+def _make_runner(bundle, spec, encoder, backends, scene_cache, device,
+                 lane_cache):
+    if lane_cache is not None:
+        episode = lane_cache.get(str(spec["episode_uid"]))
+        if episode is None:
+            raise KeyError(
+                f"lane cache missing {spec['episode_uid']}"
+            )
+        return LaneRunnerAdapter(episode, spec)
+    return runner_for(bundle, spec, encoder, backends, scene_cache, device)
+
+
 def train_dqn(args, bundle, device, encoder, backends, scene_cache,
               evaluator, writer, run_dir, history, start_episode,
-              best_state, loop_started):
+              best_state, loop_started, lane_cache=None):
     agent = DQNAgentV2(
         device, seed=int(args.seed), gamma=GAMMA,
         state_dim=STATE_DIM, state_mode=STATE_MODE,
@@ -642,8 +668,9 @@ def train_dqn(args, bundle, device, encoder, backends, scene_cache,
     for episode_index in range(start_episode, int(args.max_episodes)):
         episode = episode_index + 1
         spec = bundle["train_specs"][episode_index]
-        runner = runner_for(bundle, spec, encoder, backends, scene_cache,
-                            device)
+        runner = _make_runner(
+            bundle, spec, encoder, backends, scene_cache, device, lane_cache
+        )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]
         done = False
@@ -752,7 +779,7 @@ def train_dqn(args, bundle, device, encoder, backends, scene_cache,
 
 def train_ppo(args, bundle, device, encoder, backends, scene_cache,
               evaluator, writer, run_dir, history, start_episode,
-              best_state, loop_started):
+              best_state, loop_started, lane_cache=None):
     agent = PPOAgent(
         device, seed=int(args.seed), state_dim=STATE_DIM,
         state_mode=STATE_MODE, action_dim=ACTION_DIM, gamma=GAMMA,
@@ -794,8 +821,9 @@ def train_ppo(args, bundle, device, encoder, backends, scene_cache,
     for episode_index in range(start_episode, int(args.max_episodes)):
         episode = episode_index + 1
         spec = bundle["train_specs"][episode_index]
-        runner = runner_for(bundle, spec, encoder, backends, scene_cache,
-                            device)
+        runner = _make_runner(
+            bundle, spec, encoder, backends, scene_cache, device, lane_cache
+        )
         state = runner.step_data["state"]
         mask = runner.step_data["mask"]
         done = False
@@ -972,6 +1000,10 @@ def main():
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--lane-cache", action="store_true",
+        help="train on the exact frozen-lane cache (required for formal runs)",
+    )
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--tensorboard-dir", type=Path, default=None)
@@ -991,6 +1023,11 @@ def main():
         if int(args.seed) not in FORMAL_SEEDS:
             raise SystemExit(
                 f"Stage-2r formal seeds are {FORMAL_SEEDS}, got {args.seed}"
+            )
+        if not args.lane_cache:
+            raise SystemExit(
+                "formal Stage-2r runs require --lane-cache "
+                "(exact frozen-lane replay)"
             )
     else:
         args.max_episodes = max(1, min(int(args.max_episodes), 60))
@@ -1034,15 +1071,37 @@ def main():
         device = torch.device(args.device)
 
     bundle = load_bundle(args.model)
+    lane_cache = None
+    lane_manifest = None
+    if args.lane_cache:
+        lane_cache, lane_manifest = load_lane_cache(args.model)
+        expected = bundle["train_pool"]["tasks_sha256"]
+        actual = lane_manifest["artifact_hashes"]["train_tasks"]
+        if actual != expected:
+            raise ValueError(
+                "lane cache task-pool hash does not match the frozen pool"
+            )
+        if lane_manifest["artifact_hashes"]["deployment"] != bundle[
+            "deployment"
+        ]["deployment_sha256"]:
+            raise ValueError("lane cache deployment hash mismatch")
+        print(
+            f"[{args.model}|{args.algorithm.upper()}] lane cache: "
+            f"{len(lane_cache)} episodes, "
+            f"built in {lane_manifest['elapsed_seconds']/60:.1f} min",
+            flush=True,
+        )
     protocol = protocol_payload(
         bundle, args.algorithm, args.seed, device, args.threads, sys.argv,
         run_dir, tensorboard_dir, args.max_episodes, args.validation_every,
+        lane_manifest=lane_manifest,
     )
     install_protocol(run_dir, protocol, sys.argv)
     print(
         f"[{args.model}|{args.algorithm.upper()}] starting "
         f"seed={args.seed} episodes={args.max_episodes} "
         f"validation={args.validation_every} "
+        f"mode={'lane' if lane_cache is not None else 'full'} "
         f"deployment={bundle['deployment']['deployment_sha256'][:12]} "
         f"mec={bundle['checkpoint_record']['checkpoint_sha256'][:12]}",
         flush=True,
@@ -1104,6 +1163,11 @@ def main():
                 ],
                 "train_tasks_sha256": bundle["train_pool"]["tasks_sha256"],
                 "dev_tasks_sha256": bundle["dev_pool"]["tasks_sha256"],
+                "training_mode": (
+                    "frozen_lane_replay" if lane_cache is not None
+                    else "full_environment"
+                ),
+                "lane_cache_manifest": lane_manifest,
                 "final_test_read": False,
             },
             "train": [],
@@ -1147,11 +1211,13 @@ def main():
         agent = train_dqn(
             args, bundle, device, encoder, backends, scene_cache, evaluator,
             writer, run_dir, history, start_episode, best_state, loop_started,
+            lane_cache=lane_cache,
         )
     else:
         agent = train_ppo(
             args, bundle, device, encoder, backends, scene_cache, evaluator,
             writer, run_dir, history, start_episode, best_state, loop_started,
+            lane_cache=lane_cache,
         )
     history["elapsed_seconds"] = (
         float(history.get("elapsed_seconds", 0.0))

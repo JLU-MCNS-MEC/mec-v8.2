@@ -1,0 +1,146 @@
+{
+  "stage": "stage2r_10node_small_vs_tm",
+  "created_utc": "2026-10-25T04:24:42.305422+00:00",
+  "model": "Small",
+  "split": "train",
+  "tasks": 4000,
+  "shard_size": 250,
+  "shards": [
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_000.pkl",
+      "sha256": "1c1593766f768bfc1dfda5c87b1d943f5eeabcf26ecfa7f52a6a07c610c5a052",
+      "tasks": 250,
+      "bytes": 37306563
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_001.pkl",
+      "sha256": "316d53767b9763dbe17b92cb5d37f3d37ba1f10066aa2a8ac93495db0413f5b7",
+      "tasks": 250,
+      "bytes": 34574169
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_002.pkl",
+      "sha256": "6338dbd7387fd1ce22af8d820dc122d90b2c87f511dd78cadae64d5d812cd416",
+      "tasks": 250,
+      "bytes": 39696065
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_003.pkl",
+      "sha256": "b856d1382dcc8761b6e9bebd8957e9d8f3a040b9f4e560d946a1e4826449ec61",
+      "tasks": 250,
+      "bytes": 34885923
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_004.pkl",
+      "sha256": "14b95c5fc6a567a79188325f789614f1854c05611eb635ab54e9bb5c30c41c99",
+      "tasks": 250,
+      "bytes": 36176985
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_005.pkl",
+      "sha256": "56e7f57690d5893dd93f736d7f1cad714ef940f4063f9eeb23319008e615f467",
+      "tasks": 250,
+      "bytes": 33830363
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_006.pkl",
+      "sha256": "ccf9747f304547bc545b76bf884983dc861558bea8bf28b7ac87129ca99aca78",
+      "tasks": 250,
+      "bytes": 38394081
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_007.pkl",
+      "sha256": "41db95a26f1b1461e8a26316a288e718a5c731855bbc0e894b7c7e16d869ed7d",
+      "tasks": 250,
+      "bytes": 37664709
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_008.pkl",
+      "sha256": "e9a5fa3c5290a96794dad70c14b6c6145d6d254dd9c3c8026b074a53e9a64754",
+      "tasks": 250,
+      "bytes": 36105396
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_009.pkl",
+      "sha256": "3da467ba7e5faf96bf730754fd63b54773c6a200d83d3fda32cda87677f87d9f",
+      "tasks": 250,
+      "bytes": 38373217
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_010.pkl",
+      "sha256": "852a2e441b19b59e4a3c415214d37a56ffb70440226059117f6a1e39d24b561b",
+      "tasks": 250,
+      "bytes": 36312914
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_011.pkl",
+      "sha256": "04deb09993eff7f8955dca0a226ac4388da5e8fa58ed52a98944c9c71fe668c4",
+      "tasks": 250,
+      "bytes": 36328300
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_012.pkl",
+      "sha256": "fe108ec1307ee6ce0b39d7417add8e016ae6de5c0ee111bc6264f1b34b39a649",
+      "tasks": 250,
+      "bytes": 36400824
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_013.pkl",
+      "sha256": "241b29927595b41fcdccf5994c09c9630602c42fd2cf671a15ef79420a249040",
+      "tasks": 250,
+      "bytes": 37246085
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_014.pkl",
+      "sha256": "c715ad8f1d68250821f072b2c413bfce33302f630ae7d78b0fa7f25004bcd347",
+      "tasks": 250,
+      "bytes": 38656782
+    },
+    {
+      "path": "runs/v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache/small/shard_015.pkl",
+      "sha256": "61f7b6077a0e61db11c4726fc63b6a74bd0aaf4c8bca894f3f5fbb0238fb488c",
+      "tasks": 250,
+      "bytes": 38112350
+    }
+  ],
+  "artifact_hashes": {
+    "train_tasks": "5b6747f6e513afd48ee4b33ee3b5bd1df5854023a2bd43ebe75c2c708d5d0252",
+    "dev_tasks": "aefde2aadaf443d32c70faebd74624431d165f6ef1b27d0fe3f1480572ade41d",
+    "training_order": "dece010a34a99b5edff18dd9d3ad8dc9aa01e74e775a0336369b5cd2e0618e1c",
+    "deployment": "7d9c616441a5433dd4b165bd00aa1eee981378ae2b6dc24d8660b22c390f718e",
+    "mec_checkpoint": "7349ec9d0c809a09dc2672a05053f1f89e69480b8802d6ca3b05944cea44e1f6",
+    "capability_prior": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108",
+    "deployment_source": "29a7d91d77d65b07787189ec95dcf893a5723ea64207927f8675276bb85a7e56"
+  },
+  "source_hashes": {
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/analyze.py": "c04cd1d06f6962927005ec611eabc381b0231788d135b69bb13e3c901629130b",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/common.py": "580fb462568f3ad288a1e14fb67b3d3212bdb1befce029e8d5aa1cc692a90010",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/eval.py": "5ab76470101ac39c0fd38d3657684bcc6f787a57f41966d692d2a12b757a47a4",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_cache.py": "bc7655004e1c3619bc4780747318fe3f342a05d9e93288d9ec772f9558f2afc8",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/lane_runner.py": "d7ddbcd6801040faedbf98111aa65bc922c7c1f9627e21c931b9f70d53b7f228",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/launch.py": "19fa5ad90bdec4c3c7e3564efa7822f634233b1cc07cf83d19189a7113344fc1",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/plot.py": "ac2a4855704848a940ea23868c75e30ea6681c5982559aa283fca78de9e61d0b",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/plot_trajectories.py": "e0e4dd47d0f6e743f343331b1fc40ab0588fd54ec2173e9965777c12b1cf70a9",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/progress.py": "e0989e187dd7ba16632afdacef474369d12b2f8cfc5ea76240601f69da23be48",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/render_report.py": "b2331a0cc4e3cd2f44a77759ec04ec2649c744a28275663b18debeadb3743a16",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/runtime.py": "e91b84d2bc013a9a39b7f030a74d1af2dd70f5c56f860b5e29b607a9ffbfbcb5",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/status.py": "a9e72e0b5acccf8019752302d2a008eb7170ec8423d2000040057ddf24639128",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/test_lane_equivalence.py": "2a2160d9ac66c747836c4e68c266256479736c37d731b8bb1e7b4d82887b9eb7",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/test_stage2r.py": "a1ea52178cf2b90f97e21a2dd1bf54326032bd3fc1e79e33a41237aa41f7f045",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/train.py": "623d2adb93041e7636f57ec2e472a690a9aa31d85c25e5c062d61434c07bf338",
+    "v83_spatial_stage2/stage2r_10node_small_vs_tm/trajectories.py": "01be8ee5e67068b6007bcb67731390624877b2bb43c74b1d551cabe6e9d47d91",
+    "v83_spatial_stage2/stage2k_jointr_v2_agent.py": "482a5e62ba977c4921bc16b2978cca8aa9d51c1394b8122d672b2a855f18738e",
+    "v83_spatial_stage2/stage2k_ppo_agent.py": "9d8aae5a7d2cb3ef663ecab349ef17978c6c3c4f41e0b6a8656e3cc0c7ea4730",
+    "v83_spatial_stage2/stage2k_pure_mec_v2_state.py": "864a7f730812d8edae64015a51ca581f876a82cd88355c23bd1f940601ca0362",
+    "v83_spatial_stage2/stage2k_runtime.py": "56e52ac4624a4bd4fef8bae3a6f8fe222ca40ba4f9c98230dc14088c414cd7ea",
+    "v83_spatial_stage2/stage2n_common.py": "308c0781f97b7df265091e15c3b037ee399d4ab20c43258e82d920928d3693d0",
+    "v83_spatial_stage2/stage2n_lanes.py": "c3a52a3a9f6604ac1285552d4466f9949e108f46c9bf305899ee8d6668c88682",
+    "v83_spatial_stage2/stage2n_runtime.py": "ce7c22eeab0b6f5743d7cd43429b3145908cbbb978c5f5aa8e0b19cc35d3734d",
+    "v83_spatial_stage2/stage2n_train.py": "42d7aa905953bde1467c40674b601c63274b9d3367a7a554ccf4ad22b72d8705",
+    "v83_spatial_stage2/stage2o/rewards.py": "6c34639ee922bd3adfa645515c4e384702d2d90418a732a1b29163de952835c4"
+  },
+  "elapsed_seconds": 2634.6,
+  "finalized_from_existing_shards": true,
+  "final_test_read": false
+}

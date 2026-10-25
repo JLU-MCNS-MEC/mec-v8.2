@@ -1,0 +1,7 @@
+model,reference,policy,node_choice_mismatches,action_mismatches,same_as_reference
+Small,greedy_min_e2e,nearest,0,0,True
+Small,greedy_min_e2e,max_uplink_rate,0,0,True
+Small,greedy_min_e2e,random,58,0,False
+Transformer-M,greedy_min_e2e,nearest,0,0,True
+Transformer-M,greedy_min_e2e,max_uplink_rate,0,0,True
+Transformer-M,greedy_min_e2e,random,59,0,False
