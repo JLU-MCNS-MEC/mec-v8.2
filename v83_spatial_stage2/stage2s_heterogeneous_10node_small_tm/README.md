@@ -27,6 +27,7 @@ Transformer-M MEC，推理时延使用显式 0.2 TFLOP/s 有效吞吐，比较 D
 | `progress.py` | 每 200 Episode 中文进展 + 累计成功/失败/band 统计 + 异构选择/时延分解 |
 | `launch.py` | 6 路启动器（默认 3 路并行、GPU 显存保护、崩溃续训） |
 | `status.py` | 只读查看 6 个 run 的实时状态 |
+| `progress_report.py` | 汇总最新一轮 200-Episode 进展的紧凑中文表 |
 | `smoke.py` | 训练前闭环不变量检查 + 10–20 Episode × DQN/PPO smoke |
 | `eval.py` | Dev-60 最终评估（4 baseline + 6 学习检查点，真实闭环） |
 | `analyze.py` | 汇总 CSV/JSON、训练曲线与验证统计 |
@@ -42,7 +43,7 @@ Transformer-M MEC，推理时延使用显式 0.2 TFLOP/s 有效吞吐，比较 D
 | `smoke_report.json` / `SMOKE_TEST.md` | Smoke Test 结果 |
 | `figures/` | 所有 PNG |
 | `figure_data/` | 每张图的 CSV 数据 |
-| `*.csv` / `summary.json` | 训练、验证、baseline、种子聚合、轨迹汇总 |
+| `*.csv` / `summary.json` | 训练、验证、baseline、种子聚合、轨迹汇总、前后期选择适应性 |
 
 ## 运行
 

@@ -512,6 +512,10 @@ def render():
             )
     lines += [
         "",
+        "`policy_diversity.csv` 给出任意两策略在同一 Dev 任务上的动作、节点、"
+        "成功不一致计数。Stage-2s 中这些不一致是预期现象：模型选择会改变导航动作，"
+        "不同于 Stage-2r 中“导航与关联无关”的同质设置。",
+        "",
         "训练前后选择行为（前 200 vs 末 500 Episodes）：",
         "",
         _adaptation_table(adaptation),
