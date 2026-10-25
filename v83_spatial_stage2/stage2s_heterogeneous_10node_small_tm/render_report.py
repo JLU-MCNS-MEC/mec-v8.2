@@ -147,7 +147,12 @@ def _validation_table(eval_summary):
         "| 策略 | 类型 | SR | OSR | nDTW | SPL | E2E (ms) | P95 E2E (ms) | RewardD | 违约率 | Small 选择 |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for row in eval_summary.get("summary", []):
+    rows = list(eval_summary.get("summary", []))
+    rows.sort(key=lambda row: (
+        0 if row.get("kind") == "learned" else 1,
+        str(row.get("policy", "")),
+    ))
+    for row in rows:
         lines.append(
             f"| {row['title']} | {row['kind']} | "
             f"{_pct(row['SR'])} | {_pct(row['OSR'])} | "
