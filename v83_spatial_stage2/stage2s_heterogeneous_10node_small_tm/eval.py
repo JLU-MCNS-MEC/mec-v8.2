@@ -243,6 +243,45 @@ def _load_learned(algorithm, seed, device):
     }
 
 
+def _success_e2e_diagnostic(rows_by_policy):
+    """Check whether low E2E comes from short failed episodes.
+
+    Scheme D has no success or stop term.  A policy can therefore obtain a
+    high reward from short, low-E2E failures.  This table makes that
+    mechanism visible instead of hiding it.
+    """
+    rows = []
+    for policy, episodes in rows_by_policy.items():
+        for success in (1, 0):
+            subset = [
+                row for row in episodes
+                if int(row["success"]) == int(success)
+            ]
+            if not subset:
+                continue
+            rows.append({
+                "policy": policy,
+                "algorithm": episodes[0]["algorithm"],
+                "kind": episodes[0]["kind"],
+                "seed": episodes[0]["seed"],
+                "success": int(success),
+                "episodes": len(subset),
+                "mean_e2e_ms": float(np.mean([
+                    float(row["mean_e2e_ms"]) for row in subset
+                ])),
+                "mean_steps": float(np.mean([
+                    int(row["steps"]) for row in subset
+                ])),
+                "mean_ndtw": float(np.mean([
+                    float(row["ndtw"]) for row in subset
+                ])),
+                "mean_reward_D": float(np.mean([
+                    float(row["reward_D"]) for row in subset
+                ])),
+            })
+    return rows
+
+
 def _policy_diversity(rows_by_policy):
     policies = sorted(rows_by_policy)
     rows = []
@@ -455,6 +494,7 @@ def evaluate(args):
         for row in rows:
             per_episode.append(_strip(row))
     diversity = _policy_diversity(rows_by_policy)
+    success_diagnostic = _success_e2e_diagnostic(rows_by_policy)
     latency_rows = []
     for policy, rows in rows_by_policy.items():
         overall = _overall(rows)
@@ -542,6 +582,9 @@ def evaluate(args):
         EVIDENCE_DIR / "policy_diversity.csv", diversity
     )
     write_csv(
+        EVIDENCE_DIR / "success_e2e_diagnostic.csv", success_diagnostic
+    )
+    write_csv(
         EVIDENCE_DIR / "forced_model_diagnostic.csv", forced_summary
     )
     write_csv(
@@ -555,6 +598,7 @@ def evaluate(args):
         "baseline_comparison": baseline_comparison,
         "latency_decomposition": latency_rows,
         "policy_diversity": diversity,
+        "success_e2e_diagnostic": success_diagnostic,
         "forced_model_diagnostic": forced_summary,
     })
     print(

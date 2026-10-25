@@ -214,6 +214,24 @@ def _trajectory_table(trajectories):
     return "\n".join(lines)
 
 
+def _success_diagnostic_table(rows):
+    if not rows:
+        return "（无数据）"
+    lines = [
+        "| 策略 | 算法 | 类型 | 结果 | Episodes | 平均 E2E (ms) | 平均步数 | 平均 nDTW | 平均 RewardD |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row['policy']} | {row['algorithm']} | {row['kind']} | "
+            f"{'成功' if int(row['success']) else '失败'} | "
+            f"{int(row['episodes'])} | {_fmt(row['mean_e2e_ms'], 2)} | "
+            f"{_fmt(row['mean_steps'], 1)} | {_fmt(row['mean_ndtw'], 4)} | "
+            f"{_fmt(row['mean_reward_D'], 4)} |"
+        )
+    return "\n".join(lines)
+
+
 def _selection_table(selection):
     if selection is None or selection.empty:
         return "（无数据）"
@@ -329,6 +347,7 @@ def render():
     smoke = _json("smoke_report.json")
     trajectories = _csv("trajectory_summary.csv")
     selection = _csv("model_selection_summary.csv")
+    success_diagnostic = _csv("success_e2e_diagnostic.csv")
     latency = _csv("latency_decomposition.csv")
     episodes = _csv("per_episode_validation.csv")
     if summary is None:
@@ -497,6 +516,17 @@ def render():
         "`corr_small_ratio_vs_success`、`_vs_ndtw`、`_vs_e2e_ms`、`_vs_steps`。"
         "相关不等于因果；模型选择与任务难度/位置同时变化，需结合配对 baseline 阅读。",
         "",
+        "### 6.1 奖励—成功解耦诊断（方案 D 无成功项）",
+        "",
+        "方案 D 只依赖每步 E2E 与终止修正，没有成功奖励或 Stop 奖励。"
+        "因此低 E2E 可能来自“短而失败”的 Episode。下表把成功/失败分开统计，"
+        "用于检查最优 Dev E2E 检查点是否以导航质量为代价：",
+        "",
+        _success_diagnostic_table(
+            success_diagnostic.to_dict("records")
+            if success_diagnostic is not None else []
+        ),
+        "",
         "## 7. 真实闭环轨迹",
         "",
         _trajectory_table(trajectories),
@@ -587,11 +617,12 @@ def render():
     # Q5: navigation cost
     if selection is not None and not selection.empty:
         lines.append(
-            "5. **导航质量是否出现代价？** 见第 6 节分组表与 "
-            "`per_seed_metrics.csv` / `seed_aggregate.csv` 的 SR/OSR/nDTW/SPL。"
-            "如果 Small 高占比组的 SR/nDTW 低于 Transformer-M 高占比组，"
-            "且学习策略的 SR/nDTW 低于 Greedy-Min-E2E，则说明存在导航代价；"
-            "否则不能仅凭模型偏好推断代价。"
+            "5. **导航质量是否出现代价？** 见第 6 节分组表、"
+            "6.1 成功/失败 E2E 诊断与 `per_seed_metrics.csv` / "
+            "`seed_aggregate.csv` 的 SR/OSR/nDTW/SPL。"
+            "如果失败 Episode 的平均 E2E 明显低于成功 Episode，且最佳 Dev E2E "
+            "检查点的 SR 偏低，则说明低时延部分来自“短而失败”的轨迹；"
+            "这是方案 D 无成功项的已知设计后果，必须如实报告。"
         )
     else:
         lines.append(
