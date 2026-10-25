@@ -95,10 +95,15 @@ def _paired(left, right, metric):
 def _run_table(summary):
     runs = summary.get("runs", [])
     lines = [
-        "| 算法 | seed | Episodes | 成功 | 失败 | 成功率 | 成功 S/M/L | 失败 S/M/L | Small 选择 | MA100 E2E (ms) | 最佳 Dev E2E (ms) | 收敛 |",
-        "|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---|",
+        "| 算法 | seed | Episodes | 成功 | 失败 | 成功率 | 成功 S/M/L | 失败 S/M/L | Small 选择 | MA100 E2E (ms) | 最佳 Dev E2E (ms) | 耗时 (h) | 收敛 |",
+        "|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|",
     ]
     for row in runs:
+        elapsed = row.get("elapsed_seconds")
+        elapsed_h = (
+            _fmt(float(elapsed) / 3600.0, 2)
+            if elapsed is not None else "N/A"
+        )
         lines.append(
             f"| {row['algorithm_label']} | {row['seed']} | "
             f"{row['episodes']} | {row['total_success']} | "
@@ -108,7 +113,7 @@ def _run_table(summary):
             f"{row['failure_short']}/{row['failure_medium']}/"
             f"{row['failure_long']} | {_pct(row.get('small_ratio'))} | "
             f"{_fmt(row.get('ma100_e2e_last'), 2)} | "
-            f"{_fmt(row.get('best_dev_e2e_ms'), 2)} | "
+            f"{_fmt(row.get('best_dev_e2e_ms'), 2)} | {elapsed_h} | "
             f"{row.get('convergence')} |"
         )
     return "\n".join(lines)
@@ -530,6 +535,8 @@ def render():
         "- 测试：`test_stage2s.py`（CPU，17/17）与 `test_stage2s_gpu.py`"
         "（GPU 真实闭环，7/7）全部通过。",
         "- Smoke 报告：`smoke_report.json` / `SMOKE_TEST.md`。",
+        "- 未修改 Stage-2n/2o/2p/2r 的任何代码、任务、检查点或结果；"
+        "新增文件仅位于本 Stage-2s 目录。",
         "",
         "节点分配：",
         "",
