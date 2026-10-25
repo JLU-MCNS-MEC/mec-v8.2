@@ -376,6 +376,7 @@ def _selection_summary(summaries):
                 "mean_ndtw": float(ndtw[mask].mean()),
                 "mean_e2e_ms": float(e2e[mask].mean()),
                 "mean_steps": float(steps[mask].mean()),
+                "correlation": None,
             })
         for name, values in (
             ("success", success), ("ndtw", ndtw),
@@ -401,12 +402,16 @@ def _selection_summary(summaries):
 
 def _audit(summary_rows, step_rows):
     rows = []
-    by_uid = {}
+    by_key = {}
     for row in step_rows:
-        by_uid.setdefault(row["episode_uid"], []).append(row)
+        by_key.setdefault(
+            (row["algorithm"], row["episode_uid"]), []
+        ).append(row)
     for summary in summary_rows:
         steps = sorted(
-            by_uid.get(summary["episode_uid"], []),
+            by_key.get(
+                (summary["algorithm"], summary["episode_uid"]), []
+            ),
             key=lambda row: row["step"],
         )
         e2e_ok = all(
@@ -575,9 +580,15 @@ def main(argv=None):
     write_csv(
         EVIDENCE_DIR / "trajectory_dev_pool.csv", pool_rows,
     )
+    selection_rows = _selection_summary(pool_rows)
+    selection_fields = [
+        "algorithm", "group", "episodes", "mean_small_ratio",
+        "success_rate", "mean_ndtw", "mean_e2e_ms", "mean_steps",
+        "correlation",
+    ]
     write_csv(
         EVIDENCE_DIR / "model_selection_summary.csv",
-        _selection_summary(pool_rows),
+        selection_rows, fieldnames=selection_fields,
     )
     audit = _audit(selected_rows, all_steps)
     write_csv(EVIDENCE_DIR / "trajectory_audit.csv", audit)

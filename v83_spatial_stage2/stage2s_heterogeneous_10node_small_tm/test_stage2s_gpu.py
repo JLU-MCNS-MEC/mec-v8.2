@@ -280,6 +280,41 @@ class HeterogeneousClosedLoopTests(unittest.TestCase):
             result["steps"],
         )
 
+    def test_cuda_safe_full_checkpoint_resume(self):
+        import tempfile
+
+        from v83_spatial_stage2.stage2k_jointr_v2_agent import DQNAgentV2
+        from v83_spatial_stage2.stage2s_heterogeneous_10node_small_tm.train import (
+            _load_full_cuda_safe,
+        )
+
+        agent = DQNAgentV2(
+            self.device, seed=7, gamma=1.0, state_dim=common.STATE_DIM,
+            state_mode=common.STATE_MODE, action_dim=common.ACTION_DIM,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "last_full.pt"
+            agent.save_full(path, extra={
+                "stage": common.STAGE,
+                "algorithm": "dqn",
+                "seed": 7,
+                "deployment_sha256": self.bundle["deployment"][
+                    "deployment_sha256"
+                ],
+            })
+            restored = DQNAgentV2(
+                self.device, seed=7, gamma=1.0,
+                state_dim=common.STATE_DIM,
+                state_mode=common.STATE_MODE,
+                action_dim=common.ACTION_DIM,
+            )
+            payload = _load_full_cuda_safe(restored, path)
+        self.assertEqual(payload.get("stage"), common.STAGE)
+        self.assertEqual(restored.total_steps, agent.total_steps)
+        # A forward pass after RNG restore must remain finite.
+        state = np.zeros(common.STATE_DIM, dtype=np.float32)
+        self.assertTrue(np.all(np.isfinite(restored.q_values(state))))
+
     def test_greedy_min_e2e_uses_current_total_ms_only(self):
         source = inspect.getsource(HeterogeneousEvaluator.select_strategy)
         self.assertNotIn("oracle", source.lower())
