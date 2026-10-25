@@ -465,6 +465,7 @@ def render():
     success_diagnostic = _csv("success_e2e_diagnostic.csv")
     adaptation = _csv("adaptation_summary.csv")
     forced = _csv("forced_model_diagnostic.csv")
+    trajectory_manifest = _json("trajectory_manifest.json")
     latency = _csv("latency_decomposition.csv")
     episodes = _csv("per_episode_validation.csv")
     if summary is None:
@@ -686,6 +687,12 @@ def render():
         "## 7. 真实闭环轨迹",
         "",
         _trajectory_table(trajectories),
+        "",
+        (
+            f"轨迹审计：{'通过' if trajectory_manifest.get('audit_passed') else '未通过'}；"
+            f"选中轨迹 {len(trajectory_manifest.get('selected', []))} 条。"
+            if trajectory_manifest else "轨迹审计：无 manifest。"
+        ),
         "",
         "轨迹图：`fig_traj_dqn.png`、`fig_traj_ppo.png`、"
         "`fig_traj_overview.png`、`fig_traj_model_usage.png`、"
