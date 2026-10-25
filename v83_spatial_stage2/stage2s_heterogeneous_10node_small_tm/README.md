@@ -67,12 +67,12 @@ $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/launch.py \
 # 查看进度
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/status.py
 
-# 汇总 + 图（训练结束后）
+# Dev-60 最终评估（训练结束后；先于汇总/图）
+$PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/eval.py
+
+# 汇总 + 图（评估后）
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/analyze.py
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/plot.py
-
-# Dev-60 最终评估（训练结束后）
-$PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/eval.py
 
 # 轨迹与轨迹图（评估后）
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/trajectories.py
