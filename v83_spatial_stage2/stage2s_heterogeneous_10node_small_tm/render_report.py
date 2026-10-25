@@ -749,7 +749,8 @@ def render():
             f"{adaptation_text}{paired_text}"
             "但“利用”不等于“优于 baseline”：如果学习策略的 E2E 不优于 "
             "Greedy-Min-E2E，则只能说明它学会了按当前时延选择，"
-            "而不是学会了利用未来导航收益。"
+            "而不是学会了利用未来导航收益；若连 Random/Nearest 也不优于，"
+            "则不能声称学会了有效的时延选择。"
         )
     else:
         lines.append(
