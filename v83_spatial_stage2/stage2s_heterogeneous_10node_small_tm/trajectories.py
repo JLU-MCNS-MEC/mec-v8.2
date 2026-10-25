@@ -118,7 +118,7 @@ def _best_seed(algorithm):
         raise FileNotFoundError(
             f"no completed {algorithm} run to build trajectories"
         )
-    candidates.sort()
+    candidates.sort(key=lambda item: (item[0], item[1]))
     return candidates[0][1], candidates[0][2]
 
 

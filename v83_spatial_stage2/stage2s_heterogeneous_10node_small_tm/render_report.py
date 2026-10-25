@@ -462,7 +462,15 @@ def render():
         "",
         _aggregate_table(summary),
         "",
-        "### 3.2 收敛性",
+        "### 3.2 中断与恢复",
+        "",
+        "训练启动器曾在首次运行约 Ep60 时被人工停止（仅停止启动器，训练子进程随之退出）。"
+        "4 个 run 从 Ep50 的 `last_full.pt` 恢复；`training_history.json` 被截断到 "
+        "Ep50 后重放，历史中无重复 Episode。另 2 个 run 从 0 开始。"
+        "续训时发现共享 Stage-2k agent 的 CUDA RNG 恢复问题，已在 Stage-2s 本地"
+        "包装修复（commit `a41a170`），未修改历史共享代码。",
+        "",
+        "### 3.3 收敛性",
         "",
         "预注册判据：最近三次 Dev E2E 波动 ≤ 最佳值 1%，且末次 ≤ 最佳值 101%。",
         "",
