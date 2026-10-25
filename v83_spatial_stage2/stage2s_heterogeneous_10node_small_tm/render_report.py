@@ -160,8 +160,8 @@ def _eval_aggregate_table(eval_summary):
     if not rows:
         return "（无数据）"
     lines = [
-        "| 算法 | SR | OSR | nDTW | SPL | E2E (ms) | RewardD | Small 选择 |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| 算法 | SR | OSR | nDTW | SPL | E2E (ms) | P95 E2E (ms) | RewardD | 违约率 | Small 选择 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in rows:
         def pair(key, digits=4):
@@ -171,7 +171,8 @@ def _eval_aggregate_table(eval_summary):
         lines.append(
             f"| {row['algorithm_label']} | {pair('SR')} | {pair('OSR')} | "
             f"{pair('nDTW')} | {pair('SPL')} | {pair('E2E_ms', 2)} | "
-            f"{pair('RewardD')} | {pair('small_ratio')} |"
+            f"{pair('P95_E2E_ms', 2)} | {pair('RewardD')} | "
+            f"{pair('delay_violation_rate')} | {pair('small_ratio')} |"
         )
     return "\n".join(lines)
 
