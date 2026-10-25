@@ -439,7 +439,8 @@ def render():
         "续训兼容修复 commit：`a41a170`（仅修复 CUDA RNG 恢复，不改变训练动力学）。",
         f"- 部署哈希：`{deployment.get('deployment_sha256', 'N/A')}`。",
         "- 冻结协议：`STAGE2S_PROTOCOL.md`；部署明细：`deployment_heterogeneous.json`。",
-        "- 测试：`test_stage2s.py`（CPU）与 `test_stage2s_gpu.py`（GPU 真实闭环）全部通过。",
+        "- 测试：`test_stage2s.py`（CPU，17/17）与 `test_stage2s_gpu.py`"
+        "（GPU 真实闭环，7/7）全部通过。",
         "- Smoke 报告：`smoke_report.json` / `SMOKE_TEST.md`。",
         "",
         "节点分配：",
