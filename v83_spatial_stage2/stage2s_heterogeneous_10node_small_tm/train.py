@@ -117,6 +117,37 @@ TRAINING_MODE = "full_closed_loop_heterogeneous"
 BASELINE_RANDOM_SEED = 20261025
 
 
+def _load_full_cuda_safe(agent, path):
+    """Load a full checkpoint with RNG ByteTensors forced back to CPU.
+
+    ``torch.load(..., map_location=self.device)`` in the shared Stage-2k
+    agents moves the saved RNG state to CUDA.  ``torch.set_rng_state``
+    requires a CPU ByteTensor.  This Stage-2s-local wrapper fixes the RNG
+    restore without modifying the historical shared agent files.
+    """
+    original = agent._restore_rng_state
+
+    def restore(state):
+        state = dict(state)
+        if "torch" in state and torch.is_tensor(state["torch"]):
+            state["torch"] = state["torch"].detach().cpu().to(
+                torch.uint8
+            )
+        if "cuda" in state:
+            state["cuda"] = [
+                value.detach().cpu().to(torch.uint8)
+                if torch.is_tensor(value) else value
+                for value in state["cuda"]
+            ]
+        return original(state)
+
+    agent._restore_rng_state = restore
+    try:
+        return agent.load_full(path)
+    finally:
+        agent._restore_rng_state = original
+
+
 def _git_state():
     try:
         commit = subprocess.check_output(
@@ -760,7 +791,7 @@ def train_dqn(args, bundle, device, encoder, backends, latency_model,
     if args.resume:
         if not last_full.is_file():
             raise SystemExit(f"--resume but {last_full} is missing")
-        payload = agent.load_full(last_full)
+        payload = _load_full_cuda_safe(agent, last_full)
         if payload.get("stage") != STAGE:
             raise SystemExit("Resume checkpoint is not a Stage-2s run")
         if payload.get("algorithm") != "dqn":
@@ -925,7 +956,7 @@ def train_ppo(args, bundle, device, encoder, backends, latency_model,
     if args.resume:
         if not last_full.is_file():
             raise SystemExit(f"--resume but {last_full} is missing")
-        payload = agent.load_full(last_full)
+        payload = _load_full_cuda_safe(agent, last_full)
         if payload.get("stage") != STAGE:
             raise SystemExit("Resume checkpoint is not a Stage-2s run")
         if payload.get("algorithm") != "ppo":
