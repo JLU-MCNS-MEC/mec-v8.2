@@ -33,6 +33,7 @@ Transformer-M MEC，推理时延使用显式 0.2 TFLOP/s 有效吞吐，比较 D
 | `plot.py` | 训练/验证/种子变异性/异构性图（300 dpi，CSV 侧车） |
 | `trajectories.py` | DQN/PPO 真实闭环轨迹采集与逐步数据 |
 | `plot_trajectories.py` | 轨迹图、模型选择着色、强制模型诊断图 |
+| `render_report.py` | 从汇总 CSV/JSON 生成最终中文报告（数字不手写） |
 | `test_stage2s.py` | CPU 单元测试（部署、算力、时延、状态、奖励、隔离） |
 | `test_stage2s_gpu.py` | GPU 闭环测试（双模型加载、调度、动作影响、奖励恒等式） |
 | `STAGE2S_PROTOCOL.md` | 训练前冻结的协议 |
@@ -75,6 +76,9 @@ $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/eval.py
 # 轨迹与轨迹图（评估后）
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/trajectories.py
 $PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/plot_trajectories.py
+
+# 最终中文报告（在 eval / analyze / trajectories 之后）
+$PY v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/render_report.py
 
 # 或：等待 6 个 run 完成后自动执行 eval → analyze → plot → trajectories → 报告
 bash v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/run_postprocess.sh
