@@ -1,0 +1,283 @@
+{
+  "version": "stage2s-heterogeneous-deployment-v1",
+  "stage": "stage2s_heterogeneous_10node_small_tm",
+  "created_utc": "2026-10-25T14:16:34.416588+00:00",
+  "deployment_id": "stage2s-A10-5small-5transformer_m",
+  "description": "10 MEC nodes on the Stage-2r A10_fixed geometry; five nodes run the frozen Small checkpoint and five run the frozen Transformer-M checkpoint. All nodes keep nominal 2.0 TFLOP/s, 30 MHz, 500 m coverage and 2.0 W; inference latency uses an explicit 0.2 TFLOP/s effective throughput.",
+  "source_topology": "runs/v83_spatial_stage2/stage2l_fixed_city/topologies/A_fixed.json",
+  "source_topology_sha256": "29a7d91d77d65b07787189ec95dcf893a5723ea64207927f8675276bb85a7e56",
+  "source_topology_seed": 9000000,
+  "node_selection_rule": "A10_fixed: start at the A_fixed node nearest the city centre (750,750), then repeatedly add the node with the largest minimum distance to the already selected nodes; ties by lower A_fixed index. Finally sort the 10 selected indices ascending for node IDs M01..M10.",
+  "selected_source_indices": [
+    1,
+    2,
+    4,
+    6,
+    7,
+    8,
+    11,
+    12,
+    18,
+    19
+  ],
+  "assignment": {
+    "assignment_rule": "5+5 spatial balance: enumerate all 252 five-node subsets of A10_fixed; for each subset and its complement compute 500 m coverage on a deterministic 76x76 uniform city grid (0..1500 m, 20 m spacing) and on all Train-4000+Dev-60 start positions (geometry only). Rank by (1) larger minimum grid coverage, (2) larger minimum start coverage, (3) smaller mean-nearest-start-distance gap, (4) smaller worst mean nearest distance, (5) lexicographic node indices. The selected subset that contains the A10 node nearest the city centre is assigned to Small; its complement is assigned to Transformer-M. Node IDs stay in A10 order M01..M10.",
+    "small_node_indices": [
+      2,
+      5,
+      6,
+      8,
+      9
+    ],
+    "transformer_node_indices": [
+      0,
+      1,
+      3,
+      4,
+      7
+    ],
+    "model_by_source_index": {
+      "0": "Transformer-M",
+      "1": "Transformer-M",
+      "2": "Small",
+      "3": "Transformer-M",
+      "4": "Transformer-M",
+      "5": "Small",
+      "6": "Small",
+      "7": "Transformer-M",
+      "8": "Small",
+      "9": "Small"
+    },
+    "balance": {
+      "grid_coverage_small": 0.8395083102493075,
+      "grid_coverage_transformer_m": 0.9153393351800554,
+      "grid_coverage_gap": 0.07583102493074789,
+      "grid_coverage_min": 0.8395083102493075,
+      "start_coverage_small": 0.9268472906403941,
+      "start_coverage_transformer_m": 0.958128078817734,
+      "start_coverage_gap": 0.031280788177339924,
+      "start_coverage_min": 0.9268472906403941,
+      "mean_nearest_start_m_small": 288.7025110670597,
+      "mean_nearest_start_m_transformer_m": 297.9289408070801,
+      "mean_nearest_gap_m": 9.226429740020421,
+      "centre_nearest_node_index": 5
+    },
+    "checks": {
+      "five_small_five_transformer": true,
+      "grid_coverage_balanced": true,
+      "start_coverage_balanced": true,
+      "grid_coverage_min_80pct": true,
+      "start_coverage_min_80pct": true,
+      "ok": true
+    },
+    "candidates_considered": 252,
+    "selected_rank": 1
+  },
+  "capability_prior": {
+    "path": "runs/v83_spatial_stage2/stage2k/capability_prior_v2.json",
+    "sha256": "7859ee81ec314a441594a36b2435f85056601c814730eca13d06e434053a0108",
+    "models": {
+      "Small": {
+        "sr": 0.16111111111111112,
+        "osr": 0.32222222222222224,
+        "spl": 0.16111111111111112,
+        "ndtw": 0.2314342437021882
+      },
+      "Transformer-M": {
+        "sr": 0.5722222222222222,
+        "osr": 0.8555555555555555,
+        "spl": 0.5722199265103929,
+        "ndtw": 0.5574818203119742
+      }
+    }
+  },
+  "mec": {
+    "deployment_kind": "heterogeneous",
+    "model_types": [
+      "Small",
+      "Transformer-M"
+    ],
+    "model_counts": {
+      "Small": 5,
+      "Transformer-M": 5
+    },
+    "checkpoints": {
+      "Small": "runs/v83_spatial_stage2/stage2j/Small/best.pt",
+      "Transformer-M": "runs/v83_spatial_stage2/stage2j/Transformer-M/best.pt"
+    },
+    "checkpoint_sha256": {
+      "Small": "7349ec9d0c809a09dc2672a05053f1f89e69480b8802d6ca3b05944cea44e1f6",
+      "Transformer-M": "57c88b7d71e1a7f17862aaa8429afa8a041cba5e747f744f3a7febf47f273c6d"
+    },
+    "compute_capacity_flops_per_s": 2000000000000.0,
+    "effective_inference_compute_flops_per_s": 200000000000.0,
+    "compute_semantics": "compute_capacity_flops_per_s is the nominal node capacity kept in topology/state features; inference latency uses only effective_inference_compute_flops_per_s",
+    "bandwidth_hz": 30000000.0,
+    "coverage_radius_m": 500.0,
+    "tx_power_w": 0.1,
+    "num_nodes": 10,
+    "frozen": true,
+    "requires_grad": false
+  },
+  "checks": {
+    "num_nodes_10": true,
+    "positions_unique": true,
+    "five_small": true,
+    "five_transformer_m": true,
+    "two_model_types": true,
+    "positions_equal_a10": true,
+    "all_nominal_compute_2tf": true,
+    "all_effective_inference_02tf": true,
+    "all_bandwidth_30mhz": true,
+    "all_coverage_500m": true,
+    "all_tx_power_equal": true,
+    "positions_inside_city": true,
+    "source_indices_ascending": true,
+    "spatial_balance_passed": true,
+    "ok": true
+  },
+  "nodes": [
+    {
+      "node_id": "M01",
+      "source_index": 1,
+      "x": 61.533485412597656,
+      "y": 159.94300842285156,
+      "model_type": "Transformer-M",
+      "model_index": 3,
+      "quality_prior": 0.5574818203119742,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M02",
+      "source_index": 2,
+      "x": 309.3292541503906,
+      "y": 1229.6812744140625,
+      "model_type": "Transformer-M",
+      "model_index": 3,
+      "quality_prior": 0.5574818203119742,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M03",
+      "source_index": 4,
+      "x": 411.46771240234375,
+      "y": 259.6279602050781,
+      "model_type": "Small",
+      "model_index": 0,
+      "quality_prior": 0.2314342437021882,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M04",
+      "source_index": 6,
+      "x": 1117.262939453125,
+      "y": 1254.922607421875,
+      "model_type": "Transformer-M",
+      "model_index": 3,
+      "quality_prior": 0.5574818203119742,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M05",
+      "source_index": 7,
+      "x": 857.0403442382812,
+      "y": 463.0541076660156,
+      "model_type": "Transformer-M",
+      "model_index": 3,
+      "quality_prior": 0.5574818203119742,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M06",
+      "source_index": 8,
+      "x": 836.337646484375,
+      "y": 949.736572265625,
+      "model_type": "Small",
+      "model_index": 0,
+      "quality_prior": 0.2314342437021882,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M07",
+      "source_index": 11,
+      "x": 1304.9622802734375,
+      "y": 161.05950927734375,
+      "model_type": "Small",
+      "model_index": 0,
+      "quality_prior": 0.2314342437021882,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M08",
+      "source_index": 12,
+      "x": 893.6693115234375,
+      "y": 99.37238311767578,
+      "model_type": "Transformer-M",
+      "model_index": 3,
+      "quality_prior": 0.5574818203119742,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M09",
+      "source_index": 18,
+      "x": 123.61428833007812,
+      "y": 588.9541625976562,
+      "model_type": "Small",
+      "model_index": 0,
+      "quality_prior": 0.2314342437021882,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    },
+    {
+      "node_id": "M10",
+      "source_index": 19,
+      "x": 1321.6058349609375,
+      "y": 689.1244506835938,
+      "model_type": "Small",
+      "model_index": 0,
+      "quality_prior": 0.2314342437021882,
+      "compute_capacity_flops_per_s": 2000000000000.0,
+      "effective_inference_compute_flops_per_s": 200000000000.0,
+      "bandwidth_hz": 30000000.0,
+      "coverage_radius_m": 500.0,
+      "tx_power_w": 0.1
+    }
+  ],
+  "final_test_read": false,
+  "deployment_sha256": "1fce485ce6256a288fb0aecd525afbf2830467b5ee9f2918952af54148a081cd"
+}
