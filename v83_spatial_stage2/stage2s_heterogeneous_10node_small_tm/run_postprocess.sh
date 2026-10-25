@@ -18,6 +18,19 @@ from pathlib import Path
 runs = Path(sys.argv[1])
 keys = [f"{a}_s{s}" for a in ("dqn", "ppo") for s in (101, 202, 303)]
 while True:
+    state_path = runs / "launch_state.json"
+    if state_path.is_file():
+        try:
+            state = json.loads(state_path.read_text())
+            failed = [
+                key for key, item in state.get("jobs", {}).items()
+                if item.get("status") == "failed"
+            ]
+        except Exception:
+            failed = []
+        if failed:
+            print(f"[postprocess] failed runs: {failed}", flush=True)
+            sys.exit(2)
     done = []
     pending = []
     for key in keys:
