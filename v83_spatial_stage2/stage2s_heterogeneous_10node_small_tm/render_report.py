@@ -155,6 +155,27 @@ def _validation_table(eval_summary):
     return "\n".join(lines)
 
 
+def _eval_aggregate_table(eval_summary):
+    rows = eval_summary.get("seed_aggregate", [])
+    if not rows:
+        return "（无数据）"
+    lines = [
+        "| 算法 | SR | OSR | nDTW | SPL | E2E (ms) | RewardD | Small 选择 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        def pair(key, digits=4):
+            mean = row.get(f"{key}_mean")
+            std = row.get(f"{key}_std")
+            return f"{_fmt(mean, digits)} ± {_fmt(std, digits)}"
+        lines.append(
+            f"| {row['algorithm_label']} | {pair('SR')} | {pair('OSR')} | "
+            f"{pair('nDTW')} | {pair('SPL')} | {pair('E2E_ms', 2)} | "
+            f"{pair('RewardD')} | {pair('small_ratio')} |"
+        )
+    return "\n".join(lines)
+
+
 def _baseline_table(eval_summary):
     lines = [
         "| 算法 | baseline | 学习均值 E2E (ms) | baseline E2E (ms) | ΔE2E (ms) | ΔE2E (%) | ΔRewardD | ΔSR | ΔnDTW |",
@@ -192,6 +213,48 @@ def _latency_table(latency):
             f"{_fmt(row['mean_e2e_ms'], 2)} |"
         )
     return "\n".join(lines)
+
+
+def _diagnostic_by_algorithm(rows):
+    if rows is None or rows.empty:
+        return {}
+    learned = rows[rows["kind"] == "learned"]
+    output = {}
+    for algorithm in ALGORITHMS:
+        subset = learned[learned["algorithm"] == algorithm]
+        if subset.empty:
+            continue
+        item = {}
+        for success in (1, 0):
+            group = subset[subset["success"] == success]
+            if group.empty:
+                continue
+            item["success" if success else "failure"] = {
+                "e2e": float(group["mean_e2e_ms"].mean()),
+                "steps": float(group["mean_steps"].mean()),
+                "ndtw": float(group["mean_ndtw"].mean()),
+            }
+        output[algorithm] = item
+    return output
+
+
+def _adaptation_by_algorithm(adaptation):
+    if adaptation is None or adaptation.empty:
+        return {}
+    output = {}
+    for algorithm in ALGORITHMS:
+        subset = adaptation[adaptation["algorithm"] == algorithm]
+        if subset.empty:
+            continue
+        output[algorithm] = {
+            "delta_small": float(subset["delta_small_ratio"].mean()),
+            "delta_e2e": float(subset["delta_e2e_ms"].mean()),
+            "early_small": float(subset["early_small_ratio"].mean()),
+            "late_small": float(subset["late_small_ratio"].mean()),
+            "early_e2e": float(subset["early_e2e_ms"].mean()),
+            "late_e2e": float(subset["late_e2e_ms"].mean()),
+        }
+    return output
 
 
 def _trajectory_table(trajectories):
@@ -382,6 +445,10 @@ def render():
     algo_e2e = _algorithm_e2e(eval_summary)
     paired = _paired_evidence(eval_summary, episodes)
     variability = _small_ratio_variability(episodes)
+    adaptation_by_algorithm = _adaptation_by_algorithm(adaptation)
+    diagnostic_by_algorithm = _diagnostic_by_algorithm(
+        success_diagnostic
+    )
     best = _best_selection(summary)
     lower_algorithm = (
         min(algo_e2e, key=algo_e2e.get) if algo_e2e else None
@@ -483,7 +550,11 @@ def render():
         "",
         _validation_table(eval_summary),
         "",
-        "### 4.1 相对 baseline 的 E2E / 奖励 / 导航差",
+        "### 4.1 学习算法的 3-seed 均值 ± 标准差",
+        "",
+        _eval_aggregate_table(eval_summary),
+        "",
+        "### 4.2 相对 baseline 的 E2E / 奖励 / 导航差",
         "",
         _baseline_table(eval_summary),
         "",
@@ -599,9 +670,19 @@ def render():
             f"{_pct(item['mean'])}（标准差 {_fmt(item['std'], 3)}）"
             for a, item in variability.items()
         )
+        adaptation_text = ""
+        if adaptation_by_algorithm:
+            adaptation_text = " 训练前后：" + "；".join(
+                f"{ALGORITHM_LABELS[a]} Small 比例 "
+                f"{_pct(item['early_small'])}→{_pct(item['late_small'])}"
+                f"（Δ{_pct(item['delta_small'])}），E2E "
+                f"{_fmt(item['early_e2e'], 2)}→{_fmt(item['late_e2e'], 2)} ms"
+                for a, item in adaptation_by_algorithm.items()
+            ) + "。"
         lines.append(
             f"1. **DQN/PPO 是否学会利用模型异构性？** "
             f"证据是选择比例随 Episode 变化且不固定在 50%：{variability_text}。"
+            f"{adaptation_text}"
             "但“利用”不等于“优于 baseline”：是否真正降低 E2E 见下一问的配对结果。"
             "如果学习策略的 E2E 不优于 Greedy-Min-E2E，则只能说明它学会了"
             "按当前时延选择，而不是学会了利用未来导航收益。"
@@ -656,10 +737,22 @@ def render():
         )
     # Q5: navigation cost
     if selection is not None and not selection.empty:
+        diagnostic_text = ""
+        if diagnostic_by_algorithm:
+            diagnostic_text = " 成功/失败分解：" + "；".join(
+                f"{ALGORITHM_LABELS[a]} 成功 E2E "
+                f"{_fmt(item.get('success', {}).get('e2e'), 2)} ms/"
+                f"{_fmt(item.get('success', {}).get('steps'), 0)} 步，"
+                f"失败 E2E "
+                f"{_fmt(item.get('failure', {}).get('e2e'), 2)} ms/"
+                f"{_fmt(item.get('failure', {}).get('steps'), 0)} 步"
+                for a, item in diagnostic_by_algorithm.items()
+            ) + "。"
         lines.append(
             "5. **导航质量是否出现代价？** 见第 6 节分组表、"
             "6.1 成功/失败 E2E 诊断与 `per_seed_metrics.csv` / "
             "`seed_aggregate.csv` 的 SR/OSR/nDTW/SPL。"
+            f"{diagnostic_text}"
             "如果失败 Episode 的平均 E2E 明显低于成功 Episode，且最佳 Dev E2E "
             "检查点的 SR 偏低，则说明低时延部分来自“短而失败”的轨迹；"
             "这是方案 D 无成功项的已知设计后果，必须如实报告。"
