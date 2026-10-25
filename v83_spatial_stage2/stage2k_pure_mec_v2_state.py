@@ -141,16 +141,24 @@ def pure_mec_v2_candidate_features(
     uav_position,
     latency_model,
     capability_prior,
+    num_nodes=None,
 ):
-    """20 x 19-D MEC features; availability is a separate action mask."""
-    if len(nodes) != NUM_NODES:
-        raise ValueError(f"expected {NUM_NODES} nodes, got {len(nodes)}")
+    """``num_nodes`` x 19-D MEC features; availability is a separate mask.
+
+    ``num_nodes`` defaults to the historical 20-node layout.  Stage-2r passes
+    10 explicitly; the feature layout and semantics are unchanged.
+    """
+    num_nodes = int(NUM_NODES if num_nodes is None else num_nodes)
+    if num_nodes <= 0:
+        raise ValueError(f"num_nodes must be positive, got {num_nodes}")
+    if len(nodes) != num_nodes:
+        raise ValueError(f"expected {num_nodes} nodes, got {len(nodes)}")
     capacity = _flatten_capability(capability_prior)
     uav_position = np.asarray(uav_position, dtype=np.float64)[:2]
-    features = np.zeros((NUM_NODES, CANDIDATE_DIM), dtype=np.float32)
-    mask = np.zeros(NUM_NODES, dtype=bool)
-    metrics = [None] * NUM_NODES
-    distances = np.zeros(NUM_NODES, dtype=np.float64)
+    features = np.zeros((num_nodes, CANDIDATE_DIM), dtype=np.float32)
+    mask = np.zeros(num_nodes, dtype=bool)
+    metrics = [None] * num_nodes
+    distances = np.zeros(num_nodes, dtype=np.float64)
 
     for index, node in enumerate(nodes):
         dx = float(node["x"]) - float(uav_position[0])
@@ -239,8 +247,12 @@ def build_pure_mec_v2_state(
     """Build the 384-D variant-A state."""
     uav = np.asarray(uav_position, dtype=np.float32).reshape(-1)[:2]
     candidate = np.asarray(candidate20x19, dtype=np.float32)
-    if candidate.shape != (NUM_NODES, CANDIDATE_DIM):
+    if candidate.ndim != 2 or candidate.shape[1] != CANDIDATE_DIM:
         raise ValueError(f"candidate shape {candidate.shape}")
+    num_nodes = int(candidate.shape[0])
+    if num_nodes <= 0:
+        raise ValueError(f"candidate has no nodes: {candidate.shape}")
+    expected_dim = GLOBAL_DIM + num_nodes * CANDIDATE_DIM
     step_index = int(step_index)
     if not 0 <= step_index <= MAX_STEPS:
         raise ValueError(
@@ -260,8 +272,10 @@ def build_pure_mec_v2_state(
     state = np.concatenate([
         global_features, candidate.reshape(-1),
     ])
-    if state.shape != (STATE_DIM_PURE_MEC_V2,):
-        raise RuntimeError(f"pure-MEC v2 state dim {state.shape}")
+    if state.shape != (expected_dim,):
+        raise RuntimeError(
+            f"pure-MEC v2 state dim {state.shape} != {expected_dim}"
+        )
     return state.astype(np.float32)
 
 

@@ -48,23 +48,30 @@ from v83_spatial_stage2.stage2n_common import (
 
 
 class HomogeneousBackendPool:
-    """Only the frozen Transformer-M, shared by all 20 homogeneous nodes."""
+    """One frozen MEC model shared by every node of a homogeneous deployment.
+
+    ``model_name`` defaults to the Stage-2n Transformer-M so every existing
+    Stage-2n/2o/2p caller is byte-for-byte unchanged.  Stage-2r passes
+    ``Small`` or ``Transformer-M`` explicitly; only that checkpoint is loaded.
+    """
 
     def __init__(self, device, checkpoint=MEC_CHECKPOINT,
-                 expected_sha256=MEC_CHECKPOINT_SHA256):
+                 expected_sha256=MEC_CHECKPOINT_SHA256,
+                 model_name=MEC_MODEL):
         self.device = torch.device(device)
+        self.model_name = str(model_name)
         checkpoint = Path(checkpoint)
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
         actual = sha256_file(checkpoint)
         if actual != expected_sha256:
             raise ValueError(
-                f"Transformer-M checkpoint SHA-256 {actual} != "
+                f"{self.model_name} checkpoint SHA-256 {actual} != "
                 f"{expected_sha256}"
             )
         self.checkpoint = checkpoint
         self.checkpoint_sha256 = actual
-        self.model = build_stage2j_model(MEC_MODEL).to(self.device)
+        self.model = build_stage2j_model(self.model_name).to(self.device)
         load_checkpoint(self.model, checkpoint, self.device)
         self.model.eval()
         for parameter in self.model.parameters():
@@ -73,13 +80,13 @@ class HomogeneousBackendPool:
 
     @torch.inference_mode()
     def get(self, model_name, inputs, cache=None):
-        if str(model_name) != MEC_MODEL:
+        if str(model_name) != self.model_name:
             raise ValueError(
-                f"Stage-2n is homogeneous; only {MEC_MODEL} is loaded, got "
+                f"This homogeneous pool only loads {self.model_name}, got "
                 f"{model_name}"
             )
-        if cache is not None and MEC_MODEL in cache:
-            return cache[MEC_MODEL]
+        if cache is not None and self.model_name in cache:
+            return cache[self.model_name]
         components = self.model.forward_components(
             inputs["current_tokens"],
             inputs["goal_tokens"],
@@ -104,7 +111,7 @@ class HomogeneousBackendPool:
             np.asarray([arrival_probability], dtype=np.float32),
         ]).astype(np.float32)
         output = {
-            "model_type": MEC_MODEL,
+            "model_type": self.model_name,
             "move_logits": move_logits.detach().cpu().numpy(),
             "move_probabilities": move_probabilities.detach().cpu().numpy(),
             "arrival_probability": arrival_probability,
@@ -112,9 +119,11 @@ class HomogeneousBackendPool:
             "move_action": move_action,
             "action": int(action),
         }
-        self.load_calls[MEC_MODEL] = self.load_calls.get(MEC_MODEL, 0) + 1
+        self.load_calls[self.model_name] = (
+            self.load_calls.get(self.model_name, 0) + 1
+        )
         if cache is not None:
-            cache[MEC_MODEL] = output
+            cache[self.model_name] = output
         return output
 
 

@@ -50,13 +50,17 @@ def epsilon_at(total_steps, decay_steps=EPSILON_DECAY_STEPS):
 class DQNAgentV2:
     def __init__(self, device, seed=SEED, gamma=GAMMA_V2,
                  state_dim=STATE_DIM, state_mode="full",
+                 action_dim=ACTION_DIM,
                  epsilon_decay_steps=None, double_dqn=False,
                  legacy_target=False):
         self.device = torch.device(device)
         self.seed = int(seed)
         self.gamma = float(gamma)
         self.state_dim = int(state_dim)
+        self.action_dim = int(action_dim)
         self.state_mode = str(state_mode)
+        if self.action_dim < 1:
+            raise ValueError("action_dim must be positive")
         self.double_dqn = bool(double_dqn)
         # ``legacy_target`` reproduces the pre-audit target that filled
         # masked next actions with 0.0 instead of -inf.  It is kept only to
@@ -73,8 +77,12 @@ class DQNAgentV2:
         if self.epsilon_decay_steps <= 0:
             raise ValueError("epsilon_decay_steps must be positive")
         torch.manual_seed(int(seed))
-        self.online = QNetwork(state_dim=self.state_dim).to(self.device)
-        self.target = QNetwork(state_dim=self.state_dim).to(self.device)
+        self.online = QNetwork(
+            state_dim=self.state_dim, action_dim=self.action_dim
+        ).to(self.device)
+        self.target = QNetwork(
+            state_dim=self.state_dim, action_dim=self.action_dim
+        ).to(self.device)
         self.target.load_state_dict(self.online.state_dict())
         self.target.eval()
         for parameter in self.target.parameters():
@@ -84,7 +92,7 @@ class DQNAgentV2:
         )
         self.buffer = ReplayBuffer(
             capacity=REPLAY_CAPACITY, state_dim=self.state_dim,
-            action_dim=ACTION_DIM, seed=seed,
+            action_dim=self.action_dim, seed=seed,
         )
         self.rng = np.random.default_rng(int(seed))
         self.total_steps = 0
@@ -181,10 +189,12 @@ class DQNAgentV2:
 
     def config(self):
         return {
-            "architecture": f"mlp_{self.state_dim}_256_256_20",
+            "architecture": (
+                f"mlp_{self.state_dim}_256_256_{self.action_dim}"
+            ),
             "state_dim": self.state_dim,
             "state_mode": self.state_mode,
-            "action_dim": ACTION_DIM,
+            "action_dim": self.action_dim,
             "gamma": self.gamma,
             "learning_rate": LEARNING_RATE,
             "batch_size": BATCH_SIZE,
@@ -283,6 +293,11 @@ class DQNAgentV2:
             raise RuntimeError(
                 f"Checkpoint state_dim {config.get('state_dim')} != "
                 f"{self.state_dim}"
+            )
+        if int(config.get("action_dim", ACTION_DIM)) != self.action_dim:
+            raise RuntimeError(
+                f"Checkpoint action_dim {config.get('action_dim')} != "
+                f"{self.action_dim}"
             )
         if int(config.get(
             "epsilon_decay_steps", EPSILON_DECAY_STEPS

@@ -321,6 +321,7 @@ class EpisodeRunner:
                     pose,
                     self.latency_model,
                     capability_prior=self.quality_prior,
+                    num_nodes=len(self.nodes),
                 )
             )
             state = build_pure_mec_v2_state(

@@ -188,6 +188,7 @@ class PPOAgent:
         seed=SEED,
         state_dim=384,
         state_mode="pure_mec_v2",
+        action_dim=ACTION_DIM,
         gamma=GAMMA,
         gae_lambda=GAE_LAMBDA,
         clip_eps=CLIP_EPS,
@@ -203,7 +204,10 @@ class PPOAgent:
         self.device = torch.device(device)
         self.seed = int(seed)
         self.state_dim = int(state_dim)
+        self.action_dim = int(action_dim)
         self.state_mode = str(state_mode)
+        if self.action_dim < 1:
+            raise ValueError("action_dim must be positive")
         self.gamma = float(gamma)
         self.gae_lambda = float(gae_lambda)
         self.clip_eps = float(clip_eps)
@@ -226,7 +230,7 @@ class PPOAgent:
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
         self.network = ActorCriticMLP(
-            state_dim=self.state_dim, action_dim=ACTION_DIM
+            state_dim=self.state_dim, action_dim=self.action_dim
         ).to(self.device)
         self.optimizer = torch.optim.Adam(
             self.network.parameters(), lr=self.learning_rate, eps=1e-5
@@ -251,10 +255,14 @@ class PPOAgent:
                 },
             )
         mask_np = np.asarray(mask, dtype=bool)
-        if mask_np.shape != (ACTION_DIM,) or not mask_np.any():
+        if mask_np.shape != (self.action_dim,) or not mask_np.any():
             raise PPOAnomalyError(
                 "Invalid availability mask passed to the policy",
-                {"available": int(mask_np.sum())},
+                {
+                    "available": int(mask_np.sum()),
+                    "mask_shape": list(mask_np.shape),
+                    "action_dim": int(self.action_dim),
+                },
             )
         state_tensor = torch.from_numpy(
             state_np
@@ -294,8 +302,11 @@ class PPOAgent:
         if not np.isfinite(state_np).all():
             raise RuntimeError("Non-finite state during greedy evaluation")
         mask_np = np.asarray(mask, dtype=bool)
-        if mask_np.shape != (ACTION_DIM,) or not mask_np.any():
-            raise RuntimeError("Invalid availability mask during evaluation")
+        if mask_np.shape != (self.action_dim,) or not mask_np.any():
+            raise RuntimeError(
+                "Invalid availability mask during evaluation: "
+                f"{mask_np.shape} vs action_dim={self.action_dim}"
+            )
         state_tensor = torch.from_numpy(
             state_np
         ).unsqueeze(0).to(self.device)
@@ -540,11 +551,12 @@ class PPOAgent:
         return {
             "algorithm": "ppo",
             "architecture": (
-                f"actor_critic_mlp_{self.state_dim}_256_256_20"
+                f"actor_critic_mlp_{self.state_dim}_256_256_"
+                f"{self.action_dim}"
             ),
             "state_dim": self.state_dim,
             "state_mode": self.state_mode,
-            "action_dim": ACTION_DIM,
+            "action_dim": self.action_dim,
             "gamma": self.gamma,
             "gae_lambda": self.gae_lambda,
             "clip_eps": self.clip_eps,
@@ -559,7 +571,9 @@ class PPOAgent:
             "seed": self.seed,
             "reward_mode": REWARD_MODE,
             "reward": JOINTR_REWARD_DESCRIPTION,
-            "action_masking": "20-D availability mask on policy logits",
+            "action_masking": (
+                f"{self.action_dim}-D availability mask on policy logits"
+            ),
             "final_test_read": False,
         }
 
@@ -629,6 +643,11 @@ class PPOAgent:
             raise RuntimeError(
                 f"Checkpoint state_dim {config.get('state_dim')} != "
                 f"{self.state_dim}"
+            )
+        if int(config.get("action_dim", ACTION_DIM)) != self.action_dim:
+            raise RuntimeError(
+                f"Checkpoint action_dim {config.get('action_dim')} != "
+                f"{self.action_dim}"
             )
         if abs(float(config.get("gamma", -1.0)) - self.gamma) > 1e-12:
             raise RuntimeError("Checkpoint gamma does not match PPO gamma")

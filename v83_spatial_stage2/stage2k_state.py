@@ -437,11 +437,14 @@ def build_state(visual128, global10, candidate20x17):
 def masked_q_values(q_values, mask):
     q_values = np.asarray(q_values, dtype=np.float64).reshape(-1)
     mask = np.asarray(mask, dtype=bool).reshape(-1)
-    if q_values.shape != (NUM_NODES,) or mask.shape != (NUM_NODES,):
-        raise ValueError("q/mask must have 20 entries")
+    if q_values.shape != mask.shape or q_values.size < 1:
+        raise ValueError(
+            "q/mask must be equal-length non-empty vectors, got "
+            f"{q_values.shape} and {mask.shape}"
+        )
     if not mask.any():
         raise ValueError("mask has no reachable node")
-    output = np.full(NUM_NODES, -np.inf, dtype=np.float64)
+    output = np.full(q_values.size, -np.inf, dtype=np.float64)
     output[mask] = q_values[mask]
     return output
 
