@@ -531,6 +531,8 @@ def render():
         "- 训练代码 commit：`7f61e9acaf3a9643f8d4ae016a251e5f234d2f6a`；"
         "续训兼容修复 commit：`a41a170`（仅修复 CUDA RNG 恢复，不改变训练动力学）。",
         f"- 部署哈希：`{deployment.get('deployment_sha256', 'N/A')}`。",
+        "- MEC 检查点：Small `7349ec9d…44e1f6`，"
+        "Transformer-M `57c88b7d…73c6d`（完整 SHA256 见协议/部署 JSON）。",
         "- 冻结协议：`STAGE2S_PROTOCOL.md`；部署明细：`deployment_heterogeneous.json`。",
         "- 测试：`test_stage2s.py`（CPU，17/17）与 `test_stage2s_gpu.py`"
         "（GPU 真实闭环，7/7）全部通过。",
