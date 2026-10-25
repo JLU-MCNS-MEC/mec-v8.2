@@ -154,7 +154,6 @@ def _summary_row(policy, algorithm, seed, kind, title, overall):
     }
     for key in POLICY_METRICS:
         row[key] = overall.get(key)
-    row["RewardD"] = float(1.0 - row["E2E_ms"] / 100.0)
     return row
 
 
@@ -168,7 +167,7 @@ def _aggregate(per_seed, algorithm):
         "seeds": ",".join(str(item["seed"]) for item in subset),
         "n_seeds": len(subset),
     }
-    for key in POLICY_METRICS + ("RewardD",):
+    for key in POLICY_METRICS:
         values = np.asarray(
             [float(item[key]) for item in subset
              if item.get(key) is not None],
@@ -563,7 +562,7 @@ def evaluate(args):
         EVIDENCE_DIR / "validation_summary.csv", summaries,
         fieldnames=[
             "policy", "condition", "algorithm", "seed", "kind", "title",
-            "episodes", *POLICY_METRICS, "RewardD",
+            "episodes", *POLICY_METRICS,
         ],
     )
     write_csv(
