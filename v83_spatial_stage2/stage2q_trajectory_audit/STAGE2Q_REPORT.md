@@ -137,8 +137,8 @@ MEC 的预期直接当作结果。
 | 差异审计图 | `v83_spatial_stage2/stage2q_trajectory_audit/trajectory_difference_audit.png` |
 | 采集/绘图/测试代码 | `collect_trajectories.py` / `plot_trajectories.py` / `test_trajectory_audit.py` |
 
-Git 提交：见文末 **§10**。主提交 SHA 为 `__MAIN_SHA__`，提交链接为
-`https://github.com/JLU-MCNS-MEC/mec-v8.2/commit/__MAIN_SHA__`。
+Git 提交：见文末 **§10**。主提交 SHA 为 `23b7b19c8f30395c585120b00e742eb606a16bee`，提交链接为
+`https://github.com/JLU-MCNS-MEC/mec-v8.2/commit/23b7b19c8f30395c585120b00e742eb606a16bee`。
 
 ---
 
@@ -652,7 +652,7 @@ OMP_NUM_THREADS=2 MPLBACKEND=Agg \
 ### 10.2 Git
 
 - 分支：`experiment/v83-spatial-foundation`
-- Stage-2q 主提交（代码 + CSV + PNG + 报告初版）：`__MAIN_SHA__`
-- 主提交链接：`https://github.com/JLU-MCNS-MEC/mec-v8.2/commit/__MAIN_SHA__`
+- Stage-2q 主提交（代码 + CSV + PNG + 报告初版）：`23b7b19c8f30395c585120b00e742eb606a16bee`
+- 主提交链接：`https://github.com/JLU-MCNS-MEC/mec-v8.2/commit/23b7b19c8f30395c585120b00e742eb606a16bee`
 - 目录链接：`https://github.com/JLU-MCNS-MEC/mec-v8.2/tree/experiment/v83-spatial-foundation/v83_spatial_stage2/stage2q_trajectory_audit`
 - 报告回填 SHA 的后续提交只更新本文件，不改变任何 CSV/PNG/代码。
