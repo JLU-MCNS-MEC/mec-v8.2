@@ -4,7 +4,7 @@
 - 仓库：`JLU-MCNS-MEC/mec-v8.2`
 - 分支：`experiment/v83-spatial-foundation`
 - 实验根目录（可追踪）：`v83_spatial_stage2/stage2q_trajectory_audit/`
-- 原始运行目录（被 `.gitignore` 排除）：`runs/v83_spatial_stage2/stage2q_trajectory_audit/`
+- 原始运行日志（被 `.gitignore` 排除）：`runs/v83_spatial_stage2/stage2q_collect.log`
 - 任务池：Stage-2n **Dev-60**，`map_seed = 10,000,001`
 - Test-400：**未读取**（`final_test_read = false`、`test_pool_read = false`）
 - 训练：**未重新训练**；只加载各实验的 `best.pt` 做推理与真实环境闭环
@@ -316,11 +316,11 @@ Stage-2o/2p 的 `freeze_protocol.py` 把父协议的 `deployment["sha256"]`
 
 ### 2.6 历史复现
 
-| 审计 | 策略数 | 比较数 | 最大绝对误差 | 通过 |
+| 审计 | 策略数 | 比较数（任务或字段） | 最大绝对误差 | 通过 |
 |---|---:|---:|---:|---|
-| Stage-2n 逐 Episode（60 任务 × 8 策略） | 8 | 480 | 动作哈希/成功/步数/SR/SPL/nDTW/E2E/P95/违约率/LatencyReturn 全部 **0.0** | 是 |
-| Stage-2n 汇总（10 个汇总字段） | 8 | 80 | **0.0** | 是 |
-| Stage-2o/2p best.pt 验证指标 | 12 | 120 | **0.0** | 是 |
+| Stage-2n 逐 Episode（60 任务 × 8 策略） | 8 | 480（8×60） | 动作哈希/成功/步数/SR/SPL/nDTW/E2E/P95/违约率/LatencyReturn 全部 **0.0** | 是 |
+| Stage-2n 汇总（10 个汇总字段） | 8 | 80（8×10） | **0.0** | 是 |
+| Stage-2o/2p best.pt 验证指标 | 12 | 120（12×10） | **0.0** | 是 |
 
 Stage-2n 的 8 个策略是 6 个 learned + Greedy + Random；Stage-2o/2p 的
 12 个策略是 6 个 Stage-2o + 6 个 Stage-2p。所有 `best_dev_e2e_ms` 与
