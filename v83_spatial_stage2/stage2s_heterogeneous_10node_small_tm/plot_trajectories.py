@@ -139,7 +139,7 @@ def _plot_trajectory_panel(ax, steps, summary, nodes, annotate=True,
     if annotate:
         status = "成功" if int(summary["success"]) else "失败"
         text = (
-            f"Ep {str(summary['episode_uid']).split('-')[-1]}\n"
+            f"{summary['episode_uid']}\n"
             f"{status} | {summary['band']} | {summary['steps']} 步\n"
             f"路径 {summary['path_length_m']:.1f} m\n"
             f"E2E {summary['mean_e2e_ms']:.1f} ms | "
