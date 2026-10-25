@@ -235,7 +235,7 @@ def main(argv=None):
                 })
                 print(f"[launch] completed {key}", flush=True)
             else:
-                retries[key] += 1
+                retries[key] = retries.get(key, 0) + 1
                 state["jobs"][key].update({
                     "status": "retrying",
                     "returncode": int(code),
