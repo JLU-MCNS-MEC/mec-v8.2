@@ -560,7 +560,9 @@ def render():
         "",
         "负 ΔE2E 表示学习策略时延更低；ΔRewardD 为正表示方案 D 奖励更高。"
         "baseline 与学习策略使用同一 10 节点部署和同一真实模型推理时延；"
-        "Greedy-Min-E2E 只使用当前状态可获得的 `total_ms`。",
+        "Random 使用固定 RNG 种子 20261025，Nearest / Max-Uplink-Rate / "
+        "Greedy-Min-E2E 为确定性规则；Greedy-Min-E2E 只使用当前状态可获得的 "
+        "`total_ms`，不使用未来轨迹、目标位置或 Oracle 动作。",
         "",
         "## 5. 异构性分析",
         "",
@@ -679,13 +681,32 @@ def render():
                 f"{_fmt(item['early_e2e'], 2)}→{_fmt(item['late_e2e'], 2)} ms"
                 for a, item in adaptation_by_algorithm.items()
             ) + "。"
+        paired_text = ""
+        if paired:
+            parts = []
+            for algorithm in ALGORITHMS:
+                item = paired.get(f"{algorithm}_vs_greedy_e2e")
+                if not item:
+                    continue
+                significant = (
+                    abs(item["mean"]) > item["ci95"] and item["mean"] < 0
+                )
+                parts.append(
+                    f"{ALGORITHM_LABELS[algorithm]} 相对 Greedy 的 ΔE2E "
+                    f"{item['mean']:+.2f} ms（95% CI "
+                    f"[{item['mean']-item['ci95']:+.2f}, "
+                    f"{item['mean']+item['ci95']:+.2f}]，"
+                    f"{'显著更低' if significant else '未显著更低'}）"
+                )
+            if parts:
+                paired_text = " 配对检验：" + "；".join(parts) + "。"
         lines.append(
             f"1. **DQN/PPO 是否学会利用模型异构性？** "
             f"证据是选择比例随 Episode 变化且不固定在 50%：{variability_text}。"
-            f"{adaptation_text}"
-            "但“利用”不等于“优于 baseline”：是否真正降低 E2E 见下一问的配对结果。"
-            "如果学习策略的 E2E 不优于 Greedy-Min-E2E，则只能说明它学会了"
-            "按当前时延选择，而不是学会了利用未来导航收益。"
+            f"{adaptation_text}{paired_text}"
+            "但“利用”不等于“优于 baseline”：如果学习策略的 E2E 不优于 "
+            "Greedy-Min-E2E，则只能说明它学会了按当前时延选择，"
+            "而不是学会了利用未来导航收益。"
         )
     else:
         lines.append(
@@ -703,6 +724,16 @@ def render():
     if latency is not None and not latency.empty:
         learned = latency[latency["kind"] == "learned"]
         if not learned.empty:
+            greedy_rows = latency[
+                latency["policy"] == "greedy_min_e2e"
+            ]
+            greedy_text = ""
+            if not greedy_rows.empty:
+                greedy_text = (
+                    f" Greedy-Min-E2E 的 Small 比例为 "
+                    f"{_pct(greedy_rows['small_ratio'].iloc[0])}，"
+                    "可作为“只按当前时延选择”的参照。"
+                )
             lines.append(
                 "3. **Small/Transformer-M 的选择比例？** 学习策略 Dev-60 "
                 f"Small 步数比例范围 "
@@ -711,6 +742,7 @@ def render():
                 f"均值 {_pct(learned['small_ratio'].mean())}；"
                 f"Transformer-M 均值 "
                 f"{_pct(learned['transformer_m_ratio'].mean())}。"
+                f"{greedy_text}"
             )
     # Q4: E2E vs baseline
     baseline_rows = eval_summary.get("baseline_comparison", [])
@@ -723,8 +755,12 @@ def render():
             ]
             if not subset:
                 continue
+            beaten = [
+                row for row in subset if row["delta_E2E_ms"] < 0
+            ]
             best_wins.append(
-                f"{ALGORITHM_LABELS[algorithm]} 对 4 个 baseline 的 ΔE2E 为 "
+                f"{ALGORITHM_LABELS[algorithm]} 低于 {len(beaten)}/"
+                f"{len(subset)} 个 baseline 的 E2E；逐项 ΔE2E 为 "
                 + ", ".join(
                     f"{row['baseline_title']} {row['delta_E2E_pct']:+.2f}%"
                     for row in subset
