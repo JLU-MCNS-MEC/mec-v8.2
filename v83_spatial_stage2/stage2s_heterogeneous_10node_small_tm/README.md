@@ -10,6 +10,8 @@ Transformer-M MEC，推理时延使用显式 0.2 TFLOP/s 有效吞吐，比较 D
 
 ## 结果摘要（Dev-60，详见 `STAGE2S_REPORT.md`）
 
+结果提交：`d4e5430243327dcc74386da933dc5d3529fc0a2e`（GitHub commit 链接见报告）。
+
 - 6/6 run 完成 4000 Episodes；严格收敛判据 **0/6**。
 - PPO 3-seed 均值：E2E **68.93 ± 0.40 ms**，SR 32.22%，nDTW 0.359，RewardD 0.311。
 - DQN 3-seed 均值：E2E **83.13 ± 0.99 ms**，SR 36.11%，nDTW 0.378，RewardD 0.169。

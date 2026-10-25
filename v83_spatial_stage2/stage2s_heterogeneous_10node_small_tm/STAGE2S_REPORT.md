@@ -22,6 +22,8 @@
 - 部署哈希：`1fce485ce6256a288fb0aecd525afbf2830467b5ee9f2918952af54148a081cd`。
 - MEC 检查点：Small `7349ec9d…44e1f6`，Transformer-M `57c88b7d…73c6d`（完整 SHA256 见协议/部署 JSON）。
 - 冻结协议：`STAGE2S_PROTOCOL.md`；部署明细：`deployment_heterogeneous.json`。
+- 结果提交：`d4e5430243327dcc74386da933dc5d3529fc0a2e`；
+  GitHub：<https://github.com/JLU-MCNS-MEC/mec-v8.2/commit/d4e5430243327dcc74386da933dc5d3529fc0a2e>。
 - 测试：`test_stage2s.py`（CPU，17/17）与 `test_stage2s_gpu.py`（GPU 真实闭环，7/7）全部通过。
 - Smoke 报告：`smoke_report.json` / `SMOKE_TEST.md`。
 - 未修改 Stage-2n/2o/2p/2r 的任何代码、任务、检查点或结果；新增文件仅位于本 Stage-2s 目录。
