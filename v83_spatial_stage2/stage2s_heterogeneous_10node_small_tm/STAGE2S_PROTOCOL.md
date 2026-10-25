@@ -307,9 +307,10 @@ Greedy-Min-E2E 不使用未来轨迹、目标位置、Oracle 动作或任何特�
 
 ## 11. 代码版本记录
 
-- 训练代码 commit：见 `runs/v83_spatial_stage2/stage2s_heterogeneous_10node_small_tm/<run>/protocol.json`
-  的 `launch_environment.git.commit`；
-- 协议冻结与部署哈希 commit：见本目录 Git 历史中 `Stage-2s: freeze protocol and deployment`
-  提交；
+- **训练代码 commit**：`7f61e9acaf3a9643f8d4ae016a251e5f234d2f6a`
+  （`Stage-2s: heterogeneous 5xSmall+5xTransformer-M MEC framework`）；
+- 每个 run 的 `protocol.json` 还会记录训练启动时的 `launch_environment.git.commit`
+  与 dirty 状态；
+- 协议冻结与部署哈希 commit：本次提交（训练启动前）；
 - 部署哈希：`1fce485ce6256a288fb0aecd525afbf2830467b5ee9f2918952af54148a081cd`；
 - 检查点哈希：Small `7349ec9d…44e1f6`，Transformer-M `57c88b7d…73c6d`。
