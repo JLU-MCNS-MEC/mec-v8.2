@@ -164,6 +164,8 @@ def _run_summary(algorithm, seed, run):
     history = run["history"]
     result = run["result"]
     last100 = frame.tail(100)
+    early = frame.head(min(200, len(frame)))
+    late = frame.tail(min(500, len(frame)))
     stats = cumulative_stats(frame.to_dict("records"))
     return {
         "algorithm": algorithm,
@@ -203,6 +205,27 @@ def _run_summary(algorithm, seed, run):
         "reward_std100_last": _finite(last100["episode_return"].std(
             ddof=0
         )),
+        "early_small_ratio": (
+            _finite(early["small_ratio"].mean())
+            if "small_ratio" in early else None
+        ),
+        "late_small_ratio": (
+            _finite(late["small_ratio"].mean())
+            if "small_ratio" in late else None
+        ),
+        "delta_small_ratio": (
+            _finite(
+                late["small_ratio"].mean() - early["small_ratio"].mean()
+            ) if "small_ratio" in early and "small_ratio" in late else None
+        ),
+        "early_e2e_ms": _finite(early["mean_episode_e2e_ms"].mean()),
+        "late_e2e_ms": _finite(late["mean_episode_e2e_ms"].mean()),
+        "delta_e2e_ms": _finite(
+            late["mean_episode_e2e_ms"].mean()
+            - early["mean_episode_e2e_ms"].mean()
+        ),
+        "early_success_rate": _finite(early["success"].mean()),
+        "late_success_rate": _finite(late["success"].mean()),
         "best_dev_e2e_ms": (result or {}).get("best_dev_e2e_ms"),
         "best_dev_episode": (result or {}).get("best_dev_episode"),
         "convergence": (result or {}).get("convergence", {}).get("status"),
@@ -412,6 +435,18 @@ def main(argv=None):
             "convergence": row["convergence"],
         })
     write_csv(EVIDENCE_DIR / "seed_stability.csv", stability)
+    adaptation = [{
+        key: row.get(key) for key in (
+            "algorithm", "algorithm_label", "seed", "episodes",
+            "early_small_ratio", "late_small_ratio", "delta_small_ratio",
+            "early_e2e_ms", "late_e2e_ms", "delta_e2e_ms",
+            "early_success_rate", "late_success_rate",
+            "best_dev_e2e_ms", "convergence",
+        )
+    } for row in run_summaries]
+    write_csv(
+        EVIDENCE_DIR / "adaptation_summary.csv", adaptation
+    )
     eval_summary = read_json(EVIDENCE_DIR / "validation_summary.json")
     summary = {
         "stage": STAGE,

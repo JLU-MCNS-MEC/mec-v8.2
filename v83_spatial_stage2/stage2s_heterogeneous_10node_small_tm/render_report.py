@@ -214,6 +214,28 @@ def _trajectory_table(trajectories):
     return "\n".join(lines)
 
 
+def _adaptation_table(adaptation):
+    if adaptation is None or adaptation.empty:
+        return "（无数据）"
+    lines = [
+        "| 算法 | seed | 前 200 Small | 末 500 Small | ΔSmall | 前 200 E2E | 末 500 E2E | ΔE2E | 前 200 成功率 | 末 500 成功率 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for _, row in adaptation.iterrows():
+        lines.append(
+            f"| {str(row['algorithm']).upper()} | {int(row['seed'])} | "
+            f"{_pct(row['early_small_ratio'])} | "
+            f"{_pct(row['late_small_ratio'])} | "
+            f"{_pct(row['delta_small_ratio'])} | "
+            f"{_fmt(row['early_e2e_ms'], 2)} | "
+            f"{_fmt(row['late_e2e_ms'], 2)} | "
+            f"{_fmt(row['delta_e2e_ms'], 2)} | "
+            f"{_pct(row['early_success_rate'])} | "
+            f"{_pct(row['late_success_rate'])} |"
+        )
+    return "\n".join(lines)
+
+
 def _success_diagnostic_table(rows):
     if not rows:
         return "（无数据）"
@@ -348,6 +370,7 @@ def render():
     trajectories = _csv("trajectory_summary.csv")
     selection = _csv("model_selection_summary.csv")
     success_diagnostic = _csv("success_e2e_diagnostic.csv")
+    adaptation = _csv("adaptation_summary.csv")
     latency = _csv("latency_decomposition.csv")
     episodes = _csv("per_episode_validation.csv")
     if summary is None:
@@ -480,6 +503,10 @@ def render():
                 "偏离 50% 超过 10 个百分点。"
             )
     lines += [
+        "",
+        "训练前后选择行为（前 200 vs 末 500 Episodes）：",
+        "",
+        _adaptation_table(adaptation),
         "",
         "配对检验（同一 Dev 任务，学习策略 − Greedy-Min-E2E；E2E 为负更好）：",
         "",
