@@ -318,6 +318,25 @@ def _success_diagnostic_table(rows):
     return "\n".join(lines)
 
 
+def _forced_table(forced):
+    if forced is None or forced.empty:
+        return "（无数据）"
+    lines = [
+        "| 算法 | 最佳 seed | 强制模型 | SR | OSR | nDTW | SPL | E2E (ms) | RewardD | 覆盖外回退步数 |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for _, row in forced.iterrows():
+        lines.append(
+            f"| {str(row['algorithm']).upper()} | {int(row['seed'])} | "
+            f"{row['forced_model']} | {_pct(row['SR'])} | "
+            f"{_pct(row['OSR'])} | {_fmt(row['nDTW'], 4)} | "
+            f"{_fmt(row['SPL'], 4)} | {_fmt(row['E2E_ms'], 2)} | "
+            f"{_fmt(row['RewardD'], 4)} | "
+            f"{int(row.get('forced_fallback_steps', 0))} |"
+        )
+    return "\n".join(lines)
+
+
 def _selection_table(selection):
     if selection is None or selection.empty:
         return "（无数据）"
@@ -435,6 +454,7 @@ def render():
     selection = _csv("model_selection_summary.csv")
     success_diagnostic = _csv("success_e2e_diagnostic.csv")
     adaptation = _csv("adaptation_summary.csv")
+    forced = _csv("forced_model_diagnostic.csv")
     latency = _csv("latency_decomposition.csv")
     episodes = _csv("per_episode_validation.csv")
     if summary is None:
@@ -640,6 +660,14 @@ def render():
             success_diagnostic.to_dict("records")
             if success_diagnostic is not None else []
         ),
+        "",
+        "### 6.2 强制模型诊断（仅诊断，不进入预注册主比较）",
+        "",
+        "把学习策略的动作 mask 限制为单一模型类型；若该模型在覆盖外，"
+        "回退到不受限贪心动作并计数。该诊断用于看同一策略在"
+        "“只能选 Small”与“只能选 Transformer-M”下的导航/时延差异。",
+        "",
+        _forced_table(forced),
         "",
         "## 7. 真实闭环轨迹",
         "",
