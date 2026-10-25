@@ -30,6 +30,7 @@ from v83_spatial_stage2.stage2s_heterogeneous_10node_small_tm.common import (  #
     FORMAL_SEEDS,
     MEC_MODELS,
     STAGE,
+    run_dir,
 )
 
 
@@ -61,6 +62,12 @@ def _fmt(value, digits=3, suffix=""):
 
 def _pct(value, digits=2):
     return _fmt(None if value is None else 100.0 * float(value), digits, "%")
+
+
+def _pp(value, digits=2):
+    if value is None:
+        return "N/A"
+    return f"{100.0 * float(value):+.{digits}f} pp"
 
 
 def _paired(left, right, metric):
@@ -249,6 +256,52 @@ def _diagnostic_by_algorithm(rows):
     return output
 
 
+def _navigation_cost_text(selection, diagnostic):
+    parts = []
+    small_better = False
+    if selection is not None and not selection.empty:
+        for algorithm in ALGORITHMS:
+            subset = selection[selection["algorithm"] == algorithm]
+            small = subset[subset["group"] == "Small"]
+            transformer = subset[subset["group"] == "Transformer-M"]
+            if small.empty or transformer.empty:
+                continue
+            small_row = small.iloc[0]
+            transformer_row = transformer.iloc[0]
+            if float(small_row["success_rate"]) < float(
+                transformer_row["success_rate"]
+            ):
+                small_better = True
+            parts.append(
+                f"{ALGORITHM_LABELS[algorithm]}：Small 主导组 SR "
+                f"{_pct(small_row['success_rate'])}、nDTW "
+                f"{_fmt(small_row['mean_ndtw'], 4)}、E2E "
+                f"{_fmt(small_row['mean_e2e_ms'], 2)} ms；"
+                f"Transformer-M 主导组 SR "
+                f"{_pct(transformer_row['success_rate'])}、nDTW "
+                f"{_fmt(transformer_row['mean_ndtw'], 4)}、E2E "
+                f"{_fmt(transformer_row['mean_e2e_ms'], 2)} ms"
+            )
+    if diagnostic:
+        for algorithm in ALGORITHMS:
+            item = diagnostic.get(algorithm)
+            if not item or "success" not in item or "failure" not in item:
+                continue
+            success = item["success"]
+            failure = item["failure"]
+            parts.append(
+                f"{ALGORITHM_LABELS[algorithm]}：成功 Episode 平均 E2E "
+                f"{_fmt(success['e2e'], 2)} ms/{_fmt(success['steps'], 0)} 步，"
+                f"失败 {_fmt(failure['e2e'], 2)} ms/"
+                f"{_fmt(failure['steps'], 0)} 步"
+            )
+    verdict = (
+        "存在明显的导航质量代价（Small 主导组 SR 低于 Transformer-M 主导组）"
+        if small_better else "未观察到明显的 Small 主导组 SR 下降"
+    )
+    return "；".join(parts) + f"。判定：{verdict}。" if parts else verdict
+
+
 def _adaptation_by_algorithm(adaptation):
     if adaptation is None or adaptation.empty:
         return {}
@@ -410,6 +463,7 @@ def _paired_evidence(eval_summary, episodes):
         ppo = episodes[episodes["algorithm"] == "ppo"]
         evidence["dqn_vs_ppo_e2e"] = _paired(dqn, ppo, "mean_e2e_ms")
         evidence["dqn_vs_ppo_ndtw"] = _paired(dqn, ppo, "ndtw")
+        evidence["dqn_vs_ppo_sr"] = _paired(dqn, ppo, "success")
     return evidence
 
 
@@ -468,6 +522,13 @@ def render():
     trajectory_manifest = _json("trajectory_manifest.json")
     latency = _csv("latency_decomposition.csv")
     episodes = _csv("per_episode_validation.csv")
+    per_seed_eval = _csv("per_seed_metrics.csv")
+    eval_by_policy = {}
+    if per_seed_eval is not None and not per_seed_eval.empty:
+        eval_by_policy = {
+            str(row["policy"]): row
+            for _, row in per_seed_eval.iterrows()
+        }
     if summary is None:
         raise SystemExit("summary.json missing; run analyze.py first")
     if eval_summary is None:
@@ -485,6 +546,34 @@ def render():
     lower_algorithm = (
         min(algo_e2e, key=algo_e2e.get) if algo_e2e else None
     )
+    convergence_details = {}
+    for algorithm in ALGORITHMS:
+        for seed in FORMAL_SEEDS:
+            payload = read_json(
+                run_dir(algorithm, seed) / "training_result.json"
+            )
+            if payload is not None:
+                convergence_details[f"{algorithm}_s{seed}"] = payload.get(
+                    "convergence", {}
+                )
+    best_learned = None
+    if per_seed_eval is not None and not per_seed_eval.empty:
+        best_learned = per_seed_eval.loc[
+            per_seed_eval["E2E_ms"].idxmin()
+        ].to_dict()
+    greedy_row = next(
+        (row for row in eval_summary.get("summary", [])
+         if row.get("policy") == "greedy_min_e2e"),
+        None,
+    )
+    learned_latency = (
+        latency[latency["kind"] == "learned"]
+        if latency is not None and not latency.empty else None
+    )
+    eval_aggregate = {
+        row["algorithm"]: row
+        for row in eval_summary.get("seed_aggregate", [])
+    }
     lines = []
     lines += [
         "# Stage-2s 最终报告：5×Small + 5×Transformer-M 异构 10 节点 MEC",
@@ -510,12 +599,21 @@ def render():
     for algorithm in ALGORITHMS:
         row = best.get(algorithm)
         if row:
+            policy = f"{algorithm}_s{row['seed']}"
+            eval_row = eval_by_policy.get(policy)
+            if eval_row is not None:
+                sr_text = _pct(eval_row.get("SR"))
+                small_text = _pct(eval_row.get("small_ratio"))
+                label = "Dev SR"
+            else:
+                sr_text = _pct(row.get("success_rate"))
+                small_text = _pct(row.get("small_ratio"))
+                label = "训练成功率"
             lines.append(
                 f"- {ALGORITHM_LABELS[algorithm]} 最佳 seed="
                 f"{row['seed']}：Dev E2E "
-                f"{_fmt(row.get('best_dev_e2e_ms'), 2)} ms，SR "
-                f"{_pct(row.get('success_rate'))}，Small 选择 "
-                f"{_pct(row.get('small_ratio'))}。"
+                f"{_fmt(row.get('best_dev_e2e_ms'), 2)} ms，{label} "
+                f"{sr_text}，Small 选择 {small_text}。"
             )
     lines.append(
         f"- 达到预注册严格收敛判据的 run："
@@ -635,16 +733,19 @@ def render():
         "| 对比 | n | ΔE2E 均值 (ms) | 95% CI | 学习更低/更高/持平 | ΔnDTW 均值 | ΔSR 均值 |",
         "|---|---:|---:|---|---:|---:|---:|",
     ]
-    for key in sorted(paired):
-        if not key.endswith("_e2e"):
+    pair_rows = (
+        ("dqn_vs_greedy_e2e", "DQN vs Greedy-Min-E2E", "dqn_vs_greedy"),
+        ("ppo_vs_greedy_e2e", "PPO vs Greedy-Min-E2E", "ppo_vs_greedy"),
+        ("dqn_vs_ppo_e2e", "DQN vs PPO（负=DQN 更低）", "dqn_vs_ppo"),
+    )
+    for e2e_key, label, prefix in pair_rows:
+        item = paired.get(e2e_key)
+        if not item:
             continue
-        item = paired[key]
-        algorithm = key.split("_vs_")[0]
-        ndtw = paired.get(f"{algorithm}_vs_greedy_ndtw")
-        sr = paired.get(f"{algorithm}_vs_greedy_sr")
+        ndtw = paired.get(f"{prefix}_ndtw")
+        sr = paired.get(f"{prefix}_sr")
         lines.append(
-            f"| {ALGORITHM_LABELS.get(algorithm, algorithm)} vs "
-            f"Greedy-Min-E2E | {item['n']} | {item['mean']:+.3f} | "
+            f"| {label} | {item['n']} | {item['mean']:+.3f} | "
             f"[{item['mean']-item['ci95']:+.3f}, "
             f"{item['mean']+item['ci95']:+.3f}] | "
             f"{item['wins']}/{item['losses']}/{item['ties']} | "
@@ -738,15 +839,18 @@ def render():
                 item = paired.get(f"{algorithm}_vs_greedy_e2e")
                 if not item:
                     continue
-                significant = (
-                    abs(item["mean"]) > item["ci95"] and item["mean"] < 0
-                )
+                if abs(item["mean"]) > item["ci95"]:
+                    verdict = (
+                        "显著更低（更好）" if item["mean"] < 0
+                        else "显著更高（更差）"
+                    )
+                else:
+                    verdict = "无显著差异"
                 parts.append(
                     f"{ALGORITHM_LABELS[algorithm]} 相对 Greedy 的 ΔE2E "
                     f"{item['mean']:+.2f} ms（95% CI "
                     f"[{item['mean']-item['ci95']:+.2f}, "
-                    f"{item['mean']+item['ci95']:+.2f}]，"
-                    f"{'显著更低' if significant else '未显著更低'}）"
+                    f"{item['mean']+item['ci95']:+.2f}]，{verdict}）"
                 )
             if parts:
                 paired_text = " 配对检验：" + "；".join(parts) + "。"
@@ -785,15 +889,32 @@ def render():
                     f"{_pct(greedy_rows['small_ratio'].iloc[0])}，"
                     "可作为“只按当前时延选择”的参照。"
                 )
+            weighted_text = ""
+            if learned_latency is not None and not learned_latency.empty:
+                weighted_parts = []
+                for algorithm in ALGORITHMS:
+                    subset = learned_latency[
+                        learned_latency["algorithm"] == algorithm
+                    ]
+                    if not subset.empty:
+                        weighted_parts.append(
+                            f"{ALGORITHM_LABELS[algorithm]} "
+                            f"{_pct(subset['small_ratio'].mean())}"
+                        )
+                if weighted_parts:
+                    weighted_text = (
+                        " 按步数加权（Dev-60 全部步）："
+                        + "，".join(weighted_parts) + "。"
+                    )
             lines.append(
                 "3. **Small/Transformer-M 的选择比例？** 学习策略 Dev-60 "
-                f"Small 步数比例范围 "
+                f"每 Episode 的 Small 步数比例范围 "
                 f"{_pct(learned['small_ratio'].min())}–"
                 f"{_pct(learned['small_ratio'].max())}，"
-                f"均值 {_pct(learned['small_ratio'].mean())}；"
-                f"Transformer-M 均值 "
+                f"Episode 平均 {_pct(learned['small_ratio'].mean())}；"
+                f"Transformer-M Episode 平均 "
                 f"{_pct(learned['transformer_m_ratio'].mean())}。"
-                f"{greedy_text}"
+                f"{weighted_text}{greedy_text}"
             )
     # Q4: E2E vs baseline
     baseline_rows = eval_summary.get("baseline_comparison", [])
@@ -810,8 +931,8 @@ def render():
                 row for row in subset if row["delta_E2E_ms"] < 0
             ]
             best_wins.append(
-                f"{ALGORITHM_LABELS[algorithm]} 低于 {len(beaten)}/"
-                f"{len(subset)} 个 baseline 的 E2E；逐项 ΔE2E 为 "
+                f"{ALGORITHM_LABELS[algorithm]} 仅在 {len(beaten)}/"
+                f"{len(subset)} 个 baseline 上 E2E 更低；逐项 ΔE2E 为 "
                 + ", ".join(
                     f"{row['baseline_title']} {row['delta_E2E_pct']:+.2f}%"
                     for row in subset
@@ -836,13 +957,10 @@ def render():
                 for a, item in diagnostic_by_algorithm.items()
             ) + "。"
         lines.append(
-            "5. **导航质量是否出现代价？** 见第 6 节分组表、"
-            "6.1 成功/失败 E2E 诊断与 `per_seed_metrics.csv` / "
-            "`seed_aggregate.csv` 的 SR/OSR/nDTW/SPL。"
-            f"{diagnostic_text}"
-            "如果失败 Episode 的平均 E2E 明显低于成功 Episode，且最佳 Dev E2E "
-            "检查点的 SR 偏低，则说明低时延部分来自“短而失败”的轨迹；"
-            "这是方案 D 无成功项的已知设计后果，必须如实报告。"
+            "5. **导航质量是否出现代价？** "
+            f"{_navigation_cost_text(selection, diagnostic_by_algorithm)}"
+            " 这与第 6 节的相关性方向一致；方案 D 没有成功/Stop 奖励，"
+            "因此低 E2E 与较低 SR 可以同时出现，必须如实报告。"
         )
     else:
         lines.append(
@@ -852,9 +970,144 @@ def render():
         f"6. **哪些 run 满足预先规定的收敛判据？** "
         f"{', '.join(converged) if converged else '无'}。"
     )
+    lines += ["", "## 10. 关键发现（自动汇总）", ""]
+    dqn_agg = eval_aggregate.get("dqn")
+    ppo_agg = eval_aggregate.get("ppo")
+    if dqn_agg is not None and ppo_agg is not None:
+        delta_e2e = (
+            float(ppo_agg["E2E_ms_mean"]) - float(dqn_agg["E2E_ms_mean"])
+        )
+        lines.append(
+            f"- 算法：PPO E2E {_fmt(ppo_agg['E2E_ms_mean'], 2)} ms vs "
+            f"DQN {_fmt(dqn_agg['E2E_ms_mean'], 2)} ms"
+            f"（Δ{delta_e2e:+.2f} ms，"
+            f"{100*delta_e2e/float(dqn_agg['E2E_ms_mean']):+.2f}%）；"
+            f"SR {_pct(ppo_agg['SR_mean'])} vs {_pct(dqn_agg['SR_mean'])}"
+            f"（{_pp(float(ppo_agg['SR_mean'])-float(dqn_agg['SR_mean']))}）；"
+            f"nDTW {_fmt(ppo_agg['nDTW_mean'], 4)} vs "
+            f"{_fmt(dqn_agg['nDTW_mean'], 4)}。"
+        )
+    for algorithm in ALGORITHMS:
+        row = next(
+            (item for item in eval_summary.get("baseline_comparison", [])
+             if item["algorithm"] == algorithm
+             and item["baseline"] == "greedy_min_e2e"),
+            None,
+        )
+        if row is None:
+            continue
+        verdict = "未超过" if row["delta_E2E_ms"] > 0 else "超过"
+        lines.append(
+            f"- {ALGORITHM_LABELS[algorithm]} vs Greedy-Min-E2E："
+            f"ΔE2E {row['delta_E2E_ms']:+.2f} ms "
+            f"（{row['delta_E2E_pct']:+.2f}%），"
+            f"ΔSR {_pp(row['delta_SR'])}，"
+            f"ΔnDTW {row['delta_nDTW']:+.4f}；{verdict} Greedy-Min-E2E。"
+        )
+    if best_learned is not None:
+        greedy_text = ""
+        if greedy_row is not None:
+            greedy_text = (
+                f" Greedy-Min-E2E 为 "
+                f"{_fmt(greedy_row['E2E_ms'], 2)} ms / SR "
+                f"{_pct(greedy_row['SR'])} / RewardD "
+                f"{_fmt(greedy_row['RewardD'], 4)}。"
+            )
+        lines.append(
+            f"- 最低 E2E 学习 run：{best_learned['policy']}，"
+            f"E2E {_fmt(best_learned['E2E_ms'], 2)} ms，"
+            f"SR {_pct(best_learned['SR'])}，"
+            f"RewardD {_fmt(best_learned['RewardD'], 4)}。"
+            f"{greedy_text}"
+        )
+    if learned_latency is not None and not learned_latency.empty:
+        for algorithm in ALGORITHMS:
+            subset = learned_latency[
+                learned_latency["algorithm"] == algorithm
+            ]
+            if subset.empty:
+                continue
+            lines.append(
+                f"- {ALGORITHM_LABELS[algorithm]} 时延分解："
+                f"通信 {_fmt(subset['mean_communication_ms'].mean(), 2)} ms，"
+                f"推理 {_fmt(subset['mean_inference_ms'].mean(), 2)} ms，"
+                f"Small 选择 {_pct(subset['small_ratio'].mean())}。"
+            )
+        lines.append(
+            "- 解释：PPO 相对 DQN 的 E2E 优势主要来自更低的通信时延"
+            "（选择更近/信道更好的节点），而不是单纯因为 Small 推理便宜；"
+            "推理时延本身只有约 6.6–7.0 ms，通信约 39.6–53.5 ms。"
+        )
+    if selection is not None and not selection.empty:
+        for algorithm in ALGORITHMS:
+            subset = selection[selection["algorithm"] == algorithm]
+            small = subset[subset["group"] == "Small"]
+            transformer = subset[subset["group"] == "Transformer-M"]
+            if small.empty or transformer.empty:
+                continue
+            srow = small.iloc[0]
+            trow = transformer.iloc[0]
+            lines.append(
+                f"- 导航代价（{ALGORITHM_LABELS[algorithm]}）："
+                f"Small 主导组 SR {_pct(srow['success_rate'])} / nDTW "
+                f"{_fmt(srow['mean_ndtw'], 4)} / E2E "
+                f"{_fmt(srow['mean_e2e_ms'], 2)} ms；"
+                f"Transformer-M 主导组 SR {_pct(trow['success_rate'])} / "
+                f"nDTW {_fmt(trow['mean_ndtw'], 4)} / E2E "
+                f"{_fmt(trow['mean_e2e_ms'], 2)} ms。"
+            )
+    if forced is not None and not forced.empty:
+        for algorithm in ALGORITHMS:
+            subset = forced[forced["algorithm"] == algorithm]
+            small = subset[subset["forced_model"] == "Small"]
+            transformer = subset[
+                subset["forced_model"] == "Transformer-M"
+            ]
+            if small.empty or transformer.empty:
+                continue
+            srow = small.iloc[0]
+            trow = transformer.iloc[0]
+            lines.append(
+                f"- 强制模型（{ALGORITHM_LABELS[algorithm]}，"
+                f"仅诊断）：强制 Small SR {_pct(srow['SR'])} / nDTW "
+                f"{_fmt(srow['nDTW'], 4)} / E2E {_fmt(srow['E2E_ms'], 2)} ms"
+                f"（回退 {int(srow.get('forced_fallback_steps', 0))} 步）；"
+                f"强制 Transformer-M SR {_pct(trow['SR'])} / nDTW "
+                f"{_fmt(trow['nDTW'], 4)} / E2E {_fmt(trow['E2E_ms'], 2)} ms"
+                f"（回退 {int(trow.get('forced_fallback_steps', 0))} 步）。"
+            )
+    if diagnostic_by_algorithm:
+        for algorithm in ALGORITHMS:
+            item = diagnostic_by_algorithm.get(algorithm)
+            if not item or "success" not in item or "failure" not in item:
+                continue
+            success = item["success"]
+            failure = item["failure"]
+            diff = failure["e2e"] - success["e2e"]
+            lines.append(
+                f"- 奖励—成功解耦（{ALGORITHM_LABELS[algorithm]}）："
+                f"成功 E2E {_fmt(success['e2e'], 2)} ms / "
+                f"{_fmt(success['steps'], 0)} 步；失败 "
+                f"{_fmt(failure['e2e'], 2)} ms / "
+                f"{_fmt(failure['steps'], 0)} 步；失败−成功 "
+                f"{diff:+.2f} ms。"
+            )
+    if convergence_details:
+        closest = min(
+            convergence_details.items(),
+            key=lambda item: float(
+                item[1].get("last3_spread_fraction", float("inf"))
+            ),
+        )
+        lines.append(
+            f"- 收敛：{len(converged)}/{len(summary.get('runs', []))} 达到"
+            f"严格判据；最接近的是 {closest[0]}，最后三次波动 "
+            f"{_pct(closest[1].get('last3_spread_fraction'))}，"
+            f"末次差距 {_pct(closest[1].get('final_gap_fraction'))}。"
+        )
     lines += [
         "",
-        "## 10. 限制",
+        "## 11. 限制",
         "",
         "1. 单城市、单任务生成规则、两个冻结导航模型；结论不外推到新城市或重新训练导航模型。",
         "2. 只有 3 个随机种子；不足以做强统计推断，只能检查种子间方向一致性。",
@@ -865,7 +1118,7 @@ def render():
         "6. 强制 Small/Transformer-M 诊断只限制动作 mask；若该模型在覆盖外则回退并计数，"
         "不是严格的同轨迹反事实。",
         "",
-        "## 11. 复现",
+        "## 12. 复现",
         "",
         "```bash",
         "PY=/home/ubuntu5/miniconda3/envs/DRL/bin/python",

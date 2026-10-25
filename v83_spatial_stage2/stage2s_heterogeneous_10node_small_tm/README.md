@@ -8,6 +8,19 @@ Transformer-M MEC，推理时延使用显式 0.2 TFLOP/s 有效吞吐，比较 D
 **本阶段不使用 Stage-2r 的冻结 lane 缓存**：每个 step 由所选节点的模型真实
 产生导航动作，模型选择会改变 UAV 轨迹、状态和后续关联决策。
 
+## 结果摘要（Dev-60，详见 `STAGE2S_REPORT.md`）
+
+- 6/6 run 完成 4000 Episodes；严格收敛判据 **0/6**。
+- PPO 3-seed 均值：E2E **68.93 ± 0.40 ms**，SR 32.22%，nDTW 0.359，RewardD 0.311。
+- DQN 3-seed 均值：E2E **83.13 ± 0.99 ms**，SR 36.11%，nDTW 0.378，RewardD 0.169。
+- Baseline：Greedy-Min-E2E 66.26 ms / SR 35.00%；Nearest 66.88 ms / SR 33.33%；
+  Random 101.61 ms / SR 43.33%。
+- 最低 E2E 学习 run：PPO-s303，68.52 ms / SR 35.00% / RewardD 0.3148，
+  比 Greedy（66.26 ms / RewardD 0.3374）慢 3.42%、RewardD 低 0.0226；
+  PPO 3-seed 均值比 Greedy 慢 4.03%。
+- Small 主导 Episode 的 SR 明显低于 Transformer-M 主导 Episode
+  （DQN 23.33% vs 50.00%；PPO 25.00% vs 43.75%），导航质量代价明确。
+
 ## 关键常量
 
 - 部署哈希：`1fce485ce6256a288fb0aecd525afbf2830467b5ee9f2918952af54148a081cd`

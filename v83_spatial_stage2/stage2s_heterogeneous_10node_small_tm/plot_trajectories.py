@@ -278,7 +278,12 @@ def plot_model_usage(summaries):
             f"{'S' if int(row['success']) else 'F'}-{row['band']}"
             for _, row in subset.iterrows()
         ]
-        subset = subset.sort_values("role")
+        role_order = {
+            "S-short": 0, "S-medium": 1, "S-long": 2,
+            "F-short": 3, "F-medium": 4, "F-long": 5,
+        }
+        subset["role_order"] = subset["role"].map(role_order)
+        subset = subset.sort_values("role_order")
         x = np.arange(len(subset))
         small = subset["small_ratio"].to_numpy(dtype=float)
         transformer = subset["transformer_m_ratio"].to_numpy(dtype=float)

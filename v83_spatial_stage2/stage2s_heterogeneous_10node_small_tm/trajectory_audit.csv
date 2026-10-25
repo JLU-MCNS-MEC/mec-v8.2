@@ -1,0 +1,13 @@
+algorithm,seed,episode_uid,role,selection_status,steps_recorded,steps,e2e_components_ok,model_type_ok,reward_identity_ok,model_usage_accounted,passed
+dqn,202,stage2n-dev-00013,success_short,exact,43,42,True,True,True,True,True
+dqn,202,stage2n-dev-00008,failure_short,exact,233,232,True,True,True,True,True
+dqn,202,stage2n-dev-00039,success_medium,exact,59,58,True,True,True,True,True
+dqn,202,stage2n-dev-00020,failure_medium,exact,163,162,True,True,True,True,True
+dqn,202,stage2n-dev-00054,success_long,exact,89,88,True,True,True,True,True
+dqn,202,stage2n-dev-00049,failure_long,exact,153,152,True,True,True,True,True
+ppo,303,stage2n-dev-00009,success_short,exact,42,41,True,True,True,True,True
+ppo,303,stage2n-dev-00000,failure_short,exact,401,400,True,True,True,True,True
+ppo,303,stage2n-dev-00039,success_medium,exact,59,58,True,True,True,True,True
+ppo,303,stage2n-dev-00024,failure_medium,exact,134,133,True,True,True,True,True
+ppo,303,stage2n-dev-00054,success_long,exact,89,88,True,True,True,True,True
+ppo,303,stage2n-dev-00047,failure_long,exact,178,177,True,True,True,True,True

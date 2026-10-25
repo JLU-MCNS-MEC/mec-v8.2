@@ -1,0 +1,13 @@
+algorithm,role,episode_uid,small_ratio,transformer_m_ratio,success,band
+dqn,S-short,stage2n-dev-00013,0.4523809523809524,0.5476190476190477,1,short
+dqn,S-medium,stage2n-dev-00039,0.6551724137931034,0.3448275862068966,1,medium
+dqn,S-long,stage2n-dev-00054,0.6022727272727273,0.3977272727272727,1,long
+dqn,F-short,stage2n-dev-00008,0.0129310344827586,0.9870689655172412,0,short
+dqn,F-medium,stage2n-dev-00020,0.5679012345679012,0.4320987654320987,0,medium
+dqn,F-long,stage2n-dev-00049,0.5592105263157895,0.4407894736842105,0,long
+ppo,S-short,stage2n-dev-00009,0.0,1.0,1,short
+ppo,S-medium,stage2n-dev-00039,1.0,0.0,1,medium
+ppo,S-long,stage2n-dev-00054,0.6931818181818182,0.3068181818181818,1,long
+ppo,F-short,stage2n-dev-00000,0.815,0.185,0,short
+ppo,F-medium,stage2n-dev-00024,0.7969924812030075,0.2030075187969924,0,medium
+ppo,F-long,stage2n-dev-00047,0.4011299435028249,0.5988700564971752,0,long
