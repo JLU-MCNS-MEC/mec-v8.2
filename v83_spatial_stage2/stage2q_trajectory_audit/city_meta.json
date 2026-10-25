@@ -1,0 +1,15 @@
+{
+  "map_seed": 10000001,
+  "city_fingerprint": "392500aa0df1d87b341f2fbd3df2fe4f2dc0405624a1ecc91cd33eca616bb182",
+  "world_size_m": 1500.0,
+  "num_landmarks": 160,
+  "road_spacing_m": 240.20953460466444,
+  "road_half_width_m": 6.934600886225261,
+  "road_alpha": 0.1648606491129071,
+  "background_value": 24.305274810795474,
+  "stop_radius_m": 20.0,
+  "uav_altitude_m": 80.0,
+  "forward_step_m": 5.0,
+  "turn_step_deg": 15.0,
+  "max_steps": 400
+}
